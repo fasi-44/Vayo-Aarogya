@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="24" fill="#16a34a"/>
+  <g fill="white">
+    <!-- Heart with plus sign - representing health care -->
+    <path d="M96 160c-2.5 0-4.9-1-6.7-2.8l-44.6-44.6C34.4 102.3 28 89.5 28 76c0-26.5 21.5-48 48-48 13.3 0 25.3 5.4 34 14.1 8.7-8.7 20.7-14.1 34-14.1 26.5 0 48 21.5 48 48 0 13.5-6.4 26.3-16.7 36.6l-44.6 44.6c-1.8 1.8-4.2 2.8-6.7 2.8z" opacity="0.9"/>
+    <!-- Plus sign in center -->
+    <rect x="88" y="60" width="16" height="56" rx="4" fill="#16a34a"/>
+    <rect x="68" y="80" width="56" height="16" rx="4" fill="#16a34a"/>
+  </g>
+  <!-- VA text at bottom -->
+  <text x="96" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white" opacity="0.9">VA</text>
+</svg>

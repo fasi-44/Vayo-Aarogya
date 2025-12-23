@@ -1,0 +1,57 @@
+{
+  "name": "Vayo Aarogya - Healthy Ageing App",
+  "short_name": "Vayo Aarogya",
+  "description": "WHO ICOPE-based elderly care assessment and management system for healthy ageing",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["health", "medical", "lifestyle"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "New Assessment",
+      "short_name": "Assessment",
+      "description": "Start a new health assessment",
+      "url": "/dashboard/assessments/new",
+      "icons": [{ "src": "/icon-192x192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon-192x192.svg", "sizes": "192x192" }]
+    }
+  ]
+}

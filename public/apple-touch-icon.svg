@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <rect width="180" height="180" rx="22" fill="#16a34a"/>
+  <g fill="white">
+    <!-- Heart with plus sign -->
+    <path d="M90 150c-2.3 0-4.6-0.9-6.3-2.6l-41.8-41.8C32.2 95.9 26 83.9 26 71c0-24.9 20.1-45 45-45 12.4 0 23.7 5.1 31.9 13.2C111.1 31.1 122.4 26 134.8 26c24.9 0 45 20.1 45 45 0 12.9-6.2 24.9-15.9 34.6l-41.8 41.8c-1.7 1.7-4 2.6-6.3 2.6z" opacity="0.9"/>
+    <!-- Plus sign -->
+    <rect x="82" y="56" width="16" height="52" rx="4" fill="#16a34a"/>
+    <rect x="64" y="74" width="52" height="16" rx="4" fill="#16a34a"/>
+  </g>
+</svg>

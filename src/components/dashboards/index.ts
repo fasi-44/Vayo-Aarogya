@@ -1,0 +1,5 @@
+export { AdminDashboard } from './admin-dashboard'
+export { ProfessionalDashboard } from './professional-dashboard'
+export { VolunteerDashboard } from './volunteer-dashboard'
+export { FamilyDashboard } from './family-dashboard'
+export { ElderlyDashboard } from './elderly-dashboard'

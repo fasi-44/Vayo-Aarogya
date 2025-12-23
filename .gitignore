@@ -1,0 +1,27 @@
+node_modules
+# Keep environment variables out of version control
+.env
+.env.local
+.env.production
+
+# Next.js
+.next
+out
+
+# PWA generated files
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+
+# Build
+build
+dist
+
+# IDE
+.idea
+.vscode
+
+# OS
+.DS_Store
+Thumbs.db

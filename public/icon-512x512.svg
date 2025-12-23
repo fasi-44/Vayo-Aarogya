@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="64" fill="#16a34a"/>
+  <g fill="white">
+    <!-- Heart with plus sign - representing health care -->
+    <path d="M256 420c-6.7 0-13-2.6-17.8-7.4l-118.8-118.8C88.4 262.8 72 228.4 72 192c0-70.7 57.3-128 128-128 35.4 0 67.4 14.4 90.6 37.6 23.2-23.2 55.2-37.6 90.6-37.6 70.7 0 128 57.3 128 128 0 36.4-16.4 70.8-47.4 101.8L343.8 412.6c-4.8 4.8-11.1 7.4-17.8 7.4h-70z" opacity="0.9"/>
+    <!-- Plus sign in center -->
+    <rect x="232" y="148" width="48" height="160" rx="12" fill="#16a34a"/>
+    <rect x="176" y="204" width="160" height="48" rx="12" fill="#16a34a"/>
+  </g>
+  <!-- VA text at bottom -->
+  <text x="256" y="480" text-anchor="middle" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="white" opacity="0.9">VAYO</text>
+</svg>

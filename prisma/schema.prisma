@@ -1,0 +1,324 @@
+// Vayo Aarogya - Healthy Ageing Platform
+// Prisma Schema for PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User roles enum
+enum UserRole {
+  super_admin
+  professional
+  volunteer
+  family
+  elderly
+}
+
+// Gender enum
+enum Gender {
+  male
+  female
+  other
+}
+
+// Risk level enum for assessments
+enum RiskLevel {
+  healthy
+  at_risk
+  intervention
+}
+
+// Assessment status enum
+enum AssessmentStatus {
+  draft
+  completed
+}
+
+// User model
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  password       String
+  name           String
+  phone          String?
+  role           UserRole  @default(family)
+  avatar         String?
+  isActive       Boolean   @default(true) @map("is_active")
+  emailVerified  Boolean   @default(false) @map("email_verified")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  lastLogin      DateTime? @map("last_login")
+
+  // Elderly-specific fields
+  vayoId           String?   @unique @map("vayo_id") // Auto-generated VA00001, VA00002, etc.
+  age              Int?
+  gender           Gender?
+  address          String?
+  emergencyContact String? @map("emergency_contact")
+  dateOfBirth      DateTime? @map("date_of_birth")
+
+  // Location fields (hierarchical)
+  stateName        String?   @map("state_name")
+  districtName     String?   @map("district_name")
+  talukName        String?   @map("taluk_name")
+  villageName      String?   @map("village_name")
+
+  // Caregiver details
+  caregiverName     String?  @map("caregiver_name")
+  caregiverPhone    String?  @map("caregiver_phone")
+  caregiverRelation String?  @map("caregiver_relation")
+
+  // Relationships - Volunteer assignment
+  assignedVolunteer   User?   @relation("ElderlyVolunteer", fields: [assignedVolunteerId], references: [id])
+  assignedVolunteerId String? @map("assigned_volunteer_id")
+  assignedElderly     User[]  @relation("ElderlyVolunteer")
+
+  // Relationships - Family/Caregiver assignment
+  assignedFamily      User?   @relation("ElderlyFamily", fields: [assignedFamilyId], references: [id])
+  assignedFamilyId    String? @map("assigned_family_id")
+  familyElders        User[]  @relation("ElderlyFamily")
+
+  // Volunteer settings
+  maxAssignments Int @default(10) @map("max_assignments")
+
+  // Auth tokens
+  refreshTokens RefreshToken[]
+
+  // Password reset
+  passwordResetTokens PasswordResetToken[]
+
+  // Assessments (as subject - elderly)
+  assessmentsAsSubject Assessment[] @relation("AssessmentSubject")
+
+  // Assessments (as assessor - volunteer/professional)
+  assessmentsAsAssessor Assessment[] @relation("AssessmentAssessor")
+
+  // Interventions
+  interventions Intervention[]
+
+  // Follow-ups
+  followUpsAsElderly  FollowUp[] @relation("ElderlyFollowUps")
+  followUpsAsAssignee FollowUp[] @relation("AssigneeFollowUps")
+
+  @@index([email])
+  @@index([role])
+  @@index([assignedVolunteerId])
+  @@index([assignedFamilyId])
+  @@map("users")
+}
+
+// Refresh token model for JWT
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+// Password reset token
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([token])
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// Assessment model (WHO ICOPE based)
+model Assessment {
+  id          String    @id @default(cuid())
+
+  // Subject (elderly being assessed)
+  subjectId   String    @map("subject_id")
+  subject     User      @relation("AssessmentSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+
+  // Assessor (volunteer/professional conducting assessment)
+  assessorId  String    @map("assessor_id")
+  assessor    User      @relation("AssessmentAssessor", fields: [assessorId], references: [id])
+
+  // Assessment date
+  assessedAt  DateTime  @default(now()) @map("assessed_at")
+
+  // Assessment status (draft or completed)
+  status      AssessmentStatus @default(completed)
+
+  // Current step (for resuming draft assessments)
+  currentStep Int?      @map("current_step")
+
+  // Overall risk level
+  overallRisk RiskLevel @default(healthy) @map("overall_risk")
+
+  // Assessment notes
+  notes       String?
+
+  // Domain scores (JSON for flexibility) - stores partial answers for drafts
+  domainScores Json? @map("domain_scores")
+
+  // Individual domain results
+  domains     AssessmentDomain[]
+
+  // Generated interventions
+  interventions Intervention[]
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([subjectId])
+  @@index([assessorId])
+  @@index([assessedAt])
+  @@index([status])
+  @@map("assessments")
+}
+
+// Assessment domain results
+model AssessmentDomain {
+  id           String     @id @default(cuid())
+  assessmentId String     @map("assessment_id")
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  // Domain identifier (cognition, mobility, nutrition, etc.)
+  domain       String
+
+  // Risk level for this domain
+  riskLevel    RiskLevel  @default(healthy) @map("risk_level")
+
+  // Score (0-100)
+  score        Int?
+
+  // Domain-specific answers (JSON)
+  answers      Json?
+
+  // Notes for this domain
+  notes        String?
+
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@unique([assessmentId, domain])
+  @@index([assessmentId])
+  @@index([domain])
+  @@map("assessment_domains")
+}
+
+// Intervention/Care plan model
+model Intervention {
+  id           String      @id @default(cuid())
+
+  // Elderly receiving intervention
+  userId       String      @map("user_id")
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Related assessment (optional)
+  assessmentId String?     @map("assessment_id")
+  assessment   Assessment? @relation(fields: [assessmentId], references: [id])
+
+  // Intervention details
+  title        String
+  description  String?
+  domain       String      // Related domain (cognition, mobility, etc.)
+  priority     String      @default("medium") // low, medium, high, urgent
+  status       String      @default("pending") // pending, in_progress, completed, cancelled
+
+  // Dates
+  dueDate      DateTime?   @map("due_date")
+  completedAt  DateTime?   @map("completed_at")
+
+  // Notes and follow-up
+  notes        String?
+
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([assessmentId])
+  @@index([status])
+  @@index([domain])
+  @@map("interventions")
+}
+
+// Audit log for tracking changes
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id") // User who performed the action (null for system)
+  action    String   // create, update, delete, login, logout, etc.
+  entity    String   // User, Assessment, Intervention, etc.
+  entityId  String?  @map("entity_id") // ID of the affected entity
+  details   Json?    // Additional details
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// Location model for hierarchical dropdowns (State → District → Taluk → Village)
+model Location {
+  id        String     @id @default(cuid())
+  type      String     // state, district, taluk, village
+  name      String
+  parentId  String?    @map("parent_id")
+  parent    Location?  @relation("LocationHierarchy", fields: [parentId], references: [id])
+  children  Location[] @relation("LocationHierarchy")
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@index([type])
+  @@index([parentId])
+  @@map("locations")
+}
+
+// Follow-up scheduling model
+model FollowUp {
+  id            String    @id @default(cuid())
+
+  // Elderly being followed up
+  elderlyId     String    @map("elderly_id")
+  elderly       User      @relation("ElderlyFollowUps", fields: [elderlyId], references: [id], onDelete: Cascade)
+
+  // Volunteer/Professional assigned
+  assigneeId    String?   @map("assignee_id")
+  assignee      User?     @relation("AssigneeFollowUps", fields: [assigneeId], references: [id])
+
+  // Follow-up details
+  type          String    // routine, assessment, intervention, medication, other
+  title         String
+  description   String?
+
+  // Scheduling
+  scheduledDate DateTime  @map("scheduled_date")
+  completedDate DateTime? @map("completed_date")
+  status        String    @default("scheduled") // scheduled, completed, missed, rescheduled, cancelled
+
+  // Related assessment (if follow-up resulted from or led to assessment)
+  assessmentId  String?   @map("assessment_id")
+
+  // Notes
+  notes         String?
+
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([elderlyId])
+  @@index([assigneeId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@map("follow_ups")
+}
