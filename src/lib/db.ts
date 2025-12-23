@@ -575,7 +575,7 @@ class Database {
         domain: data.domain,
         riskLevel: data.riskLevel || 'healthy',
         score: data.score,
-        answers: data.answers,
+        answers: data.answers as any,
         notes: data.notes,
       },
     })
@@ -599,7 +599,7 @@ class Database {
       data: {
         riskLevel: data.riskLevel,
         score: data.score,
-        answers: data.answers,
+        answers: data.answers as any,
         notes: data.notes,
       },
     })
@@ -635,13 +635,13 @@ class Database {
             domain: d.domain,
             riskLevel: d.riskLevel || 'healthy',
             score: d.score,
-            answers: d.answers,
+            answers: d.answers as any,
             notes: d.notes,
           },
           update: {
             riskLevel: d.riskLevel,
             score: d.score,
-            answers: d.answers,
+            answers: d.answers as any,
             notes: d.notes,
           },
         })
@@ -800,7 +800,7 @@ class Database {
         action: data.action,
         entity: data.entity,
         entityId: data.entityId,
-        details: data.details ?? {},
+        details: data.details as any,
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
       },
