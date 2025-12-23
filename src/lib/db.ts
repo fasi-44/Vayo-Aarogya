@@ -307,7 +307,7 @@ class Database {
       const safeUser = toSafeUser(prismaUserToAppUser(u))
       const userWithRelations = u as Record<string, unknown>
       if (userWithRelations.assignedVolunteer) {
-        (safeUser as SafeUser & { assignedVolunteer: unknown }).assignedVolunteer = userWithRelations.assignedVolunteer
+        (safeUser as any).assignedVolunteer = userWithRelations.assignedVolunteer
       }
       if (userWithRelations.assessmentsAsSubject) {
         (safeUser as SafeUser & { latestAssessment: unknown }).latestAssessment = (userWithRelations.assessmentsAsSubject as unknown[])[0] || null
