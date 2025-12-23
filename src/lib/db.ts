@@ -249,16 +249,16 @@ class Database {
         // Add related data to the safe user based on role
         const userWithRelations = u as Record<string, unknown>
         if ('assignedElderly' in u && Array.isArray(userWithRelations.assignedElderly)) {
-          (safeUser as SafeUser & { assignedElderly: unknown[] }).assignedElderly = userWithRelations.assignedElderly as unknown[]
+          (safeUser as any).assignedElderly = userWithRelations.assignedElderly as unknown[]
         }
         if ('familyElders' in u && Array.isArray(userWithRelations.familyElders)) {
-          (safeUser as SafeUser & { familyElders: unknown[] }).familyElders = userWithRelations.familyElders as unknown[]
+          (safeUser as any).familyElders = userWithRelations.familyElders as unknown[]
         }
         if ('assignedFamily' in u && userWithRelations.assignedFamily) {
-          (safeUser as SafeUser & { assignedFamily: unknown }).assignedFamily = userWithRelations.assignedFamily
+          (safeUser as any).assignedFamily = userWithRelations.assignedFamily
         }
         if ('assignedVolunteer' in u && userWithRelations.assignedVolunteer) {
-          (safeUser as SafeUser & { assignedVolunteer: unknown }).assignedVolunteer = userWithRelations.assignedVolunteer
+          (safeUser as any).assignedVolunteer = userWithRelations.assignedVolunteer
         }
         return safeUser
       }),
