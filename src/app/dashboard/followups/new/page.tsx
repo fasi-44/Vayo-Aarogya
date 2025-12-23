@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -23,6 +23,20 @@ import { getUsers } from '@/services/users'
 import type { SafeUser } from '@/types'
 
 export default function NewFollowUpPage() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout title="Schedule Follow-up" subtitle="Loading...">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    }>
+      <NewFollowUpPageContent />
+    </Suspense>
+  )
+}
+
+function NewFollowUpPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedElderlyId = searchParams.get('elderlyId')

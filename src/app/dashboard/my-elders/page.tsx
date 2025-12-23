@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -70,6 +70,20 @@ const enhanceAssessment = (assessment: Assessment): Assessment => {
 }
 
 export default function MyEldersPage() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout title="My Elders" subtitle="Loading...">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    }>
+      <MyEldersPageContent />
+    </Suspense>
+  )
+}
+
+function MyEldersPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuthStore()
