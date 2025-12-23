@@ -265,7 +265,7 @@ function compareAssessmentDomains(previous: Assessment, current: Assessment): Do
     ...Array.from(currentDomains.keys()),
   ])
 
-  for (const domain of allDomains) {
+  for (const domain of Array.from(allDomains)) {
     const prevDomain = previousDomains.get(domain)
     const currDomain = currentDomains.get(domain)
 
