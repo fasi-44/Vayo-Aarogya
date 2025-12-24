@@ -944,7 +944,7 @@ class Database {
 
   async createFollowUp(data: {
     elderlyId: string
-    assigneeId?: string
+    assigneeId?: string | null
     type: string
     title: string
     description?: string
@@ -955,7 +955,8 @@ class Database {
     return prisma.followUp.create({
       data: {
         elderlyId: data.elderlyId,
-        assigneeId: data.assigneeId,
+        // Convert empty string to null for optional foreign key
+        assigneeId: data.assigneeId || null,
         type: data.type,
         title: data.title,
         description: data.description,
@@ -1024,7 +1025,7 @@ class Database {
   }
 
   async updateFollowUp(id: string, data: {
-    assigneeId?: string
+    assigneeId?: string | null
     type?: string
     title?: string
     description?: string
@@ -1033,18 +1034,21 @@ class Database {
     status?: string
     notes?: string
   }) {
+    // Build update data, only including fields that are provided
+    // Handle assigneeId specially - convert empty string to null
+    const updateData: Record<string, unknown> = {}
+    if (data.assigneeId !== undefined) updateData.assigneeId = data.assigneeId || null
+    if (data.type !== undefined) updateData.type = data.type
+    if (data.title !== undefined) updateData.title = data.title
+    if (data.description !== undefined) updateData.description = data.description
+    if (data.scheduledDate !== undefined) updateData.scheduledDate = data.scheduledDate
+    if (data.completedDate !== undefined) updateData.completedDate = data.completedDate
+    if (data.status !== undefined) updateData.status = data.status
+    if (data.notes !== undefined) updateData.notes = data.notes
+
     return prisma.followUp.update({
       where: { id },
-      data: {
-        assigneeId: data.assigneeId,
-        type: data.type,
-        title: data.title,
-        description: data.description,
-        scheduledDate: data.scheduledDate,
-        completedDate: data.completedDate,
-        status: data.status,
-        notes: data.notes,
-      },
+      data: updateData,
       include: {
         elderly: { select: { id: true, name: true, vayoId: true } },
         assignee: { select: { id: true, name: true, role: true } },

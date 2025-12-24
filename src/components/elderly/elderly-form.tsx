@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Loader2, Phone, Lock } from 'lucide-react'
+import { Loader2, Phone, Lock, Eye, EyeOff } from 'lucide-react'
 import { type SafeUser, type Location } from '@/types'
 import { type ElderlyFormData } from '@/services/elderly'
 import { getVolunteers, getFamilyMembers } from '@/services/users'
@@ -75,6 +75,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
   const [isLoading, setIsLoading] = useState(false)
   const [volunteers, setVolunteers] = useState<SafeUser[]>([])
   const [familyMembers, setFamilyMembers] = useState<SafeUser[]>([])
+  const [showPassword, setShowPassword] = useState(false)
   const isEditing = !!elderly
 
   // Check if current user is a family member creating a new elder
@@ -417,13 +418,22 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                 <Label htmlFor="password" className="text-base">
                   Password {isEditing ? '(leave blank to keep)' : '*'}
                 </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  {...register('password')}
-                  placeholder={isEditing ? '••••••••' : 'Min 8 characters'}
-                  className="text-base"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    {...register('password')}
+                    placeholder={isEditing ? '••••••••' : 'Min 8 characters'}
+                    className="text-base pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 {errors.password && (
                   <p className="text-sm text-red-500">{errors.password.message}</p>
                 )}

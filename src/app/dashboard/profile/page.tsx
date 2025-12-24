@@ -24,6 +24,8 @@ import {
   Loader2,
   CheckCircle,
   AlertCircle,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 
 interface ProfileFormData {
@@ -45,6 +47,8 @@ export default function ProfilePage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const {
     register: registerProfile,
@@ -282,15 +286,25 @@ export default function ProfilePage() {
 
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  {...registerPassword('newPassword', {
-                    required: 'New password is required',
-                    minLength: { value: 8, message: 'Password must be at least 8 characters' },
-                  })}
-                  placeholder="Min 8 characters"
-                />
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    type={showNewPassword ? 'text' : 'password'}
+                    {...registerPassword('newPassword', {
+                      required: 'New password is required',
+                      minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                    })}
+                    placeholder="Min 8 characters"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 {passwordErrors.newPassword && (
                   <p className="text-sm text-red-500">{passwordErrors.newPassword.message}</p>
                 )}
@@ -298,15 +312,25 @@ export default function ProfilePage() {
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  {...registerPassword('confirmPassword', {
-                    required: 'Please confirm your password',
-                    validate: (value) => value === newPassword || 'Passwords do not match',
-                  })}
-                  placeholder="Confirm password"
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    {...registerPassword('confirmPassword', {
+                      required: 'Please confirm your password',
+                      validate: (value) => value === newPassword || 'Passwords do not match',
+                    })}
+                    placeholder="Confirm password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 {passwordErrors.confirmPassword && (
                   <p className="text-sm text-red-500">{passwordErrors.confirmPassword.message}</p>
                 )}

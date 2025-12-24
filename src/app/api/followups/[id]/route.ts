@@ -66,7 +66,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json()
-    const { assigneeId, type, title, description, scheduledDate, status, completedDate, notes, assessmentId } = body
+    const { type, title, description, scheduledDate, status, completedDate, notes, assessmentId } = body
+    // Handle empty string as null for optional foreign keys
+    const assigneeId = body.assigneeId && body.assigneeId.trim() !== '' ? body.assigneeId : null
 
     // Validate type if provided
     const validTypes = ['routine', 'assessment', 'intervention', 'medication', 'other']

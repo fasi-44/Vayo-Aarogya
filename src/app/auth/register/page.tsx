@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Mail, Lock, User, Phone, ArrowRight, ArrowLeft, Shield, HeartPulse, CheckCircle2 } from 'lucide-react'
+import { Mail, Lock, User, Phone, ArrowRight, ArrowLeft, Shield, HeartPulse, CheckCircle2, Eye, EyeOff } from 'lucide-react'
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -44,6 +44,8 @@ export default function RegisterPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = React.useState(false)
   const [selectedRole, setSelectedRole] = React.useState('')
+  const [showPassword, setShowPassword] = React.useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
 
   const {
     register,
@@ -197,15 +199,25 @@ export default function RegisterPage() {
                   <Label htmlFor="password" className="text-sm font-medium">
                     Password
                   </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Create a strong password"
-                    icon={<Lock className="w-4 h-4" />}
-                    error={errors.password?.message}
-                    autoComplete="new-password"
-                    {...register('password')}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Create a strong password"
+                      icon={<Lock className="w-4 h-4" />}
+                      error={errors.password?.message}
+                      autoComplete="new-password"
+                      className="pr-10"
+                      {...register('password')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                   {/* Password Requirements */}
                   <div className="grid grid-cols-2 gap-2 mt-3">
                     {passwordRequirements.map((req) => (
@@ -232,15 +244,25 @@ export default function RegisterPage() {
                   <Label htmlFor="confirmPassword" className="text-sm font-medium">
                     Confirm Password
                   </Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm your password"
-                    icon={<Lock className="w-4 h-4" />}
-                    error={errors.confirmPassword?.message}
-                    autoComplete="new-password"
-                    {...register('confirmPassword')}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="Confirm your password"
+                      icon={<Lock className="w-4 h-4" />}
+                      error={errors.confirmPassword?.message}
+                      autoComplete="new-password"
+                      className="pr-10"
+                      {...register('confirmPassword')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Terms & Conditions */}

@@ -78,7 +78,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { elderlyId, assigneeId, type, title, description, scheduledDate, assessmentId, notes } = body
+    const { elderlyId, type, title, description, scheduledDate, assessmentId, notes } = body
+    // Handle empty string as null for optional foreign keys
+    const assigneeId = body.assigneeId && body.assigneeId.trim() !== '' ? body.assigneeId : null
 
     // Validate required fields
     if (!elderlyId || !title || !scheduledDate) {
