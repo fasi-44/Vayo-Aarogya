@@ -2,9 +2,6 @@ import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import {
   hashPassword,
-  generateAccessToken,
-  generateRefreshToken,
-  setAuthCookies,
   validatePassword,
   validateEmail,
   checkRateLimit,
@@ -16,7 +13,7 @@ import {
   getClientIP,
   getUserAgent,
 } from '@/lib/api-utils'
-import { type LoginResponse, type UserRole } from '@/types'
+import { type UserRole } from '@/types'
 
 // Role prefix mapping for Vayo ID
 const ROLE_PREFIX_MAP: Record<string, string> = {
@@ -110,23 +107,6 @@ export async function POST(request: NextRequest) {
       vayoId,
     })
 
-    // Generate tokens
-    const tokenPayload = {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    }
-
-    const accessToken = await generateAccessToken(tokenPayload)
-    const refreshToken = await generateRefreshToken(tokenPayload)
-
-    // Store refresh token (7 days default)
-    const refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    await db.storeRefreshToken(refreshToken, user.id, refreshTokenExpiry)
-
-    // Set cookies
-    await setAuthCookies(accessToken, refreshToken)
-
     // Log registration
     await db.createAuditLog({
       userId: user.id,
@@ -138,16 +118,10 @@ export async function POST(request: NextRequest) {
       userAgent: getUserAgent(request),
     })
 
-    // Return safe user data
+    // Return safe user data (no tokens - user must login separately)
     const safeUser = db.toSafeUser(user)
 
-    const response: LoginResponse = {
-      user: safeUser,
-      accessToken,
-      refreshToken,
-    }
-
-    return successResponse(response, 'Registration successful', 201)
+    return successResponse({ user: safeUser }, 'Registration successful. Please login with your credentials.', 201)
   } catch (error) {
     console.error('Registration error:', error)
     return errorResponse(Errors.internal('An error occurred during registration'))

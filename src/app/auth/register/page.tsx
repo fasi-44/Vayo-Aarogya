@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Mail, Lock, User, Phone, ArrowRight, ArrowLeft, Shield, HeartPulse, CheckCircle2, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, User, Phone, ArrowRight, ArrowLeft, Shield, HeartPulse, CheckCircle2, Eye, EyeOff, AlertCircle } from 'lucide-react'
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -46,6 +46,7 @@ export default function RegisterPage() {
   const [selectedRole, setSelectedRole] = React.useState('')
   const [showPassword, setShowPassword] = React.useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
 
   const {
     register,
@@ -77,10 +78,38 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    console.log('Register data:', data)
-    setIsLoading(false)
-    router.push('/auth/login?registered=true')
+    setError(null)
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          role: data.role,
+          password: data.password,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setError(result.error?.message || 'Registration failed. Please try again.')
+        return
+      }
+
+      // Registration successful - redirect to login page
+      router.push('/auth/login?registered=true')
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.')
+      console.error('Registration error:', err)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -118,6 +147,12 @@ export default function RegisterPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
+              {error && (
+                <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  {error}
+                </div>
+              )}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 {/* Name Field */}
                 <div className="space-y-2">
@@ -269,7 +304,8 @@ export default function RegisterPage() {
                 <div className="flex items-start gap-3">
                   <Checkbox
                     id="terms"
-                    {...register('terms')}
+                    checked={watch('terms')}
+                    onCheckedChange={(checked) => setValue('terms', checked === true)}
                     className="mt-0.5 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
                   <label
