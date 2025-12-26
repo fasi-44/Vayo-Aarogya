@@ -1,5 +1,6 @@
 import type { Assessment, RiskLevel, ApiResponse } from '@/types'
 import { getAssessments } from './assessments'
+import { formatDate } from '@/lib/utils'
 
 // Report data types
 export interface ReportFilters {
@@ -178,8 +179,7 @@ export async function generateReport(
 
 function formatMonth(monthKey: string): string {
   const [year, month] = monthKey.split('-')
-  const date = new Date(parseInt(year), parseInt(month) - 1, 1)
-  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  return `${month}/${year}`
 }
 
 // Generate CSV data
@@ -194,7 +194,7 @@ export function generateCSV(data: ReportData): string {
   ]
 
   const rows = data.assessments.map((a) => [
-    new Date(a.assessedAt).toLocaleDateString(),
+    formatDate(a.assessedAt),
     a.subject?.name || '',
     a.subject?.vayoId || '',
     a.overallRisk,
@@ -230,7 +230,7 @@ export function generateDetailedCSV(data: ReportData): string {
     })
 
     return [
-      new Date(a.assessedAt).toLocaleDateString(),
+      formatDate(a.assessedAt),
       a.subject?.name || '',
       a.subject?.vayoId || '',
       a.overallRisk,
@@ -270,7 +270,7 @@ export function generateSummaryText(data: ReportData): string {
 
   return `
 VAYO AAROGYA - HEALTH ASSESSMENT REPORT
-Generated: ${new Date().toLocaleDateString()}
+Generated: ${formatDate(new Date())}
 
 SUMMARY
 -------

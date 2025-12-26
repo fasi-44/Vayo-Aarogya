@@ -11,9 +11,16 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const user = requireAuth(request)
+    const { searchParams } = new URL(request.url)
+    const subjectId = searchParams.get('subjectId')
 
     // Get all drafts for this assessor
-    const drafts = await db.getDraftAssessments(user.userId)
+    let drafts = await db.getDraftAssessments(user.userId)
+
+    // Filter by subjectId if provided
+    if (subjectId) {
+      drafts = drafts.filter(d => d.subjectId === subjectId)
+    }
 
     return successResponse({
       drafts,

@@ -27,7 +27,6 @@ import {
   AlertTriangle,
   Calendar,
   User,
-  Pencil,
   Play,
   FileText,
   List,
@@ -38,6 +37,7 @@ import { getElderlyAssessments } from '@/services/assessments'
 import { getRiskLevelDisplay } from '@/lib/assessment-scoring'
 import { AssessmentDetailView } from '@/components/assessments'
 import { AssessmentComparisonGraph } from './assessment-comparison-graph'
+import { formatDate } from '@/lib/utils'
 
 interface ElderlyAssessmentsDialogProps {
   open: boolean
@@ -79,11 +79,6 @@ export function ElderlyAssessmentsDialog({
   const handleNewAssessment = () => {
     onClose()
     router.push(`/dashboard/assessments/new?elderlyId=${elderly.id}`)
-  }
-
-  const handleEditAssessment = (assessmentId: string) => {
-    onClose()
-    router.push(`/dashboard/assessments/${assessmentId}/edit`)
   }
 
   const handleResumeAssessment = (assessmentId: string) => {
@@ -201,7 +196,7 @@ export function ElderlyAssessmentsDialog({
                               <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
                                 <span className="flex items-center gap-1">
                                   <Calendar className="w-3 h-3" />
-                                  {new Date(assessment.assessedAt).toLocaleDateString()}
+                                  {formatDate(assessment.assessedAt)}
                                 </span>
                                 {assessment.assessor?.name && (
                                   <span className="flex items-center gap-1">
@@ -217,8 +212,8 @@ export function ElderlyAssessmentsDialog({
                         <AccordionContent value={assessment.id}>
                           <div className="space-y-4">
                             {/* Quick Actions */}
-                            <div className="flex justify-end">
-                              {isDraft ? (
+                            {isDraft && (
+                              <div className="flex justify-end">
                                 <Button
                                   size="sm"
                                   onClick={() => handleResumeAssessment(assessment.id)}
@@ -227,17 +222,8 @@ export function ElderlyAssessmentsDialog({
                                   <Play className="w-3 h-3 mr-1" />
                                   Resume Assessment
                                 </Button>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleEditAssessment(assessment.id)}
-                                >
-                                  <Pencil className="w-3 h-3 mr-1" />
-                                  Edit Assessment
-                                </Button>
-                              )}
-                            </div>
+                              </div>
+                            )}
 
                             {/* Assessment Details - Using shared component (only for completed) */}
                             {!isDraft ? (

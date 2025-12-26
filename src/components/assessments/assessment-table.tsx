@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   Eye,
-  Pencil,
   MoreHorizontal,
   Trash2,
   FileText,
@@ -34,7 +33,7 @@ import {
 } from 'lucide-react'
 import { type Assessment, type RiskLevel, type AssessmentStatus } from '@/types'
 import { useAuthStore } from '@/store'
-import { getInitials } from '@/lib/utils'
+import { getInitials, formatDate, formatTime } from '@/lib/utils'
 
 interface AssessmentTableProps {
   assessments: Assessment[]
@@ -93,15 +92,8 @@ export function AssessmentTable({
         )}
         <DropdownMenuItem onClick={() => onView(assessment)}>
           <Eye className="w-4 h-4 mr-2" />
-          View Details
+          {assessment.status === 'completed' ? 'View Summary' : 'View Details'}
         </DropdownMenuItem>
-        {/* Only show Edit for completed assessments */}
-        {assessment.status === 'completed' && (
-          <DropdownMenuItem onClick={() => onEdit(assessment)}>
-            <Pencil className="w-4 h-4 mr-2" />
-            Edit Assessment
-          </DropdownMenuItem>
-        )}
         {onCompare && assessment.status === 'completed' && (
           <DropdownMenuItem onClick={() => onCompare(assessment)}>
             <TrendingUp className="w-4 h-4 mr-2" />
@@ -175,17 +167,9 @@ export function AssessmentTable({
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground mb-0.5">Assessment Date</p>
                       <p className="text-sm font-medium">
-                        {new Date(assessment.assessedAt).toLocaleDateString('en-US', {
-                          weekday: 'short',
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                        {formatDate(assessment.assessedAt)}
                         <span className="text-muted-foreground font-normal ml-2">
-                          {new Date(assessment.assessedAt).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                          {formatTime(assessment.assessedAt)}
                         </span>
                       </p>
                     </div>
@@ -237,13 +221,10 @@ export function AssessmentTable({
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">
-                        {new Date(assessment.assessedAt).toLocaleDateString()}
+                        {formatDate(assessment.assessedAt)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(assessment.assessedAt).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {formatTime(assessment.assessedAt)}
                       </p>
                     </div>
                   </div>

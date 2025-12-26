@@ -32,22 +32,29 @@ export async function GET(
     const { id } = await params
     const requestUser = getUserFromHeaders(request)
 
-    // Users can view their own profile, or admins can view anyone
-    const isOwnProfile = requestUser.userId === id
-    const canViewOthers = hasPermission(requestUser.role, 'users:read')
-
-    if (!isOwnProfile && !canViewOthers) {
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions' },
-        { status: 403 }
-      )
-    }
-
     const user = await db.findUserById(id)
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
+      )
+    }
+
+    // Users can view their own profile, or admins can view anyone
+    const isOwnProfile = requestUser.userId === id
+    const canViewOthers = hasPermission(requestUser.role, 'users:read')
+    const canViewElderly = hasPermission(requestUser.role, 'elderly:read')
+
+    // Check if volunteer/family is viewing their assigned elderly
+    const isAssignedElderly = user.role === 'elderly' && (
+      (requestUser.role === 'volunteer' && user.assignedVolunteer === requestUser.userId) ||
+      (requestUser.role === 'family' && user.assignedFamily === requestUser.userId)
+    )
+
+    if (!isOwnProfile && !canViewOthers && !(canViewElderly && isAssignedElderly)) {
+      return NextResponse.json(
+        { success: false, error: 'Insufficient permissions' },
+        { status: 403 }
       )
     }
 
@@ -76,22 +83,29 @@ export async function PUT(
     const requestUser = getUserFromHeaders(request)
     const body = await request.json()
 
-    // Users can update their own profile (limited fields), or admins can update anyone
-    const isOwnProfile = requestUser.userId === id
-    const canUpdateOthers = hasPermission(requestUser.role, 'users:update')
-
-    if (!isOwnProfile && !canUpdateOthers) {
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions' },
-        { status: 403 }
-      )
-    }
-
     const existingUser = await db.findUserById(id)
     if (!existingUser) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
+      )
+    }
+
+    // Users can update their own profile (limited fields), or admins can update anyone
+    const isOwnProfile = requestUser.userId === id
+    const canUpdateOthers = hasPermission(requestUser.role, 'users:update')
+    const canUpdateElderly = hasPermission(requestUser.role, 'elderly:update')
+
+    // Check if volunteer/family is updating their assigned elderly
+    const isAssignedElderly = existingUser.role === 'elderly' && (
+      (requestUser.role === 'volunteer' && existingUser.assignedVolunteer === requestUser.userId) ||
+      (requestUser.role === 'family' && existingUser.assignedFamily === requestUser.userId)
+    )
+
+    if (!isOwnProfile && !canUpdateOthers && !(canUpdateElderly && isAssignedElderly)) {
+      return NextResponse.json(
+        { success: false, error: 'Insufficient permissions' },
+        { status: 403 }
       )
     }
 

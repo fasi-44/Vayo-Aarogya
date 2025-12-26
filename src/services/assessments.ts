@@ -83,6 +83,22 @@ export async function getDraftAssessments(): Promise<ApiResponse<DraftListRespon
   return response.json()
 }
 
+// Check for existing draft for a specific elderly
+export async function checkExistingDraft(elderlyId: string): Promise<ApiResponse<Assessment | null>> {
+  const response = await fetch(`${API_BASE}/drafts?subjectId=${elderlyId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  })
+
+  const result = await response.json()
+  if (result.success && result.data?.drafts?.length > 0) {
+    // Return the first draft for this elderly
+    return { success: true, data: result.data.drafts[0] }
+  }
+  return { success: true, data: null }
+}
+
 // Save assessment as draft
 export async function saveDraft(data: Omit<AssessmentFormData, 'overallRisk'> & { overallRisk?: RiskLevel }): Promise<ApiResponse<Assessment>> {
   const response = await fetch(API_BASE, {

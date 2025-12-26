@@ -80,6 +80,8 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
 
   // Check if current user is a family member creating a new elder
   const isFamilyUserCreating = currentUser?.role === 'family' && !isEditing
+  // Check if current user is a volunteer creating a new elder
+  const isVolunteerUserCreating = currentUser?.role === 'volunteer' && !isEditing
 
   // Location states
   const [states, setStates] = useState<LocationOption[]>([])
@@ -128,9 +130,14 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
   const selectedDistrictId = watch('districtId')
   const selectedTalukId = watch('talukId')
 
-  // Load volunteers and family members for assignment
+  // Load volunteers and family members for assignment (only for admin/professional)
   useEffect(() => {
     async function loadAssignees() {
+      // Skip loading if user is volunteer or family - they can't view all users
+      if (currentUser?.role === 'volunteer' || currentUser?.role === 'family') {
+        return
+      }
+
       const [volunteersResult, familyResult] = await Promise.all([
         getVolunteers(),
         getFamilyMembers(),
@@ -143,7 +150,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
       }
     }
     loadAssignees()
-  }, [])
+  }, [currentUser?.role])
 
   // Load states on mount
   useEffect(() => {
@@ -256,7 +263,8 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
         dateOfBirth: '',
         address: '',
         emergencyContact: '',
-        assignedVolunteer: '',
+        // Auto-set volunteer if volunteer user is creating
+        assignedVolunteer: currentUser?.role === 'volunteer' ? currentUser.id : '',
         // Auto-set family if family user is creating
         assignedFamily: currentUser?.role === 'family' ? currentUser.id : '',
         stateId: '',
@@ -273,6 +281,43 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
       })
     }
   }, [elderly, reset, currentUser])
+
+  // When editing, find and set location IDs based on saved names
+  useEffect(() => {
+    if (elderly?.stateName && states.length > 0) {
+      const state = states.find(s => s.name === elderly.stateName)
+      if (state) {
+        setValue('stateId', state.id)
+      }
+    }
+  }, [elderly?.stateName, states, setValue])
+
+  useEffect(() => {
+    if (elderly?.districtName && districts.length > 0) {
+      const district = districts.find(d => d.name === elderly.districtName)
+      if (district) {
+        setValue('districtId', district.id)
+      }
+    }
+  }, [elderly?.districtName, districts, setValue])
+
+  useEffect(() => {
+    if (elderly?.talukName && taluks.length > 0) {
+      const taluk = taluks.find(t => t.name === elderly.talukName)
+      if (taluk) {
+        setValue('talukId', taluk.id)
+      }
+    }
+  }, [elderly?.talukName, taluks, setValue])
+
+  useEffect(() => {
+    if (elderly?.villageName && villages.length > 0) {
+      const village = villages.find(v => v.name === elderly.villageName)
+      if (village) {
+        setValue('villageId', village.id)
+      }
+    }
+  }, [elderly?.villageName, villages, setValue])
 
   const handleStateChange = (value: string) => {
     const state = states.find(s => s.id === value)
@@ -690,23 +735,40 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assignedVolunteer" className="text-base">Assigned Volunteer</Label>
-                <Select
-                  value={watch('assignedVolunteer') || 'none'}
-                  onValueChange={(value) => setValue('assignedVolunteer', value === 'none' ? '' : value)}
-                >
-                  <SelectTrigger className="text-base">
-                    <SelectValue placeholder="Select volunteer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {volunteers.map((v) => (
-                      <SelectItem key={v.id} value={v.id}>
-                        {v.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="assignedVolunteer" className="text-base flex items-center gap-2">
+                  Assigned Volunteer
+                  {isVolunteerUserCreating && <Lock className="w-3 h-3 text-muted-foreground" />}
+                </Label>
+                {isVolunteerUserCreating ? (
+                  // Volunteer creating - show their name, disabled
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-md border">
+                    <span className="text-base font-medium">{currentUser?.name}</span>
+                    <span className="text-sm text-muted-foreground">(You)</span>
+                  </div>
+                ) : (
+                  // Admin/Professional - can select any volunteer
+                  <Select
+                    value={watch('assignedVolunteer') || 'none'}
+                    onValueChange={(value) => setValue('assignedVolunteer', value === 'none' ? '' : value)}
+                  >
+                    <SelectTrigger className="text-base">
+                      <SelectValue placeholder="Select volunteer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {volunteers.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {isVolunteerUserCreating && (
+                  <p className="text-xs text-muted-foreground">
+                    This elder will be assigned to you
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">

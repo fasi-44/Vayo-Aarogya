@@ -42,12 +42,14 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     'reports:read', 'reports:export',
   ],
   volunteer: [
-    'assessments:read', 'assessments:create',
-    'elderly:read',
+    'assessments:read', 'assessments:create', 'assessments:update',
+    'elderly:read', 'elderly:create', 'elderly:update',
     'interventions:read',
   ],
   family: [
     'assessments:read',
+    'assessments:create',
+    'assessments:update',
     'elderly:read',
     'elderly:create',
     'elderly:update',
@@ -55,6 +57,8 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
   ],
   elderly: [
     'assessments:read',
+    'assessments:create',
+    'assessments:update',
     'interventions:read',
   ],
 }

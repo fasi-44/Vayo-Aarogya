@@ -1,12 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { successResponse, errorResponse, requireAuth, hasPermission } from '@/lib/api-utils'
 
-// GET /api/locations - Get locations with optional filters
+// GET /api/locations - Get locations with optional filters (public endpoint)
 export async function GET(request: NextRequest) {
   try {
-    requireAuth(request)
-
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || undefined
     const parentId = searchParams.get('parentId')
@@ -16,13 +14,10 @@ export async function GET(request: NextRequest) {
       parentId: parentId === 'null' ? null : parentId || undefined,
     })
 
-    return NextResponse.json(successResponse(locations))
+    return successResponse(locations)
   } catch (error) {
-    if (error instanceof Error && error.message === 'Authentication required') {
-      return NextResponse.json(errorResponse('Unauthorized'), { status: 401 })
-    }
     console.error('Get locations error:', error)
-    return NextResponse.json(errorResponse('Failed to get locations'), { status: 500 })
+    return errorResponse('Failed to get locations', 500)
   }
 }
 
@@ -32,19 +27,19 @@ export async function POST(request: NextRequest) {
     const user = requireAuth(request)
 
     if (!hasPermission(user.role, 'settings:update')) {
-      return NextResponse.json(errorResponse('Forbidden'), { status: 403 })
+      return errorResponse('Forbidden', 403)
     }
 
     const body = await request.json()
     const { type, name, parentId } = body
 
     if (!type || !name) {
-      return NextResponse.json(errorResponse('Type and name are required'), { status: 400 })
+      return errorResponse('Type and name are required', 400)
     }
 
     const validTypes = ['state', 'district', 'taluk', 'village']
     if (!validTypes.includes(type)) {
-      return NextResponse.json(errorResponse('Invalid location type'), { status: 400 })
+      return errorResponse('Invalid location type', 400)
     }
 
     const location = await db.createLocation({
@@ -62,12 +57,12 @@ export async function POST(request: NextRequest) {
       details: { type, name, parentId },
     })
 
-    return NextResponse.json(successResponse(location), { status: 201 })
+    return successResponse(location, undefined, 201)
   } catch (error) {
     if (error instanceof Error && error.message === 'Authentication required') {
-      return NextResponse.json(errorResponse('Unauthorized'), { status: 401 })
+      return errorResponse('Unauthorized', 401)
     }
     console.error('Create location error:', error)
-    return NextResponse.json(errorResponse('Failed to create location'), { status: 500 })
+    return errorResponse('Failed to create location', 500)
   }
 }

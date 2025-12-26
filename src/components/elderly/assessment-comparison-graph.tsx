@@ -35,6 +35,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { type Assessment } from '@/types'
+import { formatDate } from '@/lib/utils'
 
 interface AssessmentComparisonGraphProps {
   assessments: Assessment[]
@@ -111,12 +112,8 @@ export function AssessmentComparisonGraph({
     return completedAssessments.map((assessment, index) => {
       const dataPoint: Record<string, string | number> = {
         name: `#${index + 1}`,
-        date: new Date(assessment.assessedAt).toLocaleDateString(),
-        fullDate: new Date(assessment.assessedAt).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        }),
+        date: formatDate(assessment.assessedAt),
+        fullDate: formatDate(assessment.assessedAt),
       }
 
       assessment.domains?.forEach((domain) => {
@@ -440,11 +437,7 @@ export function AssessmentComparisonGraph({
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">
-                      {new Date(assessment.assessedAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
+                      {formatDate(assessment.assessedAt)}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Total Score: {currentTotal}

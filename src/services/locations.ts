@@ -62,7 +62,7 @@ export const locationsService = {
   },
 
   async getStates(): Promise<LocationOption[]> {
-    return this.getLocations({ type: 'state', parentId: null })
+    return this.getLocations({ type: 'state' })
   },
 
   async getDistricts(stateId: string): Promise<LocationOption[]> {

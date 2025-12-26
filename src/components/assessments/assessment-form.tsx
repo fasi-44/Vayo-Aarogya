@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -25,6 +33,9 @@ import {
   User,
   ClipboardCheck,
   FileText,
+  RotateCcw,
+  PlayCircle,
+  X,
 } from 'lucide-react'
 import { type SafeUser, type Assessment } from '@/types'
 import {
@@ -35,8 +46,9 @@ import {
 } from '@/lib/assessment-scoring'
 import { DomainQuestionCard } from './domain-question-card'
 import { AssessmentSummary } from './assessment-summary'
-import { createAssessment, saveDraft, updateDraft, completeDraft, type AssessmentFormData } from '@/services/assessments'
+import { createAssessment, saveDraft, updateDraft, completeDraft, deleteAssessment, checkExistingDraft, type AssessmentFormData } from '@/services/assessments'
 import { getElderly } from '@/services/elderly'
+import { formatDate } from '@/lib/utils'
 
 // Group domains into logical categories for wizard steps (ICOPE-based)
 const DOMAIN_GROUPS = [
@@ -124,6 +136,11 @@ export function AssessmentForm({
   const [elderlyList, setElderlyList] = useState<SafeUser[]>([])
   const [selectedElderly, setSelectedElderly] = useState<SafeUser | null>(null)
 
+  // Continue or Start Over dialog
+  const [showDraftDialog, setShowDraftDialog] = useState(false)
+  const [existingDraft, setExistingDraft] = useState<Assessment | null>(null)
+  const [isCheckingDraft, setIsCheckingDraft] = useState(false)
+
   // Domain answers: { [domainId]: { answers: { [questionId]: number }, notes: string } }
   const [domainData, setDomainData] = useState<Record<string, { answers: Record<string, number>; notes: string }>>({})
 
@@ -201,6 +218,80 @@ export function AssessmentForm({
     setDomainData(initialData)
   }, [draftAssessment])
 
+  // Show confirmation dialog when resuming a draft from assessment list
+  useEffect(() => {
+    if (draftAssessment && !selfAssessment) {
+      setExistingDraft(draftAssessment)
+      setShowDraftDialog(true)
+    }
+  }, [draftAssessment, selfAssessment])
+
+  // Load draft data into form
+  const loadDraftData = useCallback((draft: Assessment) => {
+    setDraftId(draft.id)
+    setCurrentStep(draft.currentStep || 1)
+    setGeneralNotes(draft.notes || '')
+
+    // Load domain data from draft
+    if (draft.domainScores) {
+      const savedData = draft.domainScores as Record<string, { answers: Record<string, number>; notes: string }>
+      const loadedData: Record<string, { answers: Record<string, number>; notes: string }> = {}
+      ASSESSMENT_DOMAINS.forEach(domain => {
+        if (savedData[domain.id]) {
+          loadedData[domain.id] = savedData[domain.id]
+        } else {
+          loadedData[domain.id] = { answers: {}, notes: '' }
+        }
+      })
+      setDomainData(loadedData)
+    }
+  }, [])
+
+  // Handle elderly selection - check for existing draft
+  const handleElderlySelect = async (elderly: SafeUser) => {
+    setSelectedElderly(elderly)
+    setIsCheckingDraft(true)
+
+    try {
+      const result = await checkExistingDraft(elderly.id)
+      if (result.success && result.data) {
+        // Found existing draft - show dialog
+        setExistingDraft(result.data)
+        setShowDraftDialog(true)
+      }
+    } catch (err) {
+      console.error('Error checking for draft:', err)
+    } finally {
+      setIsCheckingDraft(false)
+    }
+  }
+
+  // Handle "Continue" - load draft data
+  const handleContinueDraft = () => {
+    if (existingDraft) {
+      loadDraftData(existingDraft)
+    }
+    setShowDraftDialog(false)
+    setExistingDraft(null)
+  }
+
+  // Handle "Start Over" - reset to step 1 but keep previous answers for review
+  const handleStartOver = () => {
+    if (existingDraft) {
+      // Load the draft data so user can see previous answers
+      loadDraftData(existingDraft)
+      // But reset to step 1 so they can review from beginning
+      setCurrentStep(1)
+    }
+    setShowDraftDialog(false)
+    setExistingDraft(null)
+  }
+
+  // Handle close/exit assessment
+  const handleClose = () => {
+    router.push('/dashboard/assessments')
+  }
+
   // Get current domain group
   const currentDomainGroup = useMemo(() => {
     if (currentStep >= 1 && currentStep <= DOMAIN_GROUPS.length) {
@@ -276,13 +367,15 @@ export function AssessmentForm({
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // Navigate to next step
-  const handleNext = () => {
+  // Navigate to next step with auto-save
+  const handleNext = async () => {
     if (!isCurrentStepValid) {
       setShowValidationErrors(true)
       return
     }
     setShowValidationErrors(false)
+
+    const nextStep = Math.min(currentStep + 1, totalSteps - 1)
 
     if (currentStep === DOMAIN_GROUPS.length + 1) {
       // Moving to summary - calculate result
@@ -290,7 +383,55 @@ export function AssessmentForm({
       setAssessmentResult(result)
     }
 
-    setCurrentStep(prev => Math.min(prev + 1, totalSteps - 1))
+    // Auto-save as draft when navigating (whenever we have a selected elderly)
+    if (selectedElderly) {
+      setIsSavingDraft(true)
+      setError(null)
+      try {
+        const partialResult = calculateAssessmentResult(domainData)
+        const formData = {
+          subjectId: selectedElderly.id,
+          overallRisk: partialResult.overallRisk,
+          currentStep: nextStep,
+          notes: generalNotes || undefined,
+          domainScores: domainData,
+          domains: partialResult.domainScores.map(score => ({
+            domain: score.domain,
+            riskLevel: score.riskLevel,
+            score: score.score,
+            answers: score.answers,
+            notes: score.notes,
+          })),
+        }
+
+        console.log('Auto-saving draft...', { draftId, formData })
+
+        let result
+        if (draftId) {
+          result = await updateDraft(draftId, formData)
+        } else {
+          result = await saveDraft(formData)
+        }
+
+        console.log('Save result:', result)
+
+        if (result.success && result.data) {
+          setDraftId(result.data.id)
+          setDraftSaveMessage('Progress saved')
+          setTimeout(() => setDraftSaveMessage(null), 2000)
+        } else {
+          console.error('Save failed:', result.error)
+          setError(result.error || 'Failed to save progress')
+        }
+      } catch (err) {
+        console.error('Auto-save failed:', err)
+        setError('Failed to save progress')
+      } finally {
+        setIsSavingDraft(false)
+      }
+    }
+
+    setCurrentStep(nextStep)
     scrollToTop()
   }
 
@@ -431,7 +572,9 @@ export function AssessmentForm({
                 value={selectedElderly?.id || ''}
                 onValueChange={(value) => {
                   const elderly = elderlyList.find(e => e.id === value)
-                  setSelectedElderly(elderly || null)
+                  if (elderly) {
+                    handleElderlySelect(elderly)
+                  }
                 }}
               >
                 <SelectTrigger className="w-full">
@@ -859,42 +1002,21 @@ export function AssessmentForm({
       {currentStep === DOMAIN_GROUPS.length + 1 && renderReview()}
       {currentStep === DOMAIN_GROUPS.length + 2 && renderSummary()}
 
-      {/* Draft save message */}
-      {draftSaveMessage && (
-        <Card className="border-green-200 bg-green-50">
-          <CardContent className="p-3">
-            <p className="text-green-700 text-sm flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              {draftSaveMessage}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Navigation - Large buttons for elderly users */}
       <div className="flex flex-col gap-3 pt-4">
-        {/* Save Draft button - shown during assessment steps (not on summary) */}
-        {currentStep >= 1 && currentStep < totalSteps - 1 && selectedElderly && (
-          <div className="flex justify-center">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={handleSaveDraft}
-              disabled={isSavingDraft}
-              className="text-base px-6 py-4 h-auto border-amber-300 text-amber-700 hover:bg-amber-50"
-            >
-              {isSavingDraft ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Saving Draft...
-                </>
-              ) : (
-                <>
-                  <FileText className="w-5 h-5 mr-2" />
-                  Save & Continue Later
-                </>
-              )}
-            </Button>
+        {/* Auto-save indicator */}
+        {draftSaveMessage && (
+          <div className="flex items-center justify-center gap-2 text-sm text-green-600 bg-green-50 py-2 px-4 rounded-lg">
+            <CheckCircle2 className="w-4 h-4" />
+            {draftSaveMessage}
+          </div>
+        )}
+
+        {/* Error display */}
+        {error && (
+          <div className="flex items-center justify-center gap-2 text-sm text-red-600 bg-red-50 py-2 px-4 rounded-lg">
+            <AlertTriangle className="w-4 h-4" />
+            {error}
           </div>
         )}
 
@@ -904,40 +1026,133 @@ export function AssessmentForm({
             variant="outline"
             size="lg"
             onClick={handlePrevious}
-            disabled={(selfAssessment || isResumingDraft) ? currentStep === 1 : currentStep === 0}
+            disabled={(selfAssessment || isResumingDraft) ? currentStep === 1 : currentStep === 0 || isSavingDraft}
             className="text-lg px-6 py-6 h-auto"
           >
             <ChevronLeft className="w-6 h-6 mr-2" />
             Back
           </Button>
 
-          {currentStep < totalSteps - 1 ? (
-            <Button onClick={handleNext} size="lg" className="text-lg px-8 py-6 h-auto">
-              Next
-              <ChevronRight className="w-6 h-6 ml-2" />
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSave}
-              disabled={isSaving}
-              size="lg"
-              className="gradient-medical text-white text-lg px-8 py-6 h-auto"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-6 h-6 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <span className="text-xl mr-2">✅</span>
-                  Save Assessment
-                </>
-              )}
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Close button - shown during assessment steps (not on step 0 or summary) */}
+            {currentStep >= 1 && currentStep < totalSteps - 1 && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleClose}
+                disabled={isSavingDraft}
+                className="text-lg px-6 py-6 h-auto border-gray-300 text-gray-600 hover:bg-gray-50"
+              >
+                <X className="w-6 h-6 mr-2" />
+                Close
+              </Button>
+            )}
+
+            {currentStep < totalSteps - 1 ? (
+              <Button
+                onClick={handleNext}
+                disabled={isSavingDraft}
+                size="lg"
+                className="text-lg px-8 py-6 h-auto"
+              >
+                {isSavingDraft ? (
+                  <>
+                    <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    Next
+                    <ChevronRight className="w-6 h-6 ml-2" />
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSave}
+                disabled={isSaving}
+                size="lg"
+                className="gradient-medical text-white text-lg px-8 py-6 h-auto"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+                    Completing...
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xl mr-2">✅</span>
+                    Complete Assessment
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Continue or Start Over Dialog */}
+      <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-amber-600" />
+              Previous Assessment Found
+            </DialogTitle>
+            <DialogDescription>
+              You have an incomplete assessment for this elderly person.
+            </DialogDescription>
+          </DialogHeader>
+
+          {existingDraft && (
+            <div className="space-y-3 py-4">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Started:</span>
+                  <span className="font-medium">
+                    {formatDate(existingDraft.createdAt)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Last Updated:</span>
+                  <span className="font-medium">
+                    {formatDate(existingDraft.updatedAt)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Progress:</span>
+                  <span className="font-medium">
+                    Step {existingDraft.currentStep || 1} of {totalSteps}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                Would you like to continue from where you left off, or review from the beginning?
+                Your previous answers will be preserved.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={handleStartOver}
+              className="flex-1"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Review from Start
+            </Button>
+            <Button
+              onClick={handleContinueDraft}
+              className="flex-1"
+            >
+              <PlayCircle className="w-4 h-4 mr-2" />
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

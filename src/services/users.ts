@@ -23,6 +23,15 @@ export interface UserFormData {
   emergencyContact?: string
   dateOfBirth?: string
   assignedVolunteer?: string
+  // Location fields
+  stateName?: string
+  districtName?: string
+  talukName?: string
+  villageName?: string
+  // Caregiver fields
+  caregiverName?: string
+  caregiverPhone?: string
+  caregiverRelation?: string
   // Volunteer fields
   maxAssignments?: number
 }

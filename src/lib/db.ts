@@ -181,6 +181,8 @@ class Database {
     page?: number
     limit?: number
     isActive?: boolean
+    assignedVolunteerId?: string
+    assignedFamilyId?: string
   }): Promise<{ users: SafeUser[]; total: number }> {
     const where: Prisma.UserWhereInput = {}
 
@@ -190,6 +192,16 @@ class Database {
 
     if (options?.isActive !== undefined) {
       where.isActive = options.isActive
+    }
+
+    // Filter by assigned volunteer (for volunteers viewing their elderly)
+    if (options?.assignedVolunteerId) {
+      where.assignedVolunteerId = options.assignedVolunteerId
+    }
+
+    // Filter by assigned family (for family viewing their elderly)
+    if (options?.assignedFamilyId) {
+      where.assignedFamilyId = options.assignedFamilyId
     }
 
     if (options?.search) {

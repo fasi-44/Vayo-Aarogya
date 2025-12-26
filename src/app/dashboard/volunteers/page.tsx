@@ -28,7 +28,7 @@ import { BulkAssignDialog } from '@/components/volunteers/bulk-assign-dialog'
 import { getUsers, updateUser } from '@/services/users'
 import { getElderly } from '@/services/elderly'
 import type { SafeUser } from '@/types'
-import { cn, getInitials } from '@/lib/utils'
+import { cn, getInitials, formatDate } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import {
   Search,
@@ -462,7 +462,7 @@ export default function VolunteersPage() {
                 )}
                 <div className="flex items-center gap-3 text-sm">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span>Joined: {new Date(selectedVolunteer.createdAt).toLocaleDateString()}</span>
+                  <span>Joined: {formatDate(selectedVolunteer.createdAt)}</span>
                 </div>
               </div>
 

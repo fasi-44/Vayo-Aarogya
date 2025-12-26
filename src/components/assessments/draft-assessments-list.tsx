@@ -25,6 +25,7 @@ import {
 import { getDraftAssessments, deleteAssessment } from '@/services/assessments'
 import { type Assessment } from '@/types'
 import { ASSESSMENT_DOMAINS } from '@/lib/assessment-scoring'
+import { formatDate } from '@/lib/utils'
 
 interface DraftAssessmentsListProps {
   onResumeDraft: (draft: Assessment) => void
@@ -105,7 +106,7 @@ export function DraftAssessmentsList({ onResumeDraft, onDraftsChange }: DraftAss
     }
   }
 
-  const formatDate = (dateString: string) => {
+  const formatRelativeDate = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
@@ -118,11 +119,7 @@ export function DraftAssessmentsList({ onResumeDraft, onDraftsChange }: DraftAss
     if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
     if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
 
-    return date.toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-    })
+    return formatDate(date)
   }
 
   if (isLoading) {
@@ -200,7 +197,7 @@ export function DraftAssessmentsList({ onResumeDraft, onDraftsChange }: DraftAss
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Clock className="w-3 h-3" />
-                    {formatDate(draft.updatedAt)}
+                    {formatRelativeDate(draft.updatedAt)}
                   </div>
                 </div>
 

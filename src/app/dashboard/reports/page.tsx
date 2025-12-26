@@ -46,7 +46,7 @@ import {
   Eye,
   X,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import { generateReport, generateDetailedCSV, downloadCSV } from '@/services/reports'
 import { getUsers, getVolunteers } from '@/services/users'
 import { getInterventions } from '@/services/interventions'
@@ -187,7 +187,7 @@ export default function ReportsPage() {
           title: 'Assessment Summary Report',
           headers: ['Date', 'Elder Name', 'Vayo ID', 'Risk Level', 'Assessor'],
           rows: data.assessments.map(a => [
-            new Date(a.assessedAt).toLocaleDateString(),
+            formatDate(a.assessedAt),
             a.subject?.name || '-',
             a.subject?.vayoId || '-',
             a.overallRisk || '-',
@@ -255,7 +255,7 @@ export default function ReportsPage() {
             i.domain || '-',
             i.priority || '-',
             i.status || '-',
-            i.dueDate ? new Date(i.dueDate).toLocaleDateString() : '-',
+            i.dueDate ? formatDate(i.dueDate) : '-',
           ]),
           summary: [
             { label: 'Total', value: interventions.length },
@@ -320,7 +320,7 @@ export default function ReportsPage() {
             f.elderly?.vayoId || '-',
             f.type || '-',
             f.title || '-',
-            f.scheduledDate ? new Date(f.scheduledDate).toLocaleDateString() : '-',
+            f.scheduledDate ? formatDate(f.scheduledDate) : '-',
             f.status || '-',
             f.assignee?.name || 'Unassigned',
           ]),

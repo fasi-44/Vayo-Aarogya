@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { useAuthStore } from '@/store'
-import { getInitials } from '@/lib/utils'
+import { getInitials, formatDate } from '@/lib/utils'
 import { updateUser } from '@/services/users'
 import {
   User,
@@ -365,7 +365,7 @@ export default function ProfilePage() {
                 <div>
                   <p className="text-muted-foreground">Member Since</p>
                   <p className="font-medium">
-                    {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                    {user?.createdAt ? formatDate(user.createdAt) : 'N/A'}
                   </p>
                 </div>
               </div>

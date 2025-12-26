@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { successResponse, errorResponse, requireAuth, hasPermission } from '@/lib/api-utils'
 
@@ -8,22 +8,17 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    requireAuth(request) // Verify auth
-
     const { id } = await params
     const location = await db.getLocationById(id)
 
     if (!location) {
-      return NextResponse.json(errorResponse('Location not found'), { status: 404 })
+      return errorResponse('Location not found', 404)
     }
 
-    return NextResponse.json(successResponse(location))
+    return successResponse(location)
   } catch (error) {
-    if (error instanceof Error && error.message === 'Authentication required') {
-      return NextResponse.json(errorResponse('Unauthorized'), { status: 401 })
-    }
     console.error('Get location error:', error)
-    return NextResponse.json(errorResponse('Failed to get location'), { status: 500 })
+    return errorResponse('Failed to get location', 500)
   }
 }
 
@@ -36,24 +31,24 @@ export async function DELETE(
     const requestUser = requireAuth(request)
 
     if (!hasPermission(requestUser.role, 'settings:update')) {
-      return NextResponse.json(errorResponse('Forbidden'), { status: 403 })
+      return errorResponse('Forbidden', 403)
     }
 
     const { id } = await params
     const location = await db.getLocationById(id)
 
     if (!location) {
-      return NextResponse.json(errorResponse('Location not found'), { status: 404 })
+      return errorResponse('Location not found', 404)
     }
 
     await db.deleteLocation(id)
 
-    return NextResponse.json(successResponse({ message: 'Location deleted successfully' }))
+    return successResponse({ message: 'Location deleted successfully' })
   } catch (error) {
     if (error instanceof Error && error.message === 'Authentication required') {
-      return NextResponse.json(errorResponse('Unauthorized'), { status: 401 })
+      return errorResponse('Unauthorized', 401)
     }
     console.error('Delete location error:', error)
-    return NextResponse.json(errorResponse('Failed to delete location'), { status: 500 })
+    return errorResponse('Failed to delete location', 500)
   }
 }

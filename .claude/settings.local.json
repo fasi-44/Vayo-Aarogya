@@ -5,7 +5,10 @@
       "Bash(npx prisma:*)",
       "Bash(npm run dev:*)",
       "Bash(npm run build:*)",
-      "Bash(timeout 30 npm run dev)"
+      "Bash(timeout 30 npm run dev)",
+      "Bash(npx tsc:*)",
+      "Bash(node check-locations.js:*)",
+      "Bash(node check-domains.js:*)"
     ]
   }
 }

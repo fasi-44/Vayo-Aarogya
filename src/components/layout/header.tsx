@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { Bell, Search, ChevronDown, Settings, User, LogOut, HelpCircle } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -12,9 +13,18 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MobileMenuButton } from "./sidebar";
-import { useUIStore, useHydration } from "@/store";
+import { useUIStore, useAuthStore, useHydration } from "@/store";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+
+// Role display names
+const roleDisplayNames: Record<string, string> = {
+    super_admin: "Super Admin",
+    professional: "Professional",
+    volunteer: "Volunteer",
+    family: "Family Member",
+    elderly: "Elder",
+};
 
 interface HeaderProps {
     title: string;
@@ -22,12 +32,34 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle }: HeaderProps) {
+    const router = useRouter();
     const { sidebarCollapsed } = useUIStore();
+    const { user, logout } = useAuthStore();
     const hydrated = useHydration();
     const [searchOpen, setSearchOpen] = React.useState(false);
 
     // Use default value during SSR to prevent hydration mismatch
     const isCollapsed = hydrated ? sidebarCollapsed : false;
+
+    // Get user initials
+    const getInitials = (name: string) => {
+        return name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
+    };
+
+    const userInitials = hydrated && user?.name ? getInitials(user.name) : "??";
+    const userName = hydrated && user?.name ? user.name : "Loading...";
+    const userRole = hydrated && user?.role ? roleDisplayNames[user.role] || user.role : "";
+    const userEmail = hydrated && user?.email ? user.email : "";
+
+    const handleLogout = async () => {
+        await logout();
+        router.push("/auth/login");
+    };
 
     return (
         <header className={cn(
@@ -131,12 +163,12 @@ export function Header({ title, subtitle }: HeaderProps) {
                             <button className="flex items-center gap-2 p-1 sm:p-1.5 sm:pr-2 rounded-lg hover:bg-muted transition-colors">
                                 <Avatar className="w-8 h-8 ring-2 ring-background">
                                     <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
-                                        AD
+                                        {userInitials}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="hidden sm:block text-left max-w-[120px]">
-                                    <p className="text-sm font-medium leading-tight truncate">Dr. Admin</p>
-                                    <p className="text-xs text-muted-foreground truncate">Super Admin</p>
+                                    <p className="text-sm font-medium leading-tight truncate">{userName}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{userRole}</p>
                                 </div>
                                 <ChevronDown className="hidden sm:block w-4 h-4 text-muted-foreground" />
                             </button>
@@ -144,8 +176,8 @@ export function Header({ title, subtitle }: HeaderProps) {
                         <DropdownMenuContent align="end" className="w-56">
                             <DropdownMenuLabel>
                                 <div className="flex flex-col">
-                                    <span>Dr. Admin</span>
-                                    <span className="text-xs font-normal text-muted-foreground">admin@icms.com</span>
+                                    <span>{userName}</span>
+                                    <span className="text-xs font-normal text-muted-foreground">{userEmail}</span>
                                 </div>
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
@@ -166,11 +198,12 @@ export function Header({ title, subtitle }: HeaderProps) {
                                 Help & Support
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild className="text-destructive focus:text-destructive">
-                                <Link href="/" className="flex items-center gap-2 cursor-pointer">
-                                    <LogOut className="w-4 h-4" />
-                                    Logout
-                                </Link>
+                            <DropdownMenuItem
+                                className="text-destructive focus:text-destructive flex items-center gap-2 cursor-pointer"
+                                onClick={handleLogout}
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Logout
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

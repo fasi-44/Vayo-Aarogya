@@ -270,7 +270,7 @@ export function ElderlyViewDialog({
                           </div>
                           <div>
                             <p className="text-sm font-medium">
-                              {new Date(assessment.assessedAt).toLocaleDateString()}
+                              {formatDate(assessment.assessedAt)}
                             </p>
                             <div className="flex items-center gap-2">
                               <Badge

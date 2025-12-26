@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { type Assessment } from '@/types'
+import { formatDate } from '@/lib/utils'
 
 interface AssessmentDeleteDialogProps {
   open: boolean
@@ -68,7 +69,7 @@ export function AssessmentDeleteDialog({
               )}
               {' '}conducted on{' '}
               <span className="font-semibold">
-                {new Date(assessment.assessedAt).toLocaleDateString()}
+                {formatDate(assessment.assessedAt)}
               </span>.
             </p>
           </div>

@@ -31,7 +31,9 @@ const routeConfigs: RouteConfig[] = [
   // Admin only routes
   { path: '/dashboard/settings', roles: ['super_admin'] },
   { path: '/dashboard/users', roles: ['super_admin', 'professional'] },
-  { path: '/api/users', roles: ['super_admin', 'professional'] },
+  // /api/users - allow all authenticated users, API handles granular permissions
+  // (volunteers can create/update elderly, family can create elderly)
+  { path: '/api/users', roles: ['super_admin', 'professional', 'volunteer', 'family'] },
 
   // Assessment routes
   { path: '/dashboard/assessments', permissions: ['assessments:read'] },

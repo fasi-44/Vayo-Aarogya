@@ -23,29 +23,63 @@ function hasPermission(role: UserRole | null, permission: string): boolean {
 export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<{ users: SafeUser[]; total: number; page: number; limit: number }>>> {
   try {
     const user = getUserFromHeaders(request)
+    const { searchParams } = new URL(request.url)
+    const role = searchParams.get('role') || undefined
 
-    if (!hasPermission(user.role, 'users:read')) {
+    // Check permissions based on requested role filter
+    // - 'elderly:read' allows reading elderly users
+    // - 'users:read' allows reading all users
+    const canReadElderly = hasPermission(user.role, 'elderly:read')
+    const canReadUsers = hasPermission(user.role, 'users:read')
+
+    if (role === 'elderly') {
+      if (!canReadElderly && !canReadUsers) {
+        return NextResponse.json(
+          { success: false, error: 'Insufficient permissions' },
+          { status: 403 }
+        )
+      }
+    } else if (!canReadUsers) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions' },
         { status: 403 }
       )
     }
 
-    const { searchParams } = new URL(request.url)
-    const role = searchParams.get('role') || undefined
     const search = searchParams.get('search') || undefined
     const isActive = searchParams.get('isActive')
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 100) // Max 100 per page
 
-    // Use server-side filtering and pagination
-    const { users, total } = await db.getAllUsers({
+    // Build filter options
+    const filterOptions: {
+      role?: string
+      search?: string
+      page: number
+      limit: number
+      isActive?: boolean
+      assignedVolunteerId?: string
+      assignedFamilyId?: string
+    } = {
       role,
       search,
       page,
       limit,
       isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
-    })
+    }
+
+    // Volunteers can only see elderly assigned to them
+    if (user.role === 'volunteer' && role === 'elderly' && user.userId) {
+      filterOptions.assignedVolunteerId = user.userId
+    }
+
+    // Family members can only see elderly assigned to them
+    if (user.role === 'family' && role === 'elderly' && user.userId) {
+      filterOptions.assignedFamilyId = user.userId
+    }
+
+    // Use server-side filtering and pagination
+    const { users, total } = await db.getAllUsers(filterOptions)
 
     return NextResponse.json({
       success: true,
@@ -95,12 +129,16 @@ async function generateVayoId(role: string): Promise<string> {
   return `${prefix}${nextNumber.toString().padStart(4, '0')}`
 }
 
-// POST /api/users - Create a new user (admin only)
+// POST /api/users - Create a new user
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<SafeUser>>> {
   try {
     const requestUser = getUserFromHeaders(request)
 
-    if (!hasPermission(requestUser.role, 'users:create')) {
+    // Check permissions - 'users:create' for any user, 'elderly:create' for elderly only
+    const canCreateUsers = hasPermission(requestUser.role, 'users:create')
+    const canCreateElderly = hasPermission(requestUser.role, 'elderly:create')
+
+    if (!canCreateUsers && !canCreateElderly) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions' },
         { status: 403 }
@@ -171,6 +209,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       )
     }
 
+    // Users with only 'elderly:create' permission can only create elderly
+    if (!canCreateUsers && canCreateElderly && role !== 'elderly') {
+      return NextResponse.json(
+        { success: false, error: 'You can only create elderly records' },
+        { status: 403 }
+      )
+    }
+
     // Only super_admin can create super_admin or professional users
     if (
       (role === 'super_admin' || role === 'professional') &&
@@ -188,12 +234,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     // Auto-generate Vayo ID for all users based on role
     const vayoId = await generateVayoId(role)
 
-    // Determine family assignment
+    // Determine assignments
+    // If volunteer creates elderly, automatically assign to themselves
     // If family user creates elderly, automatically assign to themselves
+    let volunteerAssignment = assignedVolunteer
     let familyAssignment = assignedFamily
     let finalCaregiverName = caregiverName
     let finalCaregiverPhone = caregiverPhone
     let finalCaregiverRelation = caregiverRelation
+
+    if (role === 'elderly' && requestUser.role === 'volunteer' && requestUser.userId) {
+      volunteerAssignment = requestUser.userId
+    }
 
     if (role === 'elderly' && requestUser.role === 'family' && requestUser.userId) {
       familyAssignment = requestUser.userId
@@ -234,7 +286,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       caregiverPhone: finalCaregiverPhone,
       caregiverRelation: finalCaregiverRelation,
       // Assignment
-      assignedVolunteer,
+      assignedVolunteer: volunteerAssignment,
       assignedFamily: familyAssignment,
       // Volunteer-specific
       maxAssignments: maxAssignments ? Number(maxAssignments) : undefined,

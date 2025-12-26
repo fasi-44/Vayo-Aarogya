@@ -1,30 +1,25 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { useAuthStore, useHydration, assessmentDomains, getRiskLevelStyles, RiskLevel } from '@/store'
+import { useAuthStore, useHydration, getRiskLevelStyles, RiskLevel } from '@/store'
 import { cn, getInitials, formatDate } from '@/lib/utils'
 import {
-  AdminDashboard,
-  ProfessionalDashboard,
-  VolunteerDashboard,
-  FamilyDashboard,
   ElderlyDashboard,
+  FamilyDashboard,
 } from '@/components/dashboards'
 import {
   Users,
   ClipboardCheck,
   Activity,
   AlertTriangle,
-  TrendingUp,
   ArrowRight,
   Calendar,
-  CheckCircle2,
   AlertCircle,
   BarChart3,
   Plus,
@@ -36,138 +31,65 @@ import {
   HandHeart,
   Clock,
   UserPlus,
-  FileText,
   HeartPulse,
   Loader2,
 } from 'lucide-react'
 import type { SafeUser, Assessment, Intervention, FollowUp } from '@/types'
 
-// Mock data for Vayo Aarogya dashboard
-const stats = [
-  {
-    title: 'Total Elders',
-    value: '156',
-    change: '+12',
-    description: 'this month',
-    icon: Users,
-    color: 'primary',
-  },
-  {
-    title: 'Pending Assessments',
-    value: '23',
-    change: '5',
-    description: 'urgent',
-    icon: ClipboardCheck,
-    color: 'at-risk',
-  },
-  {
-    title: 'At-Risk Elders',
-    value: '34',
-    change: '-3',
-    description: 'improving',
-    icon: AlertTriangle,
-    color: 'intervention',
-  },
-  {
-    title: 'Active Interventions',
-    value: '67',
-    change: '+8',
-    description: 'ongoing',
-    icon: Activity,
-    color: 'healthy',
-  },
-]
-
-const recentAssessments = [
-  {
-    id: '1',
-    elderName: 'Shri Ram Prasad',
-    age: 72,
-    assessedBy: 'Amit Singh',
-    date: '2025-01-15',
-    riskLevel: 'healthy' as RiskLevel,
-    domains: ['cognition', 'mobility', 'nutrition'],
-  },
-  {
-    id: '2',
-    elderName: 'Smt. Kamala Devi',
-    age: 78,
-    assessedBy: 'Priya Sharma',
-    date: '2025-01-14',
-    riskLevel: 'at_risk' as RiskLevel,
-    domains: ['vision', 'hearing', 'falls'],
-  },
-  {
-    id: '3',
-    elderName: 'Shri Mohan Lal',
-    age: 81,
-    assessedBy: 'Amit Singh',
-    date: '2025-01-14',
-    riskLevel: 'intervention' as RiskLevel,
-    domains: ['cognition', 'depression', 'medication'],
-  },
-  {
-    id: '4',
-    elderName: 'Smt. Savitri Bai',
-    age: 69,
-    assessedBy: 'Rahul Verma',
-    date: '2025-01-13',
-    riskLevel: 'healthy' as RiskLevel,
-    domains: ['nutrition', 'sleep', 'social'],
-  },
-]
-
-const upcomingFollowups = [
-  {
-    id: '1',
-    elderName: 'Shri Ram Prasad',
-    type: 'Routine Check',
-    date: '2025-01-16',
-    time: '10:00 AM',
-    volunteer: 'Amit Singh',
-  },
-  {
-    id: '2',
-    elderName: 'Smt. Kamala Devi',
-    type: 'Vision Review',
-    date: '2025-01-17',
-    time: '11:30 AM',
-    volunteer: 'Priya Sharma',
-  },
-  {
-    id: '3',
-    elderName: 'Shri Mohan Lal',
-    type: 'Medication Check',
-    date: '2025-01-18',
-    time: '09:00 AM',
-    volunteer: 'Dr. Rajesh Kumar',
-  },
-]
-
-const riskDistribution = [
-  { level: 'Healthy', count: 89, percentage: 57, color: 'bg-healthy' },
-  { level: 'At Risk', count: 43, percentage: 28, color: 'bg-at-risk' },
-  { level: 'Needs Intervention', count: 24, percentage: 15, color: 'bg-intervention' },
-]
+// Dashboard data interface
+interface DashboardData {
+  stats: {
+    totalElderly: number
+    totalAssessments: number
+    atRiskElderly: number
+    activeInterventions: number
+    pendingFollowUps: number
+  }
+  recentAssessments: Assessment[]
+  upcomingFollowUps: FollowUp[]
+  riskDistribution: {
+    healthy: number
+    at_risk: number
+    intervention: number
+  }
+  volunteerStats?: {
+    assignedCount: number
+    maxAssignments: number
+    pendingVisits: number
+  }
+}
 
 const quickActions = [
   { title: 'New Assessment', href: '/dashboard/assessments/new', icon: ClipboardCheck, color: 'bg-primary' },
-  { title: 'Add Elder', href: '/dashboard/elderly', icon: UserPlus, color: 'bg-secondary' },
+  { title: 'Add Elder', href: '/dashboard/elderly/new', icon: UserPlus, color: 'bg-secondary' },
   { title: 'View Reports', href: '/dashboard/reports', icon: BarChart3, color: 'bg-accent' },
-  { title: 'Schedule Follow-up', href: '/dashboard/followups', icon: Calendar, color: 'bg-healthy' },
+  { title: 'Schedule Follow-up', href: '/dashboard/followups/new', icon: Calendar, color: 'bg-healthy' },
 ]
 
-const domainStats = [
-  { name: 'Cognition', icon: Brain, assessed: 142, atRisk: 23 },
-  { name: 'Mobility', icon: Footprints, assessed: 156, atRisk: 31 },
-  { name: 'Mental Health', icon: Heart, assessed: 138, atRisk: 28 },
-  { name: 'Nutrition', icon: HeartPulse, assessed: 145, atRisk: 19 },
+const domainIcons = [
+  { name: 'Cognition', icon: Brain },
+  { name: 'Mobility', icon: Footprints },
+  { name: 'Mental Health', icon: Heart },
+  { name: 'Nutrition', icon: HeartPulse },
 ]
 
 export default function DashboardPage() {
   const { user, hasRole } = useAuthStore()
   const hydrated = useHydration()
   const [loading, setLoading] = useState(true)
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    stats: {
+      totalElderly: 0,
+      totalAssessments: 0,
+      atRiskElderly: 0,
+      activeInterventions: 0,
+      pendingFollowUps: 0,
+    },
+    recentAssessments: [],
+    upcomingFollowUps: [],
+    riskDistribution: { healthy: 0, at_risk: 0, intervention: 0 },
+    volunteerStats: undefined,
+  })
   const [elderlyData, setElderlyData] = useState<{
     assessments: Assessment[]
     interventions: Intervention[]
@@ -184,20 +106,16 @@ export default function DashboardPage() {
   const currentUser = hydrated ? user : null
   const safeHasRole = hydrated ? hasRole : () => false
 
-  // Fetch data for elderly/family dashboard
-  useEffect(() => {
-    async function fetchElderlyData() {
-      if (!hydrated) return
+  // Fetch dashboard data based on user role
+  const fetchDashboardData = useCallback(async () => {
+    if (!hydrated || !currentUser) return
 
-      if (currentUser?.role !== 'elderly' && currentUser?.role !== 'family') {
-        setLoading(false)
-        return
-      }
-
+    // For elderly/family, use different data fetching
+    if (currentUser.role === 'elderly' || currentUser.role === 'family') {
       try {
         const [assessmentsRes, interventionsRes, followUpsRes] = await Promise.all([
-          fetch(`/api/assessments?elderlyId=${currentUser.id}&limit=10`).then(r => r.json()),
-          fetch(`/api/interventions?elderlyId=${currentUser.id}&status=pending,in_progress`).then(r => r.json()),
+          fetch(`/api/assessments?subjectId=${currentUser.id}&limit=10`).then(r => r.json()),
+          fetch(`/api/interventions?userId=${currentUser.id}&status=pending,in_progress`).then(r => r.json()),
           fetch(`/api/followups?elderlyId=${currentUser.id}&status=scheduled`).then(r => r.json()),
         ])
 
@@ -218,10 +136,76 @@ export default function DashboardPage() {
       } finally {
         setLoading(false)
       }
+      return
     }
 
-    fetchElderlyData()
-  }, [currentUser, hydrated])
+    // For admin/professional/volunteer - fetch dashboard stats
+    try {
+      const [elderlyRes, assessmentsRes, interventionsRes, followUpsRes] = await Promise.all([
+        fetch('/api/users?role=elderly&limit=1000').then(r => r.json()),
+        fetch('/api/assessments?limit=10').then(r => r.json()),
+        fetch('/api/interventions?status=pending,in_progress&limit=100').then(r => r.json()),
+        fetch('/api/followups?status=scheduled&limit=10').then(r => r.json()),
+      ])
+
+      const elderlyList: SafeUser[] = elderlyRes.success ? elderlyRes.data?.users || [] : []
+      const assessmentsList: Assessment[] = assessmentsRes.success ? assessmentsRes.data?.assessments || [] : []
+      const interventionsList: Intervention[] = interventionsRes.success ? interventionsRes.data?.interventions || [] : []
+      const followUpsList: FollowUp[] = followUpsRes.success ? followUpsRes.data?.followUps || [] : []
+
+      // Calculate risk distribution from assessments
+      const riskCounts = { healthy: 0, at_risk: 0, intervention: 0 }
+
+      // Get latest assessment per elderly to calculate current risk status
+      const elderlyLatestAssessment = new Map<string, Assessment>()
+      assessmentsList.forEach((assessment: Assessment) => {
+        const existing = elderlyLatestAssessment.get(assessment.subjectId)
+        if (!existing || new Date(assessment.assessedAt) > new Date(existing.assessedAt)) {
+          elderlyLatestAssessment.set(assessment.subjectId, assessment)
+        }
+      })
+
+      elderlyLatestAssessment.forEach((assessment) => {
+        if (assessment.overallRisk && riskCounts.hasOwnProperty(assessment.overallRisk)) {
+          riskCounts[assessment.overallRisk as keyof typeof riskCounts]++
+        }
+      })
+
+      // Calculate volunteer-specific stats
+      let volunteerStats = undefined
+      if (currentUser.role === 'volunteer') {
+        const assignedElderly = elderlyList.filter(e => e.assignedVolunteer === currentUser.id)
+        const pendingFollowUps = followUpsList.filter(f => f.assigneeId === currentUser.id)
+        volunteerStats = {
+          assignedCount: assignedElderly.length,
+          maxAssignments: currentUser.maxAssignments || 10,
+          pendingVisits: pendingFollowUps.length,
+        }
+      }
+
+      setDashboardData({
+        stats: {
+          totalElderly: elderlyRes.success ? elderlyRes.data?.total || elderlyList.length : 0,
+          totalAssessments: assessmentsRes.success ? assessmentsRes.data?.total || assessmentsList.length : 0,
+          atRiskElderly: riskCounts.at_risk + riskCounts.intervention,
+          activeInterventions: interventionsList.length,
+          pendingFollowUps: followUpsList.length,
+        },
+        recentAssessments: assessmentsList.slice(0, 5),
+        upcomingFollowUps: followUpsList.slice(0, 5),
+        riskDistribution: riskCounts,
+        volunteerStats,
+      })
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [hydrated, currentUser])
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   // Show loading state while hydrating
   if (!hydrated) {
@@ -296,11 +280,6 @@ export default function DashboardPage() {
     )
   }
 
-  // Set loading to false for non-elderly users (already filtered by early returns above)
-  if (loading) {
-    setLoading(false)
-  }
-
   const getRiskBadge = (level: RiskLevel) => {
     const styles = getRiskLevelStyles(level)
     const labels: Record<RiskLevel, string> = {
@@ -315,6 +294,72 @@ export default function DashboardPage() {
     )
   }
 
+  // Show loading for staff dashboards (elderly/family already handled above)
+  if (loading) {
+    return (
+      <DashboardLayout title="Dashboard" subtitle="Loading...">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  // Generate dynamic stats
+  const stats = [
+    {
+      title: 'Total Elders',
+      value: dashboardData.stats.totalElderly.toString(),
+      description: 'registered',
+      icon: Users,
+      color: 'primary',
+    },
+    {
+      title: 'Total Assessments',
+      value: dashboardData.stats.totalAssessments.toString(),
+      description: 'completed',
+      icon: ClipboardCheck,
+      color: 'secondary',
+    },
+    {
+      title: 'At-Risk Elders',
+      value: dashboardData.stats.atRiskElderly.toString(),
+      description: 'need attention',
+      icon: AlertTriangle,
+      color: 'intervention',
+    },
+    {
+      title: 'Active Interventions',
+      value: dashboardData.stats.activeInterventions.toString(),
+      description: 'ongoing',
+      icon: Activity,
+      color: 'healthy',
+    },
+  ]
+
+  // Calculate risk distribution percentages
+  const totalRisk = dashboardData.riskDistribution.healthy + dashboardData.riskDistribution.at_risk + dashboardData.riskDistribution.intervention
+  const riskDistribution = [
+    {
+      level: 'Healthy',
+      count: dashboardData.riskDistribution.healthy,
+      percentage: totalRisk > 0 ? Math.round((dashboardData.riskDistribution.healthy / totalRisk) * 100) : 0,
+      color: 'bg-healthy',
+    },
+    {
+      level: 'At Risk',
+      count: dashboardData.riskDistribution.at_risk,
+      percentage: totalRisk > 0 ? Math.round((dashboardData.riskDistribution.at_risk / totalRisk) * 100) : 0,
+      color: 'bg-at-risk',
+    },
+    {
+      level: 'Needs Intervention',
+      count: dashboardData.riskDistribution.intervention,
+      percentage: totalRisk > 0 ? Math.round((dashboardData.riskDistribution.intervention / totalRisk) * 100) : 0,
+      color: 'bg-intervention',
+    },
+  ]
+
   return (
     <DashboardLayout
       title={`Namaste, ${currentUser?.name?.split(' ')[0] || 'User'}`}
@@ -324,7 +369,6 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {stats.map((stat) => {
           const Icon = stat.icon
-          const isPositive = stat.change.startsWith('+') || stat.change.startsWith('-3')
 
           return (
             <Card key={stat.title} className="border-0 shadow-soft hover:shadow-soft-md transition-shadow">
@@ -334,14 +378,6 @@ export default function DashboardPage() {
                     <p className="text-sm font-medium text-muted-foreground mb-1">{stat.title}</p>
                     <p className="text-2xl lg:text-3xl font-bold text-foreground">{stat.value}</p>
                     <div className="flex items-center gap-1 mt-2">
-                      <span className={cn(
-                        'text-sm font-medium',
-                        stat.color === 'intervention' || stat.color === 'at-risk'
-                          ? 'text-at-risk'
-                          : 'text-healthy'
-                      )}>
-                        {stat.change}
-                      </span>
                       <span className="text-xs text-muted-foreground">{stat.description}</span>
                     </div>
                   </div>
@@ -398,65 +434,68 @@ export default function DashboardPage() {
               </Link>
             </CardHeader>
             <CardContent className="space-y-4">
-              {recentAssessments.map((assessment) => (
-                <div
+              {dashboardData.recentAssessments.map((assessment) => (
+                <Link
                   key={assessment.id}
-                  className="p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer group"
+                  href={`/dashboard/assessments/${assessment.id}`}
+                  className="block p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer group"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <Avatar className="w-10 h-10">
                         <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                          {getInitials(assessment.elderName)}
+                          {getInitials(assessment.subject?.name || 'Unknown')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {assessment.elderName}
+                          {assessment.subject?.name || 'Unknown Elder'}
                         </h4>
                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                          <span>{assessment.age} years</span>
+                          {assessment.subject?.vayoId && <span>{assessment.subject.vayoId}</span>}
                           <span className="flex items-center gap-1">
                             <HandHeart className="w-3.5 h-3.5" />
-                            {assessment.assessedBy}
+                            {assessment.assessor?.name || 'Unknown'}
                           </span>
                         </div>
                       </div>
                     </div>
-                    {getRiskBadge(assessment.riskLevel)}
+                    {getRiskBadge(assessment.overallRisk as RiskLevel)}
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      {assessment.domains.slice(0, 3).map((domain) => (
+                      {assessment.domains?.slice(0, 3).map((domain) => (
                         <span
-                          key={domain}
+                          key={domain.id}
                           className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground capitalize"
                         >
-                          {domain}
+                          {domain.domain}
                         </span>
                       ))}
-                      {assessment.domains.length > 3 && (
+                      {(assessment.domains?.length || 0) > 3 && (
                         <span className="text-xs text-muted-foreground">
-                          +{assessment.domains.length - 3} more
+                          +{(assessment.domains?.length || 0) - 3} more
                         </span>
                       )}
                     </div>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" />
-                      {formatDate(assessment.date)}
+                      {formatDate(assessment.assessedAt)}
                     </span>
                   </div>
-                </div>
+                </Link>
               ))}
 
-              {recentAssessments.length === 0 && (
+              {dashboardData.recentAssessments.length === 0 && (
                 <div className="text-center py-8">
                   <ClipboardCheck className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
                   <p className="text-muted-foreground">No assessments yet</p>
-                  <Button variant="outline" size="sm" className="mt-4">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Start Assessment
-                  </Button>
+                  <Link href="/dashboard/assessments/new">
+                    <Button variant="outline" size="sm" className="mt-4">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Start Assessment
+                    </Button>
+                  </Link>
                 </div>
               )}
             </CardContent>
@@ -511,27 +550,39 @@ export default function DashboardPage() {
               </Link>
             </CardHeader>
             <CardContent className="space-y-3">
-              {upcomingFollowups.map((followup) => (
-                <div
-                  key={followup.id}
-                  className="p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-foreground text-sm">{followup.elderName}</span>
-                    <Badge variant="outline" className="text-xs">{followup.type}</Badge>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {formatDate(followup.date)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {followup.time}
-                    </span>
-                  </div>
+              {dashboardData.upcomingFollowUps.length > 0 ? (
+                dashboardData.upcomingFollowUps.map((followup) => (
+                  <Link
+                    key={followup.id}
+                    href={`/dashboard/followups`}
+                    className="block p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-foreground text-sm">
+                        {followup.elderly?.name || 'Unknown'}
+                      </span>
+                      <Badge variant="outline" className="text-xs">{followup.type}</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(followup.scheduledDate)}
+                      </span>
+                      {followup.assignee && (
+                        <span className="flex items-center gap-1">
+                          <HandHeart className="w-3 h-3" />
+                          {followup.assignee.name}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <Calendar className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No upcoming follow-ups</p>
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
         </div>
@@ -548,7 +599,7 @@ export default function DashboardPage() {
               </div>
               <Link href="/dashboard/assessments">
                 <Button variant="outline" size="sm">
-                  View All 20 Domains
+                  View All Assessments
                   <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
@@ -556,9 +607,8 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {domainStats.map((domain) => {
+              {domainIcons.map((domain) => {
                 const Icon = domain.icon
-                const atRiskPercentage = Math.round((domain.atRisk / domain.assessed) * 100)
                 return (
                   <div
                     key={domain.name}
@@ -572,12 +622,8 @@ export default function DashboardPage() {
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Assessed</span>
-                        <span className="font-medium text-foreground">{domain.assessed}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">At Risk</span>
-                        <span className="font-medium text-at-risk">{domain.atRisk} ({atRiskPercentage}%)</span>
+                        <span className="text-muted-foreground">Status</span>
+                        <span className="font-medium text-foreground">Active</span>
                       </div>
                     </div>
                   </div>
@@ -614,26 +660,26 @@ export default function DashboardPage() {
       )}
 
       {/* Volunteer Stats - Only for volunteers */}
-      {safeHasRole(['volunteer']) && (
+      {safeHasRole(['volunteer']) && dashboardData.volunteerStats && (
         <Card className="border-0 shadow-soft mt-6 bg-gradient-to-r from-primary/5 to-secondary/5">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h4 className="font-semibold text-foreground mb-1">Your Assignments</h4>
                 <p className="text-sm text-muted-foreground">
-                  You are currently assigned to <strong>8 elders</strong> (max capacity: 10)
+                  You are currently assigned to <strong>{dashboardData.volunteerStats.assignedCount} elders</strong> (max capacity: {dashboardData.volunteerStats.maxAssignments})
                 </p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-primary">8</p>
+                  <p className="text-2xl font-bold text-primary">{dashboardData.volunteerStats.assignedCount}</p>
                   <p className="text-xs text-muted-foreground">Assigned</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-healthy">3</p>
+                  <p className="text-2xl font-bold text-healthy">{dashboardData.volunteerStats.pendingVisits}</p>
                   <p className="text-xs text-muted-foreground">Pending Visits</p>
                 </div>
-                <Link href="/dashboard/elderly?assigned=me">
+                <Link href="/dashboard/elderly">
                   <Button size="sm">
                     View My Elders
                     <ArrowRight className="w-4 h-4 ml-1" />

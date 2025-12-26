@@ -30,6 +30,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { type AssessmentResult, type DomainScore, type RiskLevel, getRiskLevelDisplay } from '@/lib/assessment-scoring'
+import { formatDate } from '@/lib/utils'
 
 interface AssessmentSummaryProps {
   result: AssessmentResult
@@ -58,7 +59,7 @@ export function AssessmentSummary({
               {elderlyName && (
                 <CardDescription className="mt-1">
                   Assessment for {elderlyName}
-                  {assessedAt && ` on ${new Date(assessedAt).toLocaleDateString()}`}
+                  {assessedAt && ` on ${formatDate(assessedAt)}`}
                 </CardDescription>
               )}
             </div>
