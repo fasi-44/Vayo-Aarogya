@@ -75,10 +75,10 @@ export default function ChangePasswordPage() {
                     <p className="text-muted-foreground mb-6">
                         Your password has been successfully changed.
                         <br />
-                        You can now sign in with your new password.
+                        You can now login with your new password.
                     </p>
                     <Button onClick={() => router.push("/auth/login")} className="w-full gradient-medical text-white hover:opacity-90" size="lg">
-                        Continue to Sign In
+                        Continue to Login
                     </Button>
                 </CardContent>
             </Card>

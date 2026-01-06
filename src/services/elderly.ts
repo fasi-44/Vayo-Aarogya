@@ -19,6 +19,7 @@ export interface ElderlyFormData {
   age?: number
   gender?: 'male' | 'female' | 'other'
   address?: string
+  pincode?: string
   emergencyContact?: string
   dateOfBirth?: string
   assignedVolunteer?: string
@@ -32,6 +33,10 @@ export interface ElderlyFormData {
   caregiverName?: string
   caregiverPhone?: string
   caregiverRelation?: string
+  caregiverRelationOther?: string
+  // Support requirements
+  needsFinancialAssistance?: boolean
+  needsLegalSupport?: boolean
 }
 
 // Filter options for elderly list

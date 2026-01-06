@@ -41,8 +41,9 @@ const elderlySchema = z.object({
   isActive: z.boolean().optional(),
   age: z.coerce.number().min(1).max(150).optional().or(z.literal('')),
   gender: z.enum(['male', 'female', 'other']).optional().or(z.literal('')),
-  dateOfBirth: z.string().optional(),
-  address: z.string().optional(),
+  dateOfBirth: z.string().min(1, 'Date of Birth is required'),
+  address: z.string().min(5, 'Full address is required'),
+  pincode: z.string().min(1, 'Pincode is required'),
   emergencyContact: z.string().optional(),
   assignedVolunteer: z.string().optional(),
   assignedFamily: z.string().optional(),
@@ -59,6 +60,10 @@ const elderlySchema = z.object({
   caregiverName: z.string().optional(),
   caregiverPhone: z.string().optional(),
   caregiverRelation: z.string().optional(),
+  caregiverRelationOther: z.string().optional(),
+  // Assistance fields
+  needsFinancialAssistance: z.boolean().optional(),
+  needsLegalSupport: z.boolean().optional(),
 })
 
 type FormValues = z.infer<typeof elderlySchema>
@@ -89,6 +94,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
   const [taluks, setTaluks] = useState<LocationOption[]>([])
   const [villages, setVillages] = useState<LocationOption[]>([])
   const [loadingLocations, setLoadingLocations] = useState(false)
+  const [statesLoaded, setStatesLoaded] = useState(false)
 
   const {
     register,
@@ -109,11 +115,12 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
       gender: '',
       dateOfBirth: '',
       address: '',
+      pincode: '',
       emergencyContact: '',
       assignedVolunteer: '',
       assignedFamily: '',
-      stateId: '',
-      districtId: '',
+      stateId: '', // Will be auto-set after states load
+      districtId: '', // Will be auto-set after districts load
       talukId: '',
       villageId: '',
       stateName: '',
@@ -123,6 +130,9 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
       caregiverName: '',
       caregiverPhone: '',
       caregiverRelation: '',
+      caregiverRelationOther: '',
+      needsFinancialAssistance: undefined,
+      needsLegalSupport: undefined,
     },
   })
 
@@ -152,20 +162,22 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
     loadAssignees()
   }, [currentUser?.role])
 
-  // Load states on mount
+  // Load states once
   useEffect(() => {
     async function loadStates() {
       try {
         const data = await locationsService.getStates()
         setStates(data)
+        setStatesLoaded(true)
       } catch (error) {
         console.error('Failed to load states:', error)
       }
     }
-    if (open) {
+    if (!statesLoaded) {
       loadStates()
     }
-  }, [open])
+  }, [statesLoaded])
+
 
   // Load districts when state changes
   useEffect(() => {
@@ -186,6 +198,20 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
     }
     loadDistricts()
   }, [selectedStateId])
+
+  // Auto-select Bangalore Urban when Karnataka is selected (for new entries)
+  useEffect(() => {
+    if (!isEditing && selectedStateId && districts.length > 0) {
+      const stateName = states.find(s => s.id === selectedStateId)?.name
+      if (stateName === 'Karnataka') {
+        const bangaloreUrban = districts.find(d => d.name === 'Bangalore Urban')
+        if (bangaloreUrban && !watch('districtId')) {
+          setValue('districtId', bangaloreUrban.id)
+          setValue('districtName', 'Bangalore Urban')
+        }
+      }
+    }
+  }, [selectedStateId, districts, isEditing, states, setValue, watch])
 
   // Load taluks when district changes
   useEffect(() => {
@@ -227,8 +253,10 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
     loadVillages()
   }, [selectedTalukId])
 
-  // Reset form when elderly changes
+  // Reset form when elderly changes or dialog opens
   useEffect(() => {
+    if (!open) return
+
     if (elderly) {
       reset({
         email: elderly.email,
@@ -240,6 +268,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
         gender: elderly.gender || '',
         dateOfBirth: elderly.dateOfBirth ? elderly.dateOfBirth.split('T')[0] : '',
         address: elderly.address || '',
+        pincode: (elderly as any).pincode || '',
         emergencyContact: elderly.emergencyContact || '',
         assignedVolunteer: elderly.assignedVolunteer || '',
         assignedFamily: elderly.assignedFamily || '',
@@ -250,37 +279,47 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
         caregiverName: elderly.caregiverName || '',
         caregiverPhone: elderly.caregiverPhone || '',
         caregiverRelation: elderly.caregiverRelation || '',
+        caregiverRelationOther: (elderly as any).caregiverRelationOther || '',
+        needsFinancialAssistance: (elderly as any).needsFinancialAssistance ?? undefined,
+        needsLegalSupport: (elderly as any).needsLegalSupport ?? undefined,
       })
     } else {
-      reset({
-        email: '',
-        password: '',
-        name: '',
-        phone: '',
-        isActive: true,
-        age: '',
-        gender: '',
-        dateOfBirth: '',
-        address: '',
-        emergencyContact: '',
-        // Auto-set volunteer if volunteer user is creating
-        assignedVolunteer: currentUser?.role === 'volunteer' ? currentUser.id : '',
-        // Auto-set family if family user is creating
-        assignedFamily: currentUser?.role === 'family' ? currentUser.id : '',
-        stateId: '',
-        districtId: '',
-        talukId: '',
-        villageId: '',
-        stateName: '',
-        districtName: '',
-        talukName: '',
-        villageName: '',
-        caregiverName: '',
-        caregiverPhone: '',
-        caregiverRelation: '',
-      })
+      // Creating new elderly - wait for states to load then set defaults
+      if (statesLoaded && states.length > 0) {
+        const karnataka = states.find(s => s.name === 'Karnataka')
+
+        reset({
+          email: '',
+          password: '',
+          name: '',
+          phone: '',
+          isActive: true,
+          age: '',
+          gender: '',
+          dateOfBirth: '',
+          address: '',
+          pincode: '',
+          emergencyContact: '',
+          assignedVolunteer: currentUser?.role === 'volunteer' ? currentUser.id : '',
+          assignedFamily: currentUser?.role === 'family' ? currentUser.id : '',
+          stateId: karnataka?.id || '',
+          districtId: '',
+          talukId: '',
+          villageId: '',
+          stateName: karnataka?.name || '',
+          districtName: '',
+          talukName: '',
+          villageName: '',
+          caregiverName: '',
+          caregiverPhone: '',
+          caregiverRelation: '',
+          caregiverRelationOther: '',
+          needsFinancialAssistance: undefined,
+          needsLegalSupport: undefined,
+        })
+      }
     }
-  }, [elderly, reset, currentUser])
+  }, [elderly, reset, currentUser, open, statesLoaded, states])
 
   // When editing, find and set location IDs based on saved names
   useEffect(() => {
@@ -329,6 +368,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
     setValue('talukName', '')
     setValue('villageId', '')
     setValue('villageName', '')
+    // Districts will auto-load and auto-select when stateId changes
   }
 
   const handleDistrictChange = (value: string) => {
@@ -375,6 +415,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
       if (data.gender) formData.gender = data.gender as 'male' | 'female' | 'other'
       if (data.dateOfBirth) formData.dateOfBirth = data.dateOfBirth
       if (data.address) formData.address = data.address
+      if (data.pincode !== undefined && data.pincode !== '') (formData as any).pincode = data.pincode
       if (data.emergencyContact) formData.emergencyContact = data.emergencyContact
       if (data.assignedVolunteer) formData.assignedVolunteer = data.assignedVolunteer
       if (data.assignedFamily) formData.assignedFamily = data.assignedFamily
@@ -389,6 +430,11 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
       if (data.caregiverName) formData.caregiverName = data.caregiverName
       if (data.caregiverPhone) formData.caregiverPhone = data.caregiverPhone
       if (data.caregiverRelation) formData.caregiverRelation = data.caregiverRelation
+      if (data.caregiverRelationOther) (formData as any).caregiverRelationOther = data.caregiverRelationOther
+
+      // Assistance fields
+      if (data.needsFinancialAssistance !== undefined) (formData as any).needsFinancialAssistance = data.needsFinancialAssistance
+      if (data.needsLegalSupport !== undefined) (formData as any).needsLegalSupport = data.needsLegalSupport
 
       await onSubmit(formData)
       onClose()
@@ -398,6 +444,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
   }
 
   const caregiverPhone = watch('caregiverPhone')
+  const caregiverRelation = watch('caregiverRelation')
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -535,17 +582,20 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth" className="text-base">Date of Birth</Label>
+                <Label htmlFor="dateOfBirth" className="text-base">Date of Birth *</Label>
                 <DateInput
                   id="dateOfBirth"
                   {...register('dateOfBirth')}
                   className="text-base"
                 />
+                {errors.dateOfBirth && (
+                  <p className="text-sm text-red-500">{errors.dateOfBirth.message}</p>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-base">Address</Label>
+              <Label htmlFor="address" className="text-base">Full Address *</Label>
               <Textarea
                 id="address"
                 {...register('address')}
@@ -553,6 +603,22 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                 rows={2}
                 className="text-base"
               />
+              {errors.address && (
+                <p className="text-sm text-red-500">{errors.address.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pincode" className="text-base">Pincode *</Label>
+              <Input
+                id="pincode"
+                {...register('pincode')}
+                placeholder="Enter pincode"
+                className="text-base"
+              />
+              {errors.pincode && (
+                <p className="text-sm text-red-500">{errors.pincode.message}</p>
+              )}
             </div>
           </div>
 
@@ -713,6 +779,79 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {caregiverRelation === 'other' && (
+                <div className="space-y-2">
+                  <Label htmlFor="caregiverRelationOther" className="text-base">Specify Relation</Label>
+                  <Input
+                    id="caregiverRelationOther"
+                    {...register('caregiverRelationOther')}
+                    placeholder="Please specify the relation"
+                    className="text-base"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Assistance Information */}
+          <div className="space-y-4 pt-4 border-t">
+            <h4 className="font-semibold text-base text-muted-foreground uppercase tracking-wide">
+              Support Requirements
+            </h4>
+
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <Label className="text-base">In need of any Financial Assistance</Label>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      id="financial-yes"
+                      checked={watch('needsFinancialAssistance') === true}
+                      onChange={() => setValue('needsFinancialAssistance', true)}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="financial-yes" className="text-base font-normal cursor-pointer">Yes</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      id="financial-no"
+                      checked={watch('needsFinancialAssistance') === false}
+                      onChange={() => setValue('needsFinancialAssistance', false)}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="financial-no" className="text-base font-normal cursor-pointer">No</Label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-base">In need of any Legal Support</Label>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      id="legal-yes"
+                      checked={watch('needsLegalSupport') === true}
+                      onChange={() => setValue('needsLegalSupport', true)}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="legal-yes" className="text-base font-normal cursor-pointer">Yes</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      id="legal-no"
+                      checked={watch('needsLegalSupport') === false}
+                      onChange={() => setValue('needsLegalSupport', false)}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="legal-no" className="text-base font-normal cursor-pointer">No</Label>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

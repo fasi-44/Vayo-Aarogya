@@ -59,6 +59,7 @@ model User {
   age              Int?
   gender           Gender?
   address          String?
+  pincode          String?
   emergencyContact String? @map("emergency_contact")
   dateOfBirth      DateTime? @map("date_of_birth")
 
@@ -69,9 +70,14 @@ model User {
   villageName      String?   @map("village_name")
 
   // Caregiver details
-  caregiverName     String?  @map("caregiver_name")
-  caregiverPhone    String?  @map("caregiver_phone")
-  caregiverRelation String?  @map("caregiver_relation")
+  caregiverName      String?  @map("caregiver_name")
+  caregiverPhone     String?  @map("caregiver_phone")
+  caregiverRelation  String?  @map("caregiver_relation")
+  caregiverRelationOther String? @map("caregiver_relation_other")
+
+  // Support requirements
+  needsFinancialAssistance Boolean? @map("needs_financial_assistance")
+  needsLegalSupport        Boolean? @map("needs_legal_support")
 
   // Relationships - Volunteer assignment
   assignedVolunteer   User?   @relation("ElderlyVolunteer", fields: [assignedVolunteerId], references: [id])
@@ -104,6 +110,9 @@ model User {
   // Follow-ups
   followUpsAsElderly  FollowUp[] @relation("ElderlyFollowUps")
   followUpsAsAssignee FollowUp[] @relation("AssigneeFollowUps")
+
+  // Documents (prescriptions, medical records, etc.)
+  documents Document[]
 
   @@index([email])
   @@index([role])
@@ -321,4 +330,34 @@ model FollowUp {
   @@index([scheduledDate])
   @@index([status])
   @@map("follow_ups")
+}
+
+// Document/Prescription model for storing elderly medical documents
+model Document {
+  id        String    @id @default(cuid())
+
+  // Elderly who owns the document
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Document metadata
+  title     String
+  type      String    // prescription, lab_report, medical_certificate, insurance, other
+  fileUrl   String    @map("file_url")
+  fileName  String    @map("file_name")
+  mimeType  String    @map("mime_type")
+  fileSize  Int       @map("file_size")
+
+  // Document details
+  description String?
+  documentDate DateTime? @map("document_date")
+  uploadedBy String?   @map("uploaded_by")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("documents")
 }

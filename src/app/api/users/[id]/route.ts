@@ -153,6 +153,7 @@ export async function PUT(
     if (body.gender !== undefined) updates.gender = body.gender || null
     if (body.dateOfBirth !== undefined) updates.dateOfBirth = body.dateOfBirth || null
     if (body.address !== undefined) updates.address = body.address || null
+    if (body.pincode !== undefined) updates.pincode = body.pincode || null
     if (body.emergencyContact !== undefined) updates.emergencyContact = body.emergencyContact || null
 
     // Location fields
@@ -165,6 +166,11 @@ export async function PUT(
     if (body.caregiverName !== undefined) updates.caregiverName = body.caregiverName || null
     if (body.caregiverPhone !== undefined) updates.caregiverPhone = body.caregiverPhone || null
     if (body.caregiverRelation !== undefined) updates.caregiverRelation = body.caregiverRelation || null
+    if (body.caregiverRelationOther !== undefined) updates.caregiverRelationOther = body.caregiverRelationOther || null
+
+    // Support requirements
+    if (body.needsFinancialAssistance !== undefined) updates.needsFinancialAssistance = body.needsFinancialAssistance ?? null
+    if (body.needsLegalSupport !== undefined) updates.needsLegalSupport = body.needsLegalSupport ?? null
 
     // Assignment fields (admin only)
     if (body.assignedVolunteer !== undefined && canUpdateOthers) {

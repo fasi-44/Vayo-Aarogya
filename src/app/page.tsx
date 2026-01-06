@@ -117,12 +117,12 @@ export default function LandingPage() {
             <div className="flex items-center gap-3">
               <Link href="/auth/login">
                 <Button variant="ghost" size="sm" className="hidden sm:flex text-foreground hover:text-primary hover:bg-primary/5">
-                  Sign In
+                  Login
                 </Button>
               </Link>
               <Link href="/auth/register">
                 <Button size="sm" className="gradient-primary text-white hover:opacity-90 shadow-lg shadow-primary/25 rounded-xl">
-                  Get Started
+                  Create New account
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
@@ -183,7 +183,7 @@ export default function LandingPage() {
             <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
               <Link href="/auth/register">
                 <Button size="lg" className="gradient-primary text-white hover:opacity-90 h-14 px-10 text-lg shadow-xl shadow-primary/30 rounded-2xl group">
-                  Start Free Assessment
+                  Create New account
                   <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
@@ -671,7 +671,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/auth/register">
                 <Button size="lg" className="bg-white text-coral-600 hover:bg-white/90 h-14 px-10 text-lg rounded-2xl shadow-xl font-semibold group">
-                  Get Started Free
+                  Create New account
                   <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
@@ -760,7 +760,7 @@ export default function LandingPage() {
                 <li><Link href="#features" className="hover:text-primary-400 transition-colors">Features</Link></li>
                 <li><Link href="#assessments" className="hover:text-primary-400 transition-colors">Assessments</Link></li>
                 <li><Link href="#how-it-works" className="hover:text-primary-400 transition-colors">How It Works</Link></li>
-                <li><Link href="/auth/register" className="hover:text-primary-400 transition-colors">Get Started</Link></li>
+                <li><Link href="/auth/register" className="hover:text-primary-400 transition-colors">Create New account</Link></li>
               </ul>
             </div>
 

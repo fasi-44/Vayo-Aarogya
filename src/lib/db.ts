@@ -26,6 +26,7 @@ function prismaUserToAppUser(prismaUser: PrismaUser): User {
     age: prismaUser.age ?? undefined,
     gender: prismaUser.gender ?? undefined,
     address: prismaUser.address ?? undefined,
+    pincode: prismaUser.pincode ?? undefined,
     emergencyContact: prismaUser.emergencyContact ?? undefined,
     dateOfBirth: prismaUser.dateOfBirth?.toISOString(),
     // Location fields
@@ -37,6 +38,10 @@ function prismaUserToAppUser(prismaUser: PrismaUser): User {
     caregiverName: prismaUser.caregiverName ?? undefined,
     caregiverPhone: prismaUser.caregiverPhone ?? undefined,
     caregiverRelation: prismaUser.caregiverRelation ?? undefined,
+    caregiverRelationOther: prismaUser.caregiverRelationOther ?? undefined,
+    // Support requirements
+    needsFinancialAssistance: prismaUser.needsFinancialAssistance ?? undefined,
+    needsLegalSupport: prismaUser.needsLegalSupport ?? undefined,
     // Relationships
     assignedVolunteer: prismaUser.assignedVolunteerId ?? undefined,
     maxAssignments: prismaUser.maxAssignments,
@@ -100,6 +105,7 @@ class Database {
         age: userData.age,
         gender: userData.gender as Prisma.UserCreateInput['gender'],
         address: userData.address,
+        pincode: userData.pincode,
         emergencyContact: userData.emergencyContact,
         dateOfBirth: userData.dateOfBirth ? new Date(userData.dateOfBirth) : null,
         // Location fields
@@ -111,6 +117,10 @@ class Database {
         caregiverName: userData.caregiverName,
         caregiverPhone: userData.caregiverPhone,
         caregiverRelation: userData.caregiverRelation,
+        caregiverRelationOther: userData.caregiverRelationOther,
+        // Support requirements
+        needsFinancialAssistance: userData.needsFinancialAssistance,
+        needsLegalSupport: userData.needsLegalSupport,
         // Relationships
         assignedVolunteerId: userData.assignedVolunteer,
         assignedFamilyId: userData.assignedFamily,
@@ -138,6 +148,7 @@ class Database {
       if (updates.age !== undefined) updateData.age = updates.age
       if (updates.gender !== undefined) updateData.gender = updates.gender as Prisma.UserUpdateInput['gender']
       if (updates.address !== undefined) updateData.address = updates.address
+      if (updates.pincode !== undefined) updateData.pincode = updates.pincode
       if (updates.emergencyContact !== undefined) updateData.emergencyContact = updates.emergencyContact
       if (updates.dateOfBirth !== undefined) updateData.dateOfBirth = new Date(updates.dateOfBirth)
       // Location fields
@@ -149,6 +160,10 @@ class Database {
       if (updates.caregiverName !== undefined) updateData.caregiverName = updates.caregiverName
       if (updates.caregiverPhone !== undefined) updateData.caregiverPhone = updates.caregiverPhone
       if (updates.caregiverRelation !== undefined) updateData.caregiverRelation = updates.caregiverRelation
+      if (updates.caregiverRelationOther !== undefined) updateData.caregiverRelationOther = updates.caregiverRelationOther
+      // Support requirements
+      if (updates.needsFinancialAssistance !== undefined) updateData.needsFinancialAssistance = updates.needsFinancialAssistance
+      if (updates.needsLegalSupport !== undefined) updateData.needsLegalSupport = updates.needsLegalSupport
       // Relationships
       if (updates.assignedVolunteer !== undefined) updateData.assignedVolunteerId = updates.assignedVolunteer
       if (updates.assignedFamily !== undefined) updateData.assignedFamilyId = updates.assignedFamily
@@ -159,7 +174,8 @@ class Database {
         data: updateData,
       })
       return prismaUserToAppUser(user)
-    } catch {
+    } catch (error) {
+      console.error('Update user error:', error)
       return undefined
     }
   }

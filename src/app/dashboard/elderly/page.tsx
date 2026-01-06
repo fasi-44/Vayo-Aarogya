@@ -15,6 +15,13 @@ import {
 } from '@/components/ui/select'
 import { useAuthStore } from '@/store'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   Search,
   Users,
   UserPlus,
@@ -27,6 +34,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  ClipboardPlus,
 } from 'lucide-react'
 import { type SafeUser } from '@/types'
 import {
@@ -43,9 +51,10 @@ import {
   ElderlyForm,
   ElderlyViewDialog,
   ElderlyDeleteDialog,
-  ElderlyAssessmentsDialog,
+  ElderlyDocumentsDialog,
   type ElderlyWithRelations,
 } from '@/components/elderly'
+import { checkProfileCompleteness, isProfileOverOneWeekOld } from '@/lib/profile-validation'
 
 export default function ElderlyRecordsPage() {
   return (
@@ -91,8 +100,10 @@ function ElderlyRecordsPageContent() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isViewOpen, setIsViewOpen] = useState(false)
-  const [isAssessmentsOpen, setIsAssessmentsOpen] = useState(false)
+  const [isDocumentsOpen, setIsDocumentsOpen] = useState(false)
   const [selectedElderly, setSelectedElderly] = useState<SafeUser | null>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [expandedAssessmentsId, setExpandedAssessmentsId] = useState<string | null>(null)
 
   // Stats
   const [stats, setStats] = useState({
@@ -249,8 +260,37 @@ function ElderlyRecordsPageContent() {
   }
 
   const handleViewAssessments = (elder: ElderlyWithRelations) => {
+    setExpandedAssessmentsId(expandedAssessmentsId === elder.id ? null : elder.id)
+  }
+
+  const handleCloseExpanded = () => {
+    setExpandedAssessmentsId(null)
+  }
+
+  const handleNewAssessment = (elder?: ElderlyWithRelations) => {
+    if (elder) {
+      // Validate profile completeness
+      const normalizedElder = normalizeElder(elder)
+      const completeness = checkProfileCompleteness(normalizedElder)
+      if (!completeness.isComplete) {
+        const isOverOneWeek = isProfileOverOneWeekOld(elder.createdAt)
+        if (isOverOneWeek) {
+          setSelectedElderly(normalizedElder)
+          setValidationError(
+            `Cannot add assessment: The profile is incomplete and was created more than 1 week ago. Please complete the profile first.`
+          )
+          return
+        }
+      }
+      router.push(`/dashboard/assessments/new?elderlyId=${elder.id}`)
+    } else {
+      router.push(`/dashboard/assessments/new`)
+    }
+  }
+
+  const handleDocuments = (elder: ElderlyWithRelations) => {
     setSelectedElderly(normalizeElder(elder))
-    setIsAssessmentsOpen(true)
+    setIsDocumentsOpen(true)
   }
 
   const handleDelete = (elder: ElderlyWithRelations) => {
@@ -415,24 +455,25 @@ function ElderlyRecordsPageContent() {
       {/* Main Content */}
       <Card className="border-0 shadow-soft">
         <CardHeader className="border-b border-border pb-4">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="space-y-4">
             <CardTitle className="text-lg">All Elderly Records</CardTitle>
 
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Search */}
-              <div className="relative">
+            {/* Row 1 - Search and Filters (Mobile: 2 cols, Desktop: 3 cols) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 lg:gap-3">
+              {/* Search Bar */}
+              <div className="relative lg:col-span-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by name or email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-full sm:w-64"
+                  className="pl-9 w-full text-sm lg:text-base"
                 />
               </div>
 
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-36">
+                <SelectTrigger className="w-full text-sm lg:text-base">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -444,8 +485,8 @@ function ElderlyRecordsPageContent() {
 
               {/* Volunteer Filter */}
               <Select value={volunteerFilter} onValueChange={setVolunteerFilter}>
-                <SelectTrigger className="w-full sm:w-44">
-                  <Filter className="w-4 h-4 mr-2" />
+                <SelectTrigger className="w-full text-sm lg:text-base">
+                  <Filter className="w-3 h-3 mr-1 lg:w-4 lg:h-4 lg:mr-2" />
                   <SelectValue placeholder="Volunteer" />
                 </SelectTrigger>
                 <SelectContent>
@@ -459,30 +500,53 @@ function ElderlyRecordsPageContent() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
 
-              {/* Actions */}
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleRefresh}
-                  disabled={isLoading}
-                  title="Refresh"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            {/* Row 2 - Action Buttons (Mobile: 2 cols, Desktop: 4 cols) */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
+              {/* Refresh Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isLoading}
+                title="Refresh"
+                className="w-full text-sm lg:text-base h-10"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline ml-2">Refresh</span>
+              </Button>
+
+              {/* Export Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                title="Export Records"
+                className="w-full text-sm lg:text-base h-10"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline ml-2">Export</span>
+              </Button>
+
+              {/* New Assessment Button */}
+              <Button
+                onClick={() => handleNewAssessment()}
+                variant="outline"
+                className="text-blue-600 border-blue-200 hover:bg-blue-50 w-full text-sm lg:text-base h-10"
+              >
+                <ClipboardPlus className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">New Assessment</span>
+                <span className="sm:hidden">New</span>
+              </Button>
+
+              {/* Register Elder Button */}
+              {canCreateElderly && (
+                <Button onClick={handleCreate} className="gradient-medical text-white w-full text-sm lg:text-base h-10">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Register</span>
+                  <span className="sm:hidden">Add</span>
                 </Button>
-
-                <Button variant="outline" size="icon" title="Export Records">
-                  <Download className="w-4 h-4" />
-                </Button>
-
-                {canCreateElderly && (
-                  <Button onClick={handleCreate} className="gradient-medical text-white">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Register Elder
-                  </Button>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -512,6 +576,10 @@ function ElderlyRecordsPageContent() {
                 onDelete={handleDelete}
                 onView={handleView}
                 onViewAssessments={handleViewAssessments}
+                onAssessment={handleNewAssessment}
+                onDocuments={handleDocuments}
+                expandedAssessmentsId={expandedAssessmentsId}
+                onCloseExpanded={handleCloseExpanded}
               />
             </div>
           )}
@@ -610,15 +678,56 @@ function ElderlyRecordsPageContent() {
         elderly={selectedElderly}
       />
 
-      {/* Assessments Dialog */}
-      <ElderlyAssessmentsDialog
-        open={isAssessmentsOpen}
+      {/* Documents Upload Dialog */}
+      <ElderlyDocumentsDialog
+        open={isDocumentsOpen}
         onClose={() => {
-          setIsAssessmentsOpen(false)
+          setIsDocumentsOpen(false)
           setSelectedElderly(null)
         }}
         elderly={selectedElderly}
+        onSuccess={() => {
+          loadElderly()
+        }}
       />
+
+      {/* Validation Error Dialog */}
+      <Dialog open={!!validationError} onOpenChange={() => setValidationError(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cannot Add Assessment</DialogTitle>
+            <DialogDescription>
+              {validationError}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 mt-4">
+            <p className="font-semibold mb-2">To resolve this:</p>
+            <ul className="list-disc list-inside space-y-1 text-xs">
+              <li>Complete all required fields in the elderly profile</li>
+              <li>Then you can add assessments</li>
+            </ul>
+          </div>
+          <div className="flex justify-end gap-3 mt-4 border-t pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setValidationError(null)}
+            >
+              Close
+            </Button>
+            <Button
+              onClick={() => {
+                setValidationError(null)
+                if (selectedElderly) {
+                  setIsFormOpen(true)
+                }
+              }}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              Edit Profile
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   )
 }

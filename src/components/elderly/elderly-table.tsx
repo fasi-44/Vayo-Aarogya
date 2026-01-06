@@ -39,9 +39,15 @@ import {
   HandHeart,
   Users,
   Calendar,
+  FileUp,
+  AlertCircle,
+  Plus,
+  X,
 } from 'lucide-react'
 import { type SafeUser } from '@/types'
 import { getInitials, formatDate } from '@/lib/utils'
+import { checkProfileCompleteness } from '@/lib/profile-validation'
+import { ElderlyAssessmentsAccordion } from './elderly-assessments-accordion'
 
 // Extended type for elderly with relations
 export interface ElderlyWithRelations extends Omit<SafeUser, 'assignedFamily' | 'assignedVolunteer'> {
@@ -57,6 +63,9 @@ interface ElderlyTableProps {
   onView: (elderly: ElderlyWithRelations) => void
   onAssessment?: (elderly: ElderlyWithRelations) => void
   onViewAssessments?: (elderly: ElderlyWithRelations) => void
+  onDocuments?: (elderly: ElderlyWithRelations) => void
+  expandedAssessmentsId?: string | null
+  onCloseExpanded?: () => void
 }
 
 export function ElderlyTable({
@@ -67,7 +76,18 @@ export function ElderlyTable({
   onView,
   onAssessment,
   onViewAssessments,
+  onDocuments,
+  expandedAssessmentsId,
+  onCloseExpanded,
 }: ElderlyTableProps) {
+  const normalizeElder = (elder: ElderlyWithRelations): SafeUser => {
+    return {
+      ...elder,
+      assignedFamily: typeof elder.assignedFamily === 'object' && elder.assignedFamily ? elder.assignedFamily.id : (elder.assignedFamily as string | undefined),
+      assignedVolunteer: typeof elder.assignedVolunteer === 'object' && elder.assignedVolunteer ? elder.assignedVolunteer.id : (elder.assignedVolunteer as string | undefined),
+    }
+  }
+
   const getVolunteerName = (volunteer?: ElderlyWithRelations['assignedVolunteer']) => {
     if (!volunteer) return null
     if (typeof volunteer === 'string') {
@@ -117,22 +137,30 @@ export function ElderlyTable({
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => onView(elder)}>
-          <Eye className="mr-2 h-4 w-4" />
-          View Profile
-        </DropdownMenuItem>
+        {onAssessment && (
+          <DropdownMenuItem onClick={() => onAssessment(elder)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Assessment
+          </DropdownMenuItem>
+        )}
         {onViewAssessments && (
           <DropdownMenuItem onClick={() => onViewAssessments(elder)}>
             <ClipboardCheck className="mr-2 h-4 w-4" />
             View Assessments
           </DropdownMenuItem>
         )}
-        {onAssessment && (
-          <DropdownMenuItem onClick={() => onAssessment(elder)}>
-            <ClipboardCheck className="mr-2 h-4 w-4" />
-            New Assessment
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => onView(elder)}>
+          <Eye className="mr-2 h-4 w-4" />
+          View Profile
+        </DropdownMenuItem>
+        {onDocuments && (
+          <DropdownMenuItem onClick={() => onDocuments(elder)}>
+            <FileUp className="mr-2 h-4 w-4" />
+            Upload Document
           </DropdownMenuItem>
         )}
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onEdit(elder)}>
           <Pencil className="mr-2 h-4 w-4" />
           Edit
@@ -154,8 +182,10 @@ export function ElderlyTable({
       <div className="md:hidden space-y-4">
         {elderly.map((elder) => {
           const familyInfo = getFamilyInfo(elder)
+          const isExpanded = expandedAssessmentsId === elder.id
           return (
-            <Card key={elder.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+            <div key={elder.id}>
+            <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
               {/* Header with gradient background */}
               <div className="bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/30 px-4 py-3 border-b">
                 <div className="flex items-center justify-between">
@@ -178,6 +208,32 @@ export function ElderlyTable({
               <CardContent className="p-4">
                 {/* Quick Info Pills */}
                 <div className="flex flex-wrap items-center gap-2 mb-4">
+                  {(() => {
+                    const completeness = checkProfileCompleteness(normalizeElder(elder))
+                    if (!completeness.isComplete) {
+                      return (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge className="text-xs bg-amber-100 text-amber-800 border-amber-300">
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              Incomplete Profile
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="text-xs space-y-1">
+                              <p className="font-semibold">Missing fields:</p>
+                              <ul className="list-disc list-inside">
+                                {completeness.missingFields.map(field => (
+                                  <li key={field}>{field}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      )
+                    }
+                    return null
+                  })()}
                   {elder.age && (
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
                       {elder.age} years old
@@ -257,6 +313,27 @@ export function ElderlyTable({
                 </div>
               </CardContent>
             </Card>
+
+            {/* Expanded Assessments View */}
+            {isExpanded && (
+              <Card className="shadow-sm border-t-0 rounded-t-none bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-foreground">Assessments</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onCloseExpanded}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <ElderlyAssessmentsAccordion elderly={normalizeElder(elder)} />
+                </CardContent>
+              </Card>
+            )}
+            </div>
           )
         })}
       </div>
@@ -276,7 +353,10 @@ export function ElderlyTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {elderly.map((elder) => (
+            {elderly.map((elder) => {
+              const isExpanded = expandedAssessmentsId === elder.id
+              return (
+              <>
               <TableRow key={elder.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
@@ -287,7 +367,28 @@ export function ElderlyTable({
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-medium">{elder.name}</div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-medium">{elder.name}</span>
+                        {(() => {
+                          const completeness = checkProfileCompleteness(normalizeElder(elder))
+                          if (!completeness.isComplete) {
+                            return (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertCircle className="w-4 h-4 text-amber-500" />
+                                </TooltipTrigger>
+                                <TooltipContent side="right">
+                                  <div className="text-xs space-y-1">
+                                    <p className="font-semibold">Incomplete Profile</p>
+                                    <p className="text-amber-100">Missing: {completeness.missingFields.join(', ')}</p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            )
+                          }
+                          return null
+                        })()}
+                      </div>
                       <div className="text-sm text-muted-foreground">{elder.email}</div>
                     </div>
                   </div>
@@ -380,7 +481,31 @@ export function ElderlyTable({
                   <ActionMenu elder={elder} />
                 </TableCell>
               </TableRow>
-            ))}
+
+              {/* Expanded Assessments Row */}
+              {isExpanded && (
+                <TableRow>
+                  <TableCell colSpan={7} className="p-4">
+                    <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-900/50">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold text-foreground">Assessments</h3>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={onCloseExpanded}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <ElderlyAssessmentsAccordion elderly={normalizeElder(elder)} />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+              </>
+            )
+            })}
           </TableBody>
         </Table>
       </div>

@@ -47,6 +47,7 @@ export default function NewElderlyPage() {
     gender: undefined,
     address: '',
     dateOfBirth: '',
+    pincode: '',
     stateName: '',
     districtName: '',
     talukName: '',
@@ -54,25 +55,53 @@ export default function NewElderlyPage() {
     caregiverName: '',
     caregiverPhone: '',
     caregiverRelation: '',
+    caregiverRelationOther: '',
+    needsFinancialAssistance: undefined,
+    needsLegalSupport: undefined,
   })
 
-  // Load states on mount
+  // Load states on mount and auto-select Karnataka + Bangalore Urban
   useEffect(() => {
-    const loadStates = async () => {
+    const initializeLocations = async () => {
       try {
-        const result = await getLocations('state')
-        if (result.success && result.data) {
-          setStates(result.data)
+        // Load states
+        const statesResult = await getLocations('state')
+        if (statesResult.success && statesResult.data) {
+          setStates(statesResult.data)
+
+          // Auto-select Karnataka
+          const karnataka = statesResult.data.find(s => s.name === 'Karnataka')
+          if (karnataka) {
+            setFormData(prev => ({
+              ...prev,
+              stateName: 'Karnataka'
+            }))
+
+            // Load districts for Karnataka
+            const districtsResult = await getLocations('district', karnataka.id)
+            if (districtsResult.success && districtsResult.data) {
+              setDistricts(districtsResult.data)
+
+              // Auto-select Bangalore Urban
+              const bangaloreUrban = districtsResult.data.find(d => d.name === 'Bangalore Urban')
+              if (bangaloreUrban) {
+                setFormData(prev => ({
+                  ...prev,
+                  districtName: 'Bangalore Urban'
+                }))
+              }
+            }
+          }
         }
       } catch (err) {
-        console.error('Error loading states:', err)
+        console.error('Error initializing locations:', err)
       }
     }
-    loadStates()
+    initializeLocations()
   }, [])
 
-  // Load districts when state changes
-  const loadDistricts = useCallback(async (stateName: string) => {
+  // Helper function to load districts and auto-select Bangalore Urban
+  const loadDistrictsForState = useCallback(async (stateName: string) => {
     const stateLocation = states.find(s => s.name === stateName)
     if (!stateLocation) return
 
@@ -80,6 +109,18 @@ export default function NewElderlyPage() {
       const result = await getLocations('district', stateLocation.id)
       if (result.success && result.data) {
         setDistricts(result.data)
+
+        // Auto-select Bangalore Urban if state is Karnataka
+        if (stateName === 'Karnataka') {
+          const bangaloreUrban = result.data.find(d => d.name === 'Bangalore Urban')
+          if (bangaloreUrban) {
+            setFormData(prev => ({
+              ...prev,
+              districtName: 'Bangalore Urban'
+            }))
+          }
+        }
+
         setTaluks([])
         setVillages([])
       }
@@ -87,6 +128,7 @@ export default function NewElderlyPage() {
       console.error('Error loading districts:', err)
     }
   }, [states])
+
 
   // Load taluks when district changes
   const loadTaluks = useCallback(async (districtName: string) => {
@@ -151,7 +193,7 @@ export default function NewElderlyPage() {
       talukName: '',
       villageName: '',
     }))
-    loadDistricts(value)
+    loadDistrictsForState(value)
   }
 
   const handleDistrictChange = (value: string) => {
@@ -403,6 +445,17 @@ export default function NewElderlyPage() {
                     rows={2}
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="pincode">Pincode *</Label>
+                  <Input
+                    id="pincode"
+                    value={formData.pincode || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, pincode: e.target.value }))}
+                    placeholder="Enter pincode"
+                    required
+                  />
+                </div>
               </div>
 
               {/* Caregiver Information */}
@@ -451,6 +504,77 @@ export default function NewElderlyPage() {
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+
+                {formData.caregiverRelation === 'other' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="caregiverRelationOther">Specify Relation</Label>
+                    <Input
+                      id="caregiverRelationOther"
+                      value={formData.caregiverRelationOther || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, caregiverRelationOther: e.target.value }))}
+                      placeholder="Please specify the relation"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Support Requirements */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground">Support Requirements</h3>
+
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <Label className="text-base">In need of any Financial Assistance</Label>
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          id="financial-yes"
+                          checked={formData.needsFinancialAssistance === true}
+                          onChange={() => setFormData(prev => ({ ...prev, needsFinancialAssistance: true }))}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor="financial-yes" className="text-base font-normal cursor-pointer">Yes</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          id="financial-no"
+                          checked={formData.needsFinancialAssistance === false}
+                          onChange={() => setFormData(prev => ({ ...prev, needsFinancialAssistance: false }))}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor="financial-no" className="text-base font-normal cursor-pointer">No</Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-base">In need of any Legal Support</Label>
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          id="legal-yes"
+                          checked={formData.needsLegalSupport === true}
+                          onChange={() => setFormData(prev => ({ ...prev, needsLegalSupport: true }))}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor="legal-yes" className="text-base font-normal cursor-pointer">Yes</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          id="legal-no"
+                          checked={formData.needsLegalSupport === false}
+                          onChange={() => setFormData(prev => ({ ...prev, needsLegalSupport: false }))}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor="legal-no" className="text-base font-normal cursor-pointer">No</Label>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

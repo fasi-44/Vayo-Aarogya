@@ -158,6 +158,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       gender,
       dateOfBirth,
       address,
+      pincode,
       emergencyContact,
       // Location fields
       stateName,
@@ -168,9 +169,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       caregiverName,
       caregiverPhone,
       caregiverRelation,
+      caregiverRelationOther,
       // Assignment
       assignedVolunteer,
       assignedFamily,
+      // Support requirements
+      needsFinancialAssistance,
+      needsLegalSupport,
       // Volunteer-specific
       maxAssignments,
     } = body
@@ -275,6 +280,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       gender,
       dateOfBirth,
       address,
+      pincode,
       emergencyContact,
       // Location fields
       stateName,
@@ -285,9 +291,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       caregiverName: finalCaregiverName,
       caregiverPhone: finalCaregiverPhone,
       caregiverRelation: finalCaregiverRelation,
+      caregiverRelationOther,
       // Assignment
       assignedVolunteer: volunteerAssignment,
       assignedFamily: familyAssignment,
+      // Support requirements
+      needsFinancialAssistance,
+      needsLegalSupport,
       // Volunteer-specific
       maxAssignments: maxAssignments ? Number(maxAssignments) : undefined,
     })

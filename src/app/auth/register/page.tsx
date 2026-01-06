@@ -353,7 +353,7 @@ export default function RegisterPage() {
               {/* Login Link */}
               <Link href="/auth/login">
                 <Button variant="outline" className="w-full">
-                  Sign In to Your Account
+                  Login to Your Account
                 </Button>
               </Link>
             </CardContent>

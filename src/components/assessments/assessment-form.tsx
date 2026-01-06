@@ -24,6 +24,12 @@ import {
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
   ChevronLeft,
   ChevronRight,
   Save,
@@ -36,6 +42,7 @@ import {
   RotateCcw,
   PlayCircle,
   X,
+  AlertCircle,
 } from 'lucide-react'
 import { type SafeUser, type Assessment } from '@/types'
 import {
@@ -49,6 +56,7 @@ import { AssessmentSummary } from './assessment-summary'
 import { createAssessment, saveDraft, updateDraft, completeDraft, deleteAssessment, checkExistingDraft, type AssessmentFormData } from '@/services/assessments'
 import { getElderly } from '@/services/elderly'
 import { formatDate } from '@/lib/utils'
+import { checkProfileCompleteness } from '@/lib/profile-validation'
 
 // Group domains into logical categories for wizard steps (ICOPE-based)
 const DOMAIN_GROUPS = [
@@ -140,6 +148,10 @@ export function AssessmentForm({
   const [showDraftDialog, setShowDraftDialog] = useState(false)
   const [existingDraft, setExistingDraft] = useState<Assessment | null>(null)
   const [isCheckingDraft, setIsCheckingDraft] = useState(false)
+
+  // Profile validation
+  const [profileError, setProfileError] = useState<string | null>(null)
+  const [profileMissingFields, setProfileMissingFields] = useState<string[]>([])
 
   // Domain answers: { [domainId]: { answers: { [questionId]: number }, notes: string } }
   const [domainData, setDomainData] = useState<Record<string, { answers: Record<string, number>; notes: string }>>({})
@@ -249,6 +261,21 @@ export function AssessmentForm({
 
   // Handle elderly selection - check for existing draft
   const handleElderlySelect = async (elderly: SafeUser) => {
+    // Check profile completeness first
+    const profileCheck = checkProfileCompleteness(elderly)
+
+    if (!profileCheck.isComplete) {
+      // Profile is incomplete - show error
+      setProfileError(`Cannot conduct assessment. Profile is incomplete. Missing fields: ${profileCheck.missingFields.join(', ')}`)
+      setProfileMissingFields(profileCheck.missingFields)
+      setSelectedElderly(null) // Don't select if profile is incomplete
+      return
+    }
+
+    // Clear any previous profile errors
+    setProfileError(null)
+    setProfileMissingFields([])
+
     setSelectedElderly(elderly)
     setIsCheckingDraft(true)
 
@@ -581,20 +608,53 @@ export function AssessmentForm({
                   <SelectValue placeholder="Select an elderly person" />
                 </SelectTrigger>
                 <SelectContent>
-                  {elderlyList.map((elderly) => (
-                    <SelectItem key={elderly.id} value={elderly.id}>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{elderly.name}</span>
-                        {elderly.vayoId && (
-                          <Badge variant="outline" className="text-xs">
-                            {elderly.vayoId}
-                          </Badge>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
+                  <TooltipProvider>
+                    {elderlyList.map((elderly) => {
+                      const profileCheck = checkProfileCompleteness(elderly)
+                      return (
+                        <SelectItem key={elderly.id} value={elderly.id}>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{elderly.name}</span>
+                            {elderly.vayoId && (
+                              <Badge variant="outline" className="text-xs">
+                                {elderly.vayoId}
+                              </Badge>
+                            )}
+                            {!profileCheck.isComplete && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertCircle className="w-4 h-4 text-amber-600" />
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="max-w-xs">
+                                  <div className="space-y-1">
+                                    <p className="font-semibold text-yellow-100">Profile Incomplete</p>
+                                    <p className="text-sm text-yellow-50">Missing: {profileCheck.missingFields.join(', ')}</p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
+                  </TooltipProvider>
                 </SelectContent>
               </Select>
+
+              {/* Profile Validation Error */}
+              {profileError && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-medium text-red-900">{profileError}</p>
+                    {profileMissingFields.length > 0 && (
+                      <p className="text-sm text-red-800">
+                        Please complete the profile: <strong>{profileMissingFields.join(', ')}</strong>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {selectedElderly && (

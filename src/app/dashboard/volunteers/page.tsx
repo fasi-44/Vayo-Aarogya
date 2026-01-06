@@ -211,11 +211,14 @@ export default function VolunteersPage() {
     return elderly.filter((e) => e.assignedVolunteer === selectedVolunteer.id)
   }
 
-  const statCards = [
+  const volunteerStatCards = [
     { title: 'Total Volunteers', value: stats.total, icon: Users, color: 'bg-primary' },
     { title: 'Available', value: stats.available, icon: UserCheck, color: 'bg-green-500' },
     { title: 'Near Capacity', value: stats.nearCapacity, icon: AlertCircle, color: 'bg-yellow-500' },
     { title: 'At Capacity', value: stats.atCapacity, icon: AlertCircle, color: 'bg-red-500' },
+  ]
+
+  const elderAssignmentCards = [
     { title: 'Elders Assigned', value: stats.totalAssigned, icon: Users, color: 'bg-blue-500' },
     { title: 'Unassigned Elders', value: stats.unassignedElderly, icon: UserPlus, color: 'bg-orange-500' },
   ]
@@ -225,26 +228,54 @@ export default function VolunteersPage() {
       title="Volunteer Management"
       subtitle="Manage volunteers and their elder assignments"
     >
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-        {statCards.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <Card key={stat.title} className="border-0 shadow-soft">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg ${stat.color} flex items-center justify-center`}>
-                    <Icon className="w-5 h-5 text-white" />
+      {/* Volunteer Stats Section */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Volunteer Stats</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {volunteerStatCards.map((stat) => {
+            const Icon = stat.icon
+            return (
+              <Card key={stat.title} className="border-0 shadow-soft">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg ${stat.color} flex items-center justify-center`}>
+                      <Icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold">{stat.value}</p>
+                      <p className="text-xs text-muted-foreground">{stat.title}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xl font-bold">{stat.value}</p>
-                    <p className="text-xs text-muted-foreground">{stat.title}</p>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Elder Assignment Stats Section */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Elder Assignments</h3>
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+          {elderAssignmentCards.map((stat) => {
+            const Icon = stat.icon
+            return (
+              <Card key={stat.title} className="border-0 shadow-soft">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center`}>
+                      <Icon className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{stat.value}</p>
+                      <p className="text-sm text-muted-foreground">{stat.title}</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
       </div>
 
       {/* Filters and Actions */}

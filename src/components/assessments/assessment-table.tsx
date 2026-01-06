@@ -154,7 +154,6 @@ export function AssessmentTable({
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   <StatusBadge status={assessment.status} />
                   <RiskBadge riskLevel={assessment.overallRisk} isDraft={assessment.status === 'draft'} />
-                  <DomainSummary domains={assessment.domains} />
                 </div>
 
                 {/* Details Grid */}
@@ -209,7 +208,6 @@ export function AssessmentTable({
               <TableHead className="font-semibold">Assessor</TableHead>
               <TableHead className="font-semibold">Status</TableHead>
               <TableHead className="font-semibold">Risk Level</TableHead>
-              <TableHead className="font-semibold">Domains</TableHead>
               <TableHead className="font-semibold text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -253,9 +251,6 @@ export function AssessmentTable({
                 </TableCell>
                 <TableCell>
                   <RiskBadge riskLevel={assessment.overallRisk} isDraft={assessment.status === 'draft'} />
-                </TableCell>
-                <TableCell>
-                  <DomainSummary domains={assessment.domains} />
                 </TableCell>
                 <TableCell className="text-right">
                   <ActionMenu assessment={assessment} />

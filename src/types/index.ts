@@ -82,6 +82,7 @@ export interface User {
   age?: number
   gender?: 'male' | 'female' | 'other'
   address?: string
+  pincode?: string
   emergencyContact?: string
   dateOfBirth?: string
   // Location fields
@@ -93,6 +94,10 @@ export interface User {
   caregiverName?: string
   caregiverPhone?: string
   caregiverRelation?: string
+  caregiverRelationOther?: string
+  // Support requirements
+  needsFinancialAssistance?: boolean
+  needsLegalSupport?: boolean
   // Relationships
   assignedVolunteer?: string
   assignedFamily?: string

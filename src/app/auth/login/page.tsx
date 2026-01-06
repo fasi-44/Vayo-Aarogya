@@ -110,7 +110,7 @@ function LoginPageContent() {
               <span className="text-sm font-medium text-primary">Welcome Back</span>
             </div>
           </div>
-          <CardTitle className="text-2xl lg:text-3xl font-bold text-foreground">Sign in to your account</CardTitle>
+          <CardTitle className="text-2xl lg:text-3xl font-bold text-foreground">Login to your account</CardTitle>
           <CardDescription className="text-base">
             Access health assessments and care dashboard
           </CardDescription>
@@ -201,7 +201,7 @@ function LoginPageContent() {
               size="lg"
               loading={isLoading}
             >
-              Sign In
+              Login
               <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </form>
