@@ -23,6 +23,7 @@ export interface UserFormData {
   emergencyContact?: string
   dateOfBirth?: string
   assignedVolunteer?: string
+  assignedProfessional?: string
   // Location fields
   stateName?: string
   districtName?: string
@@ -123,6 +124,11 @@ export async function getUsersByRole(role: UserRole): Promise<ApiResponse<UsersL
 // Get volunteers (for assignment dropdown)
 export async function getVolunteers(): Promise<ApiResponse<UsersListResponse>> {
   return getUsers({ role: 'volunteer', isActive: true, limit: 100 })
+}
+
+// Get professionals (for assignment dropdown)
+export async function getProfessionals(): Promise<ApiResponse<UsersListResponse>> {
+  return getUsers({ role: 'professional', isActive: true, limit: 100 })
 }
 
 // Get elderly users

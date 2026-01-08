@@ -65,6 +65,13 @@ export function InterventionTable({
     }
   }
 
+  const getStatusLabel = (status: string) => {
+    if (status === 'pending') {
+      return 'Yet to Begin'
+    }
+    return status.replace('_', ' ')
+  }
+
   const isOverdue = (intervention: Intervention) => {
     if (intervention.status === 'completed' || intervention.status === 'cancelled') {
       return false
@@ -206,7 +213,7 @@ export function InterventionTable({
                     )}
                   >
                     <span className="capitalize">
-                      {intervention.status.replace('_', ' ')}
+                      {getStatusLabel(intervention.status)}
                     </span>
                   </Badge>
                   {overdue && (
@@ -319,7 +326,7 @@ export function InterventionTable({
                     {intervention.status === 'completed' ? (
                       <Badge
                         variant="outline"
-                        className="gap-1 bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800"
+                        className="gap-1 bg-green-50 text-green-700 border-green-300 dark:bg-green-100 dark:text-green-400 dark:border-green-800"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
                         <span>Completed</span>
@@ -349,7 +356,7 @@ export function InterventionTable({
                       )}
                     >
                       <span className="capitalize">
-                        {intervention.status.replace('_', ' ')}
+                        {getStatusLabel(intervention.status)}
                       </span>
                     </Badge>
                   </TableCell>

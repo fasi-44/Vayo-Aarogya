@@ -84,6 +84,11 @@ model User {
   assignedVolunteerId String? @map("assigned_volunteer_id")
   assignedElderly     User[]  @relation("ElderlyVolunteer")
 
+  // Relationships - Professional assignment
+  assignedProfessional   User?   @relation("ElderlyProfessional", fields: [assignedProfessionalId], references: [id])
+  assignedProfessionalId String? @map("assigned_professional_id")
+  professionalElders     User[]  @relation("ElderlyProfessional")
+
   // Relationships - Family/Caregiver assignment
   assignedFamily      User?   @relation("ElderlyFamily", fields: [assignedFamilyId], references: [id])
   assignedFamilyId    String? @map("assigned_family_id")
@@ -117,6 +122,7 @@ model User {
   @@index([email])
   @@index([role])
   @@index([assignedVolunteerId])
+  @@index([assignedProfessionalId])
   @@index([assignedFamilyId])
   @@map("users")
 }

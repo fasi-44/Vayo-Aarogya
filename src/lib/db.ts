@@ -44,6 +44,7 @@ function prismaUserToAppUser(prismaUser: PrismaUser): User {
     needsLegalSupport: prismaUser.needsLegalSupport ?? undefined,
     // Relationships
     assignedVolunteer: prismaUser.assignedVolunteerId ?? undefined,
+    assignedProfessional: prismaUser.assignedProfessionalId ?? undefined,
     maxAssignments: prismaUser.maxAssignments,
   }
 }
@@ -123,6 +124,7 @@ class Database {
         needsLegalSupport: userData.needsLegalSupport,
         // Relationships
         assignedVolunteerId: userData.assignedVolunteer,
+        assignedProfessionalId: userData.assignedProfessional,
         assignedFamilyId: userData.assignedFamily,
         maxAssignments: userData.maxAssignments ?? 10,
       },
@@ -166,6 +168,7 @@ class Database {
       if (updates.needsLegalSupport !== undefined) updateData.needsLegalSupport = updates.needsLegalSupport
       // Relationships
       if (updates.assignedVolunteer !== undefined) updateData.assignedVolunteerId = updates.assignedVolunteer
+      if (updates.assignedProfessional !== undefined) updateData.assignedProfessionalId = updates.assignedProfessional
       if (updates.assignedFamily !== undefined) updateData.assignedFamilyId = updates.assignedFamily
       if (updates.maxAssignments !== undefined) updateData.maxAssignments = updates.maxAssignments
 
@@ -198,6 +201,7 @@ class Database {
     limit?: number
     isActive?: boolean
     assignedVolunteerId?: string
+    assignedProfessionalId?: string
     assignedFamilyId?: string
   }): Promise<{ users: SafeUser[]; total: number }> {
     const where: Prisma.UserWhereInput = {}
@@ -213,6 +217,11 @@ class Database {
     // Filter by assigned volunteer (for volunteers viewing their elderly)
     if (options?.assignedVolunteerId) {
       where.assignedVolunteerId = options.assignedVolunteerId
+    }
+
+    // Filter by assigned professional (for professionals viewing their elderly)
+    if (options?.assignedProfessionalId) {
+      where.assignedProfessionalId = options.assignedProfessionalId
     }
 
     // Filter by assigned family (for family viewing their elderly)
@@ -233,13 +242,17 @@ class Database {
 
     // Build query based on role
     const isVolunteer = options?.role === 'volunteer'
+    const isProfessional = options?.role === 'professional'
     const isElderly = options?.role === 'elderly'
     const isFamily = options?.role === 'family'
 
     // Define include based on role
-    const include = isVolunteer
+    const include = isVolunteer || isProfessional
       ? {
         assignedElderly: {
+          select: { id: true, name: true, vayoId: true, age: true, villageName: true }
+        },
+        professionalElders: {
           select: { id: true, name: true, vayoId: true, age: true, villageName: true }
         }
       }
@@ -249,6 +262,9 @@ class Database {
             select: { id: true, name: true, phone: true, email: true }
           },
           assignedVolunteer: {
+            select: { id: true, name: true, phone: true }
+          },
+          assignedProfessional: {
             select: { id: true, name: true, phone: true }
           }
         }
@@ -279,6 +295,9 @@ class Database {
         if ('assignedElderly' in u && Array.isArray(userWithRelations.assignedElderly)) {
           (safeUser as any).assignedElderly = userWithRelations.assignedElderly as unknown[]
         }
+        if ('professionalElders' in u && Array.isArray(userWithRelations.professionalElders)) {
+          (safeUser as any).professionalElders = userWithRelations.professionalElders as unknown[]
+        }
         if ('familyElders' in u && Array.isArray(userWithRelations.familyElders)) {
           (safeUser as any).familyElders = userWithRelations.familyElders as unknown[]
         }
@@ -287,6 +306,9 @@ class Database {
         }
         if ('assignedVolunteer' in u && userWithRelations.assignedVolunteer) {
           (safeUser as any).assignedVolunteer = userWithRelations.assignedVolunteer
+        }
+        if ('assignedProfessional' in u && userWithRelations.assignedProfessional) {
+          (safeUser as any).assignedProfessional = userWithRelations.assignedProfessional
         }
         return safeUser
       }),

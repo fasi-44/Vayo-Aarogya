@@ -100,9 +100,12 @@ export interface User {
   needsLegalSupport?: boolean
   // Relationships
   assignedVolunteer?: string
+  assignedProfessional?: string
   assignedFamily?: string
   // Volunteer-specific fields
   assignedElderly?: string[]
+  // Professional-specific fields
+  professionalElders?: string[]
   // Family-specific fields
   familyElders?: string[]
   maxAssignments?: number

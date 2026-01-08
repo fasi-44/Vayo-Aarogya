@@ -59,6 +59,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       limit: number
       isActive?: boolean
       assignedVolunteerId?: string
+      assignedProfessionalId?: string
       assignedFamilyId?: string
     } = {
       role,
@@ -71,6 +72,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     // Volunteers can only see elderly assigned to them
     if (user.role === 'volunteer' && role === 'elderly' && user.userId) {
       filterOptions.assignedVolunteerId = user.userId
+    }
+
+    // Professionals can only see elderly assigned to them
+    if (user.role === 'professional' && role === 'elderly' && user.userId) {
+      filterOptions.assignedProfessionalId = user.userId
     }
 
     // Family members can only see elderly assigned to them
