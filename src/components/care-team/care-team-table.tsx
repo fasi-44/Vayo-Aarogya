@@ -35,23 +35,23 @@ import {
 import { cn, getInitials, formatDate } from '@/lib/utils'
 import type { SafeUser } from '@/types'
 
-interface VolunteerWithStats extends SafeUser {
+interface CareTeamMemberWithStats extends SafeUser {
   assignedCount?: number
 }
 
-interface VolunteerTableProps {
-  volunteers: VolunteerWithStats[]
-  onView: (volunteer: SafeUser) => void
-  onAssign: (volunteer: SafeUser) => void
-  onViewAssigned: (volunteer: SafeUser) => void
+interface CareTeamTableProps {
+  members: CareTeamMemberWithStats[]
+  onView: (member: SafeUser) => void
+  onAssign: (member: SafeUser) => void
+  onViewAssigned: (member: SafeUser) => void
 }
 
-export function VolunteerTable({
-  volunteers,
+export function CareTeamTable({
+  members,
   onView,
   onAssign,
   onViewAssigned,
-}: VolunteerTableProps) {
+}: CareTeamTableProps) {
   const getCapacityStatus = (assigned: number, max: number) => {
     const percentage = (assigned / max) * 100
     if (percentage >= 100) return { color: 'bg-red-500', status: 'Full' }
@@ -59,17 +59,17 @@ export function VolunteerTable({
     return { color: 'bg-green-500', status: 'Available' }
   }
 
-  if (volunteers.length === 0) {
+  if (members.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
-        <p>No volunteers found</p>
+        <p>No care team members found</p>
       </div>
     )
   }
 
   // Action menu component to reuse in both views
-  const ActionMenu = ({ volunteer, assignedCount, maxAssignments }: { volunteer: SafeUser; assignedCount: number; maxAssignments: number }) => (
+  const ActionMenu = ({ member, assignedCount, maxAssignments }: { member: SafeUser; assignedCount: number; maxAssignments: number }) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -80,16 +80,16 @@ export function VolunteerTable({
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => onView(volunteer)}>
+        <DropdownMenuItem onClick={() => onView(member)}>
           <Eye className="mr-2 h-4 w-4" />
           View Profile
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onViewAssigned(volunteer)}>
+        <DropdownMenuItem onClick={() => onViewAssigned(member)}>
           <Users className="mr-2 h-4 w-4" />
           View Assigned Elders
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => onAssign(volunteer)}
+          onClick={() => onAssign(member)}
           disabled={assignedCount >= maxAssignments}
         >
           <UserPlus className="mr-2 h-4 w-4" />
@@ -103,9 +103,11 @@ export function VolunteerTable({
     <>
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
-        {volunteers.map((volunteer) => {
-          const assignedCount = volunteer.assignedElderly?.length || volunteer.assignedCount || 0
-          const maxAssignments = volunteer.maxAssignments || 10
+        {members.map((member) => {
+          const assignedCount = member.role === 'volunteer'
+            ? (member.assignedElderly?.length || member.assignedCount || 0)
+            : (member.professionalElders?.length || member.assignedCount || 0)
+          const maxAssignments = member.maxAssignments || 10
           const capacityPercentage = (assignedCount / maxAssignments) * 100
           const capacityStatus = getCapacityStatus(assignedCount, maxAssignments)
 
@@ -116,23 +118,35 @@ export function VolunteerTable({
           }
 
           return (
-            <Card key={volunteer.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+            <Card key={member.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
               {/* Header with status-based gradient */}
               <div className={`bg-gradient-to-r ${statusGradients[capacityStatus.status]} px-4 py-3 border-b`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-14 w-14 ring-2 ring-white shadow-sm">
-                      <AvatarImage src={volunteer.avatar} alt={volunteer.name} />
-                      <AvatarFallback className="bg-teal-500 text-white text-lg font-semibold">
-                        {getInitials(volunteer.name)}
+                      <AvatarImage src={member.avatar} alt={member.name} />
+                      <AvatarFallback className={cn(
+                        "text-white text-lg font-semibold",
+                        member.role === 'volunteer' ? "bg-teal-500" : "bg-blue-500"
+                      )}>
+                        {getInitials(member.name)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold text-base text-foreground">{volunteer.name}</h3>
-                      <p className="text-sm text-muted-foreground">{volunteer.email}</p>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-base text-foreground">{member.name}</h3>
+                        <Badge className={cn(
+                          'text-xs',
+                          member.role === 'volunteer' && 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300',
+                          member.role === 'professional' && 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
+                        )}>
+                          {member.role === 'volunteer' ? 'Volunteer' : 'Professional'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{member.email}</p>
                     </div>
                   </div>
-                  <ActionMenu volunteer={volunteer} assignedCount={assignedCount} maxAssignments={maxAssignments} />
+                  <ActionMenu member={member} assignedCount={assignedCount} maxAssignments={maxAssignments} />
                 </div>
               </div>
 
@@ -178,12 +192,12 @@ export function VolunteerTable({
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground mb-0.5">Contact Number</p>
-                      {volunteer.phone ? (
+                      {member.phone ? (
                         <a
-                          href={`tel:${volunteer.phone}`}
+                          href={`tel:${member.phone}`}
                           className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600 hover:text-green-700"
                         >
-                          {volunteer.phone}
+                          {member.phone}
                           <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">Tap to call</span>
                         </a>
                       ) : (
@@ -202,7 +216,7 @@ export function VolunteerTable({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onViewAssigned(volunteer)}
+                        onClick={() => onViewAssigned(member)}
                         className="h-auto p-0 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-transparent"
                       >
                         {assignedCount} elder{assignedCount !== 1 ? 's' : ''} assigned
@@ -216,7 +230,7 @@ export function VolunteerTable({
                     <span className="text-xs text-muted-foreground">Member since</span>
                     <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Calendar className="w-3.5 h-3.5" />
-                      {formatDate(volunteer.createdAt)}
+                      {formatDate(member.createdAt)}
                     </span>
                   </div>
                 </div>
@@ -231,7 +245,8 @@ export function VolunteerTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[250px]">Volunteer</TableHead>
+              <TableHead className="w-[250px]">Care Team Member</TableHead>
+              <TableHead className="w-[100px]">Role</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Capacity</TableHead>
               <TableHead>Assigned Elders</TableHead>
@@ -241,39 +256,53 @@ export function VolunteerTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {volunteers.map((volunteer) => {
-              const assignedCount = volunteer.assignedElderly?.length || volunteer.assignedCount || 0
-              const maxAssignments = volunteer.maxAssignments || 10
+            {members.map((member) => {
+              const assignedCount = member.role === 'volunteer'
+                ? (member.assignedElderly?.length || member.assignedCount || 0)
+                : (member.professionalElders?.length || member.assignedCount || 0)
+              const maxAssignments = member.maxAssignments || 10
               const capacityPercentage = (assignedCount / maxAssignments) * 100
               const capacityStatus = getCapacityStatus(assignedCount, maxAssignments)
 
               return (
-                <TableRow key={volunteer.id}>
+                <TableRow key={member.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={volunteer.avatar} alt={volunteer.name} />
-                        <AvatarFallback className="bg-teal-100 text-teal-700 text-sm font-medium">
-                          {getInitials(volunteer.name)}
+                        <AvatarImage src={member.avatar} alt={member.name} />
+                        <AvatarFallback className={cn(
+                          "text-sm font-medium",
+                          member.role === 'volunteer' ? "bg-teal-100 text-teal-700" : "bg-blue-100 text-blue-700"
+                        )}>
+                          {getInitials(member.name)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{volunteer.name}</div>
-                        <div className="text-sm text-muted-foreground">{volunteer.email}</div>
+                        <div className="font-medium">{member.name}</div>
+                        <div className="text-sm text-muted-foreground">{member.email}</div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
+                    <Badge className={cn(
+                      'text-xs',
+                      member.role === 'volunteer' && 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300',
+                      member.role === 'professional' && 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
+                    )}>
+                      {member.role === 'volunteer' ? 'Volunteer' : 'Professional'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
                     <div className="space-y-1 text-sm">
-                      {volunteer.phone && (
+                      {member.phone && (
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                           <Phone className="w-3.5 h-3.5" />
-                          {volunteer.phone}
+                          {member.phone}
                         </div>
                       )}
                       <div className="flex items-center gap-1.5 text-muted-foreground">
                         <Mail className="w-3.5 h-3.5" />
-                        {volunteer.email}
+                        {member.email}
                       </div>
                     </div>
                   </TableCell>
@@ -294,7 +323,7 @@ export function VolunteerTable({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onViewAssigned(volunteer)}
+                      onClick={() => onViewAssigned(member)}
                       className="text-primary hover:text-primary"
                     >
                       <Users className="w-4 h-4 mr-1" />
@@ -315,10 +344,10 @@ export function VolunteerTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {formatDate(volunteer.createdAt)}
+                    {formatDate(member.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <ActionMenu volunteer={volunteer} assignedCount={assignedCount} maxAssignments={maxAssignments} />
+                    <ActionMenu member={member} assignedCount={assignedCount} maxAssignments={maxAssignments} />
                   </TableCell>
                 </TableRow>
               )

@@ -18,23 +18,25 @@ import {
 } from 'lucide-react'
 import type { SafeUser } from '@/types'
 
-interface VolunteerCardProps {
-  volunteer: SafeUser & { assignedCount?: number }
+interface CareTeamCardProps {
+  member: SafeUser & { assignedCount?: number }
   onView?: () => void
   onAssign?: () => void
   onViewAssigned?: () => void
   compact?: boolean
 }
 
-export function VolunteerCard({
-  volunteer,
+export function CareTeamCard({
+  member,
   onView,
   onAssign,
   onViewAssigned,
   compact = false,
-}: VolunteerCardProps) {
-  const assignedCount = volunteer.assignedElderly?.length || volunteer.assignedCount || 0
-  const maxAssignments = volunteer.maxAssignments || 10
+}: CareTeamCardProps) {
+  const assignedCount = member.role === 'volunteer'
+    ? (member.assignedElderly?.length || member.assignedCount || 0)
+    : (member.professionalElders?.length || member.assignedCount || 0)
+  const maxAssignments = member.maxAssignments || 10
   const capacityPercentage = (assignedCount / maxAssignments) * 100
   const isFull = assignedCount >= maxAssignments
   const isNearCapacity = capacityPercentage >= 80
@@ -49,13 +51,16 @@ export function VolunteerCard({
     return (
       <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
         <Avatar className="h-10 w-10">
-          <AvatarImage src={volunteer.avatar} alt={volunteer.name} />
-          <AvatarFallback className="bg-teal-100 text-teal-700 text-sm">
-            {getInitials(volunteer.name)}
+          <AvatarImage src={member.avatar} alt={member.name} />
+          <AvatarFallback className={cn(
+            "text-sm",
+            member.role === 'volunteer' ? "bg-teal-100 text-teal-700" : "bg-blue-100 text-blue-700"
+          )}>
+            {getInitials(member.name)}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate">{volunteer.name}</p>
+          <p className="font-medium text-sm truncate">{member.name}</p>
           <p className="text-xs text-muted-foreground">
             {assignedCount}/{maxAssignments} assigned
           </p>
@@ -80,16 +85,23 @@ export function VolunteerCard({
       <CardHeader className="pb-3">
         <div className="flex items-start gap-4">
           <Avatar className="h-14 w-14">
-            <AvatarImage src={volunteer.avatar} alt={volunteer.name} />
-            <AvatarFallback className="bg-teal-100 text-teal-700 text-lg font-medium">
-              {getInitials(volunteer.name)}
+            <AvatarImage src={member.avatar} alt={member.name} />
+            <AvatarFallback className={cn(
+              "text-lg font-medium",
+              member.role === 'volunteer' ? "bg-teal-100 text-teal-700" : "bg-blue-100 text-blue-700"
+            )}>
+              {getInitials(member.name)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <CardTitle className="text-lg">{volunteer.name}</CardTitle>
+            <CardTitle className="text-lg">{member.name}</CardTitle>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline" className="text-xs bg-teal-50 text-teal-700">
-                Volunteer
+              <Badge variant="outline" className={cn(
+                "text-xs",
+                member.role === 'volunteer' && "bg-teal-50 text-teal-700 border-teal-200",
+                member.role === 'professional' && "bg-blue-50 text-blue-700 border-blue-200"
+              )}>
+                {member.role === 'volunteer' ? 'Volunteer' : 'Professional'}
               </Badge>
               {isFull && (
                 <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
@@ -103,25 +115,25 @@ export function VolunteerCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2 text-sm">
-          {volunteer.phone && (
+          {member.phone && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Phone className="w-4 h-4" />
-              <a href={`tel:${volunteer.phone}`} className="hover:text-primary">
-                {volunteer.phone}
+              <a href={`tel:${member.phone}`} className="hover:text-primary">
+                {member.phone}
               </a>
             </div>
           )}
           <div className="flex items-center gap-2 text-muted-foreground">
             <Mail className="w-4 h-4" />
-            <a href={`mailto:${volunteer.email}`} className="hover:text-primary truncate">
-              {volunteer.email}
+            <a href={`mailto:${member.email}`} className="hover:text-primary truncate">
+              {member.email}
             </a>
           </div>
-          {(volunteer.villageName || volunteer.districtName) && (
+          {(member.villageName || member.districtName) && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="w-4 h-4" />
               <span>
-                {[volunteer.villageName, volunteer.talukName, volunteer.districtName]
+                {[member.villageName, member.talukName, member.districtName]
                   .filter(Boolean)
                   .join(', ')}
               </span>

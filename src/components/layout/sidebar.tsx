@@ -74,8 +74,8 @@ const menuItems: MenuItem[] = [
     roles: ["super_admin", "professional", "volunteer"],
   },
   {
-    title: "Volunteers",
-    href: "/dashboard/volunteers",
+    title: "Care Team",
+    href: "/dashboard/care-team",
     icon: HandHeart,
     roles: ["super_admin", "professional"],
   },
