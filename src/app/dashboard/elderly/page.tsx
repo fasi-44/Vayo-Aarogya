@@ -246,6 +246,7 @@ function ElderlyRecordsPageContent() {
       ...elder,
       assignedFamily: typeof elder.assignedFamily === 'object' && elder.assignedFamily ? elder.assignedFamily.id : elder.assignedFamily as string | undefined,
       assignedVolunteer: typeof elder.assignedVolunteer === 'object' && elder.assignedVolunteer ? elder.assignedVolunteer.id : elder.assignedVolunteer as string | undefined,
+      assignedProfessional: typeof elder.assignedProfessional === 'object' && elder.assignedProfessional ? elder.assignedProfessional.id : elder.assignedProfessional as string | undefined,
     }
   }
 

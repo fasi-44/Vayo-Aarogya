@@ -54,9 +54,9 @@ export function AdminDashboard({
 
   const quickActions = [
     { title: 'New Assessment', href: '/dashboard/assessments/new', icon: ClipboardCheck, color: 'bg-primary' },
-    { title: 'Add Elder', href: '/dashboard/elderly', icon: UserPlus, color: 'bg-teal-500' },
+    { title: 'Add Elder', href: '/dashboard/elderly?action=add', icon: UserPlus, color: 'bg-teal-500' },
     { title: 'View Reports', href: '/dashboard/reports', icon: BarChart3, color: 'bg-blue-500' },
-    { title: 'Manage Volunteers', href: '/dashboard/volunteers', icon: Users, color: 'bg-green-500' },
+    { title: 'Manage Volunteers', href: '/dashboard/care-team', icon: Users, color: 'bg-green-500' },
   ]
 
   const total = riskDistribution.healthy + riskDistribution.atRisk + riskDistribution.intervention

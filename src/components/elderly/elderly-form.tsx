@@ -556,6 +556,130 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
             </div>
           </div>
 
+          {/* Emergency Contact & Assignment */}
+          <div className="space-y-4 pt-4 border-t">
+            <h4 className="font-semibold text-base text-muted-foreground uppercase tracking-wide">
+              Emergency Contact & Assignment
+            </h4>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="emergencyContact" className="text-base">Emergency Contact</Label>
+                <Input
+                  id="emergencyContact"
+                  {...register('emergencyContact')}
+                  placeholder="+91 98765 43210"
+                  className="text-base"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="assignedVolunteer" className="text-base flex items-center gap-2">
+                  Assigned Volunteer
+                  {isVolunteerUserCreating && <Lock className="w-3 h-3 text-muted-foreground" />}
+                </Label>
+                {isVolunteerUserCreating ? (
+                  // Volunteer creating - show their name, disabled
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-md border">
+                    <span className="text-base font-medium">{currentUser?.name}</span>
+                    <span className="text-sm text-muted-foreground">(You)</span>
+                  </div>
+                ) : (
+                  // Admin/Professional - can select any volunteer
+                  <Select
+                    value={watch('assignedVolunteer') || 'none'}
+                    onValueChange={(value) => setValue('assignedVolunteer', value === 'none' ? '' : value)}
+                  >
+                    <SelectTrigger className="text-base">
+                      <SelectValue placeholder="Select volunteer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {volunteers.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {isVolunteerUserCreating && (
+                  <p className="text-xs text-muted-foreground">
+                    This elder will be assigned to you
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="assignedProfessional" className="text-base">Assigned Professional</Label>
+                <Select
+                  value={watch('assignedProfessional') || 'none'}
+                  onValueChange={(value) => setValue('assignedProfessional', value === 'none' ? '' : value)}
+                >
+                  <SelectTrigger className="text-base">
+                    <SelectValue placeholder="Select professional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {professionals.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="assignedFamily" className="text-base flex items-center gap-2">
+                  Assigned Family / Caregiver
+                  {isFamilyUserCreating && <Lock className="w-3 h-3 text-muted-foreground" />}
+                </Label>
+                {isFamilyUserCreating ? (
+                  // Family member creating - show their name, disabled
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-md border">
+                    <span className="text-base font-medium">{currentUser?.name}</span>
+                    <span className="text-sm text-muted-foreground">(You)</span>
+                  </div>
+                ) : (
+                  // Admin/Professional - can select any family member
+                  <Select
+                    value={watch('assignedFamily') || 'none'}
+                    onValueChange={(value) => setValue('assignedFamily', value === 'none' ? '' : value)}
+                  >
+                    <SelectTrigger className="text-base">
+                      <SelectValue placeholder="Select family member" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {familyMembers.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>
+                          {f.name} {f.phone && `(${f.phone})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {isFamilyUserCreating
+                    ? 'This elder will be linked to your account'
+                    : 'Link to a registered family member account'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <Label htmlFor="isActive" className="text-base">Active Status</Label>
+              <Switch
+                id="isActive"
+                checked={watch('isActive')}
+                onCheckedChange={(checked) => setValue('isActive', checked)}
+              />
+            </div>
+          </div>
+
           {/* Personal Information */}
           <div className="space-y-4 pt-4 border-t">
             <h4 className="font-semibold text-base text-muted-foreground uppercase tracking-wide">
@@ -866,130 +990,6 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Emergency & Assignment */}
-          <div className="space-y-4 pt-4 border-t">
-            <h4 className="font-semibold text-base text-muted-foreground uppercase tracking-wide">
-              Emergency Contact & Assignment
-            </h4>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="emergencyContact" className="text-base">Emergency Contact</Label>
-                <Input
-                  id="emergencyContact"
-                  {...register('emergencyContact')}
-                  placeholder="+91 98765 43210"
-                  className="text-base"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="assignedVolunteer" className="text-base flex items-center gap-2">
-                  Assigned Volunteer
-                  {isVolunteerUserCreating && <Lock className="w-3 h-3 text-muted-foreground" />}
-                </Label>
-                {isVolunteerUserCreating ? (
-                  // Volunteer creating - show their name, disabled
-                  <div className="flex items-center gap-2 p-3 bg-muted rounded-md border">
-                    <span className="text-base font-medium">{currentUser?.name}</span>
-                    <span className="text-sm text-muted-foreground">(You)</span>
-                  </div>
-                ) : (
-                  // Admin/Professional - can select any volunteer
-                  <Select
-                    value={watch('assignedVolunteer') || 'none'}
-                    onValueChange={(value) => setValue('assignedVolunteer', value === 'none' ? '' : value)}
-                  >
-                    <SelectTrigger className="text-base">
-                      <SelectValue placeholder="Select volunteer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {volunteers.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                {isVolunteerUserCreating && (
-                  <p className="text-xs text-muted-foreground">
-                    This elder will be assigned to you
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="assignedProfessional" className="text-base">Assigned Professional</Label>
-                <Select
-                  value={watch('assignedProfessional') || 'none'}
-                  onValueChange={(value) => setValue('assignedProfessional', value === 'none' ? '' : value)}
-                >
-                  <SelectTrigger className="text-base">
-                    <SelectValue placeholder="Select professional" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {professionals.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="assignedFamily" className="text-base flex items-center gap-2">
-                  Assigned Family / Caregiver
-                  {isFamilyUserCreating && <Lock className="w-3 h-3 text-muted-foreground" />}
-                </Label>
-                {isFamilyUserCreating ? (
-                  // Family member creating - show their name, disabled
-                  <div className="flex items-center gap-2 p-3 bg-muted rounded-md border">
-                    <span className="text-base font-medium">{currentUser?.name}</span>
-                    <span className="text-sm text-muted-foreground">(You)</span>
-                  </div>
-                ) : (
-                  // Admin/Professional - can select any family member
-                  <Select
-                    value={watch('assignedFamily') || 'none'}
-                    onValueChange={(value) => setValue('assignedFamily', value === 'none' ? '' : value)}
-                  >
-                    <SelectTrigger className="text-base">
-                      <SelectValue placeholder="Select family member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {familyMembers.map((f) => (
-                        <SelectItem key={f.id} value={f.id}>
-                          {f.name} {f.phone && `(${f.phone})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {isFamilyUserCreating
-                    ? 'This elder will be linked to your account'
-                    : 'Link to a registered family member account'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <Label htmlFor="isActive" className="text-base">Active Status</Label>
-              <Switch
-                id="isActive"
-                checked={watch('isActive')}
-                onCheckedChange={(checked) => setValue('isActive', checked)}
-              />
             </div>
           </div>
 
