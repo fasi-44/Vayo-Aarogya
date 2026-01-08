@@ -344,12 +344,23 @@ export default function CareTeamPage() {
               />
             </div>
 
+            <Select value={filterRole} onValueChange={setFilterRole}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="volunteer">Volunteers</SelectItem>
+                <SelectItem value="professional">Professionals</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Volunteers</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="available">Available</SelectItem>
                 <SelectItem value="near-capacity">Near Capacity</SelectItem>
                 <SelectItem value="full">At Capacity</SelectItem>
@@ -440,7 +451,7 @@ export default function CareTeamPage() {
       <Dialog open={viewAssignedDialogOpen} onOpenChange={setViewAssignedDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Assigned Elders - {selectedVolunteer?.name}</DialogTitle>
+            <DialogTitle>Assigned Elders - {selectedMember?.name}</DialogTitle>
             <DialogDescription>
               {getAssignedElderly().length} elder{getAssignedElderly().length !== 1 ? 's' : ''} assigned
             </DialogDescription>
@@ -490,29 +501,29 @@ export default function CareTeamPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Volunteer Profile Dialog */}
+      {/* Care Team Member Profile Dialog */}
       <Dialog open={viewProfileDialogOpen} onOpenChange={setViewProfileDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Volunteer Profile</DialogTitle>
+            <DialogTitle>Care Team Member Profile</DialogTitle>
             <DialogDescription>
-              View volunteer details and contact information
+              View member details and contact information
             </DialogDescription>
           </DialogHeader>
 
-          {selectedVolunteer && (
+          {selectedMember && (
             <div className="space-y-4">
               {/* Avatar and Name */}
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarFallback className="bg-teal-100 text-teal-700 text-xl font-medium">
-                    {getInitials(selectedVolunteer.name)}
+                  <AvatarFallback className={cn('text-xl font-medium', selectedMember.role === 'volunteer' ? 'bg-teal-100 text-teal-700' : 'bg-blue-100 text-blue-700')}>
+                    {getInitials(selectedMember.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-lg font-semibold">{selectedVolunteer.name}</h3>
-                  <Badge variant="outline" className="bg-teal-50 text-teal-700">
-                    Volunteer
+                  <h3 className="text-lg font-semibold">{selectedMember.name}</h3>
+                  <Badge variant="outline" className={cn(selectedMember.role === 'volunteer' ? 'bg-teal-50 text-teal-700' : 'bg-blue-50 text-blue-700')}>
+                    {selectedMember.role === 'volunteer' ? 'Volunteer' : 'Professional'}
                   </Badge>
                 </div>
               </div>
@@ -521,23 +532,23 @@ export default function CareTeamPage() {
               <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-3 text-sm">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  <a href={`mailto:${selectedVolunteer.email}`} className="text-primary hover:underline">
-                    {selectedVolunteer.email}
+                  <a href={`mailto:${selectedMember.email}`} className="text-primary hover:underline">
+                    {selectedMember.email}
                   </a>
                 </div>
-                {selectedVolunteer.phone && (
+                {selectedMember.phone && (
                   <div className="flex items-center gap-3 text-sm">
                     <Phone className="w-4 h-4 text-muted-foreground" />
-                    <a href={`tel:${selectedVolunteer.phone}`} className="text-primary hover:underline">
-                      {selectedVolunteer.phone}
+                    <a href={`tel:${selectedMember.phone}`} className="text-primary hover:underline">
+                      {selectedMember.phone}
                     </a>
                   </div>
                 )}
-                {(selectedVolunteer.villageName || selectedVolunteer.districtName) && (
+                {(selectedMember.villageName || selectedMember.districtName) && (
                   <div className="flex items-center gap-3 text-sm">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
                     <span>
-                      {[selectedVolunteer.villageName, selectedVolunteer.talukName, selectedVolunteer.districtName]
+                      {[selectedMember.villageName, selectedMember.talukName, selectedMember.districtName]
                         .filter(Boolean)
                         .join(', ')}
                     </span>
@@ -545,7 +556,7 @@ export default function CareTeamPage() {
                 )}
                 <div className="flex items-center gap-3 text-sm">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span>Joined: {formatDate(selectedVolunteer.createdAt)}</span>
+                  <span>Joined: {formatDate(selectedMember.createdAt)}</span>
                 </div>
               </div>
 
@@ -555,14 +566,19 @@ export default function CareTeamPage() {
                 <div className="flex items-center justify-between text-sm mb-2">
                   <span className="text-muted-foreground">Assigned Elders</span>
                   <span className="font-medium">
-                    {(selectedVolunteer as SafeUser & { assignedElderly?: unknown[] }).assignedElderly?.length || 0} / {selectedVolunteer.maxAssignments || 10}
+                    {selectedMember.role === 'volunteer'
+                      ? (selectedMember as SafeUser & { assignedElderly?: unknown[] }).assignedElderly?.length || 0
+                      : (selectedMember as SafeUser & { professionalElders?: unknown[] }).professionalElders?.length || 0
+                    } / {selectedMember.maxAssignments || 10}
                   </span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary rounded-full transition-all"
                     style={{
-                      width: `${Math.min(100, (((selectedVolunteer as SafeUser & { assignedElderly?: unknown[] }).assignedElderly?.length || 0) / (selectedVolunteer.maxAssignments || 10)) * 100)}%`
+                      width: `${Math.min(100, (((selectedMember.role === 'volunteer'
+                        ? (selectedMember as SafeUser & { assignedElderly?: unknown[] }).assignedElderly?.length || 0
+                        : (selectedMember as SafeUser & { professionalElders?: unknown[] }).professionalElders?.length || 0) / (selectedMember.maxAssignments || 10)) * 100))}%`
                     }}
                   />
                 </div>
@@ -575,7 +591,7 @@ export default function CareTeamPage() {
                   className="flex-1"
                   onClick={() => {
                     setViewProfileDialogOpen(false)
-                    handleViewAssigned(selectedVolunteer)
+                    handleViewAssigned(selectedMember)
                   }}
                 >
                   <Users className="w-4 h-4 mr-2" />
@@ -585,9 +601,11 @@ export default function CareTeamPage() {
                   className="flex-1"
                   onClick={() => {
                     setViewProfileDialogOpen(false)
-                    handleAssign(selectedVolunteer)
+                    handleAssign(selectedMember)
                   }}
-                  disabled={((selectedVolunteer as SafeUser & { assignedElderly?: unknown[] }).assignedElderly?.length || 0) >= (selectedVolunteer.maxAssignments || 10)}
+                  disabled={(selectedMember.role === 'volunteer'
+                    ? (selectedMember as SafeUser & { assignedElderly?: unknown[] }).assignedElderly?.length || 0
+                    : (selectedMember as SafeUser & { professionalElders?: unknown[] }).professionalElders?.length || 0) >= (selectedMember.maxAssignments || 10)}
                 >
                   <UserPlus className="w-4 h-4 mr-2" />
                   Assign Elders
