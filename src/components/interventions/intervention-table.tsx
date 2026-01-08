@@ -175,18 +175,28 @@ export function InterventionTable({
 
                 {/* Status Pills */}
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      'gap-1',
-                      priorityColors?.bg,
-                      priorityColors?.text,
-                      priorityColors?.border
-                    )}
-                  >
-                    {getPriorityIcon(intervention.priority)}
-                    <span className="capitalize">{intervention.priority}</span>
-                  </Badge>
+                  {intervention.status === 'completed' ? (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800"
+                    >
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      <span>Completed</span>
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        'gap-1',
+                        priorityColors?.bg,
+                        priorityColors?.text,
+                        priorityColors?.border
+                      )}
+                    >
+                      {getPriorityIcon(intervention.priority)}
+                      <span className="capitalize">{intervention.priority}</span>
+                    </Badge>
+                  )}
                   <Badge
                     variant="outline"
                     className={cn(
@@ -306,18 +316,28 @@ export function InterventionTable({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        'gap-1',
-                        priorityColors?.bg,
-                        priorityColors?.text,
-                        priorityColors?.border
-                      )}
-                    >
-                      {getPriorityIcon(intervention.priority)}
-                      <span className="capitalize">{intervention.priority}</span>
-                    </Badge>
+                    {intervention.status === 'completed' ? (
+                      <Badge
+                        variant="outline"
+                        className="gap-1 bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>Completed</span>
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          'gap-1',
+                          priorityColors?.bg,
+                          priorityColors?.text,
+                          priorityColors?.border
+                        )}
+                      >
+                        {getPriorityIcon(intervention.priority)}
+                        <span className="capitalize">{intervention.priority}</span>
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge
