@@ -50,7 +50,11 @@ export function BulkAssignDialog({
   const [loading, setLoading] = useState(false)
 
   const selectedVolunteer = volunteers.find((v) => v.id === selectedVolunteerId)
-  const assignedCount = assignmentType === 'volunteer'
+
+  // Auto-detect assignment type based on selected member's role
+  const detectedAssignmentType = selectedVolunteer?.role as 'volunteer' | 'professional' || assignmentType
+
+  const assignedCount = detectedAssignmentType === 'volunteer'
     ? (selectedVolunteer?.assignedElderly?.length || 0)
     : ((selectedVolunteer as any)?.professionalElders?.length || 0)
   const maxAssignments = selectedVolunteer?.maxAssignments || 10
@@ -64,9 +68,9 @@ export function BulkAssignDialog({
     }
   }, [open])
 
-  // Filter unassigned elderly based on assignment type
+  // Filter unassigned elderly based on detected assignment type
   const unassignedElderly = elderly.filter((e) => {
-    if (assignmentType === 'volunteer') {
+    if (detectedAssignmentType === 'volunteer') {
       return !e.assignedVolunteer
     } else {
       return !e.assignedProfessional
@@ -84,9 +88,9 @@ export function BulkAssignDialog({
     )
     : unassignedElderly
 
-  // Filter available volunteers/professionals
+  // Filter available volunteers/professionals based on their role
   const availableVolunteers = volunteers.filter((v) => {
-    const assigned = assignmentType === 'volunteer'
+    const assigned = v.role === 'volunteer'
       ? (v.assignedElderly?.length || 0)
       : ((v as any).professionalElders?.length || 0)
     const max = v.maxAssignments || 10
@@ -119,7 +123,7 @@ export function BulkAssignDialog({
 
     setLoading(true)
     try {
-      await onBulkAssign(selectedVolunteerId, selectedElderlyIds, assignmentType)
+      await onBulkAssign(selectedVolunteerId, selectedElderlyIds, detectedAssignmentType)
       onOpenChange(false)
     } finally {
       setLoading(false)
@@ -139,14 +143,14 @@ export function BulkAssignDialog({
         <div className="space-y-4">
           {/* Volunteer/Professional Selection */}
           <div className="space-y-2">
-            <Label>Select {assignmentType === 'volunteer' ? 'Volunteer' : 'Professional'}</Label>
+            <Label>Select Care Team Member</Label>
             <Select value={selectedVolunteerId} onValueChange={setSelectedVolunteerId}>
               <SelectTrigger>
-                <SelectValue placeholder={`Choose a ${assignmentType === 'volunteer' ? 'volunteer' : 'professional'}`} />
+                <SelectValue placeholder="Choose a care team member" />
               </SelectTrigger>
               <SelectContent>
                 {availableVolunteers.map((volunteer) => {
-                  const assigned = assignmentType === 'volunteer'
+                  const assigned = volunteer.role === 'volunteer'
                     ? (volunteer.assignedElderly?.length || 0)
                     : ((volunteer as any).professionalElders?.length || 0)
                   const max = volunteer.maxAssignments || 10

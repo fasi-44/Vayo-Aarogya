@@ -190,9 +190,10 @@ export default function CareTeamPage() {
     setViewProfileDialogOpen(true)
   }
 
-  const handleAssign = (member: SafeUser, type: 'volunteer' | 'professional' = 'volunteer') => {
+  const handleAssign = (member: SafeUser) => {
     setSelectedMember(member)
-    setAssignmentType(type)
+    // Automatically detect assignment type based on member's role
+    setAssignmentType(member.role as 'volunteer' | 'professional')
     setAssignDialogOpen(true)
   }
 
