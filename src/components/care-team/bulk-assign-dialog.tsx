@@ -32,7 +32,8 @@ interface BulkAssignDialogProps {
   onOpenChange: (open: boolean) => void
   volunteers: SafeUser[]
   elderly: SafeUser[]
-  onBulkAssign: (volunteerId: string, elderlyIds: string[]) => Promise<void>
+  onBulkAssign: (volunteerId: string, elderlyIds: string[], assignmentType: 'volunteer' | 'professional') => Promise<void>
+  assignmentType?: 'volunteer' | 'professional'
 }
 
 export function BulkAssignDialog({
@@ -41,6 +42,7 @@ export function BulkAssignDialog({
   volunteers,
   elderly,
   onBulkAssign,
+  assignmentType = 'volunteer',
 }: BulkAssignDialogProps) {
   const [selectedVolunteerId, setSelectedVolunteerId] = useState<string>('')
   const [selectedElderlyIds, setSelectedElderlyIds] = useState<string[]>([])
@@ -48,7 +50,9 @@ export function BulkAssignDialog({
   const [loading, setLoading] = useState(false)
 
   const selectedVolunteer = volunteers.find((v) => v.id === selectedVolunteerId)
-  const assignedCount = selectedVolunteer?.assignedElderly?.length || 0
+  const assignedCount = assignmentType === 'volunteer'
+    ? (selectedVolunteer?.assignedElderly?.length || 0)
+    : ((selectedVolunteer as any)?.professionalElders?.length || 0)
   const maxAssignments = selectedVolunteer?.maxAssignments || 10
   const remainingCapacity = maxAssignments - assignedCount
 
@@ -60,8 +64,14 @@ export function BulkAssignDialog({
     }
   }, [open])
 
-  // Filter unassigned elderly (elderly array already contains only elderly role from getElderly)
-  const unassignedElderly = elderly.filter((e) => !e.assignedVolunteer)
+  // Filter unassigned elderly based on assignment type
+  const unassignedElderly = elderly.filter((e) => {
+    if (assignmentType === 'volunteer') {
+      return !e.assignedVolunteer
+    } else {
+      return !e.assignedProfessional
+    }
+  })
 
   // Filter by search query
   const filteredElderly = searchQuery.trim()
@@ -74,9 +84,11 @@ export function BulkAssignDialog({
     )
     : unassignedElderly
 
-  // Filter available volunteers
+  // Filter available volunteers/professionals
   const availableVolunteers = volunteers.filter((v) => {
-    const assigned = v.assignedElderly?.length || 0
+    const assigned = assignmentType === 'volunteer'
+      ? (v.assignedElderly?.length || 0)
+      : ((v as any).professionalElders?.length || 0)
     const max = v.maxAssignments || 10
     return assigned < max
   })
@@ -107,7 +119,7 @@ export function BulkAssignDialog({
 
     setLoading(true)
     try {
-      await onBulkAssign(selectedVolunteerId, selectedElderlyIds)
+      await onBulkAssign(selectedVolunteerId, selectedElderlyIds, assignmentType)
       onOpenChange(false)
     } finally {
       setLoading(false)
@@ -120,21 +132,23 @@ export function BulkAssignDialog({
         <DialogHeader>
           <DialogTitle>Bulk Assign Elders</DialogTitle>
           <DialogDescription>
-            Select multiple elders and assign them to a volunteer at once.
+            Select multiple elders and assign them to a {assignmentType === 'volunteer' ? 'volunteer' : 'professional'} at once.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Volunteer Selection */}
+          {/* Volunteer/Professional Selection */}
           <div className="space-y-2">
-            <Label>Select Volunteer</Label>
+            <Label>Select {assignmentType === 'volunteer' ? 'Volunteer' : 'Professional'}</Label>
             <Select value={selectedVolunteerId} onValueChange={setSelectedVolunteerId}>
               <SelectTrigger>
-                <SelectValue placeholder="Choose a volunteer" />
+                <SelectValue placeholder={`Choose a ${assignmentType === 'volunteer' ? 'volunteer' : 'professional'}`} />
               </SelectTrigger>
               <SelectContent>
                 {availableVolunteers.map((volunteer) => {
-                  const assigned = volunteer.assignedElderly?.length || 0
+                  const assigned = assignmentType === 'volunteer'
+                    ? (volunteer.assignedElderly?.length || 0)
+                    : ((volunteer as any).professionalElders?.length || 0)
                   const max = volunteer.maxAssignments || 10
                   return (
                     <SelectItem key={volunteer.id} value={volunteer.id}>
@@ -170,7 +184,7 @@ export function BulkAssignDialog({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search unassigned elders..."
+              placeholder={`Search unassigned elders for ${assignmentType === 'volunteer' ? 'volunteer' : 'professional'}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"

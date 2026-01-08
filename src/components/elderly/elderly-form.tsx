@@ -46,6 +46,7 @@ const elderlySchema = z.object({
   pincode: z.string().min(1, 'Pincode is required'),
   emergencyContact: z.string().optional(),
   assignedVolunteer: z.string().optional(),
+  assignedProfessional: z.string().optional(),
   assignedFamily: z.string().optional(),
   // Location fields
   stateId: z.string().optional(),
@@ -88,6 +89,8 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
   // Check if current user is a volunteer creating a new elder
   const isVolunteerUserCreating = currentUser?.role === 'volunteer' && !isEditing
 
+  const [professionals, setProfessionals] = useState<SafeUser[]>([])
+
   // Location states
   const [states, setStates] = useState<LocationOption[]>([])
   const [districts, setDistricts] = useState<LocationOption[]>([])
@@ -118,6 +121,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
       pincode: '',
       emergencyContact: '',
       assignedVolunteer: '',
+      assignedProfessional: '',
       assignedFamily: '',
       stateId: '', // Will be auto-set after states load
       districtId: '', // Will be auto-set after districts load
@@ -148,12 +152,18 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
         return
       }
 
-      const [volunteersResult, familyResult] = await Promise.all([
+      const { getProfessionals } = await import('@/services/users')
+
+      const [volunteersResult, professionalsResult, familyResult] = await Promise.all([
         getVolunteers(),
+        getProfessionals(),
         getFamilyMembers(),
       ])
       if (volunteersResult.success && volunteersResult.data) {
         setVolunteers(volunteersResult.data.users)
+      }
+      if (professionalsResult.success && professionalsResult.data) {
+        setProfessionals(professionalsResult.data.users)
       }
       if (familyResult.success && familyResult.data) {
         setFamilyMembers(familyResult.data.users)
@@ -271,6 +281,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
         pincode: (elderly as any).pincode || '',
         emergencyContact: elderly.emergencyContact || '',
         assignedVolunteer: elderly.assignedVolunteer || '',
+        assignedProfessional: (elderly as any).assignedProfessional || '',
         assignedFamily: elderly.assignedFamily || '',
         stateName: elderly.stateName || '',
         districtName: elderly.districtName || '',
@@ -301,6 +312,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
           pincode: '',
           emergencyContact: '',
           assignedVolunteer: currentUser?.role === 'volunteer' ? currentUser.id : '',
+          assignedProfessional: '',
           assignedFamily: currentUser?.role === 'family' ? currentUser.id : '',
           stateId: karnataka?.id || '',
           districtId: '',
@@ -418,6 +430,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
       if (data.pincode !== undefined && data.pincode !== '') (formData as any).pincode = data.pincode
       if (data.emergencyContact) formData.emergencyContact = data.emergencyContact
       if (data.assignedVolunteer) formData.assignedVolunteer = data.assignedVolunteer
+      if (data.assignedProfessional) (formData as any).assignedProfessional = data.assignedProfessional
       if (data.assignedFamily) formData.assignedFamily = data.assignedFamily
 
       // Location fields (store names, not IDs)
@@ -910,6 +923,28 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                 )}
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="assignedProfessional" className="text-base">Assigned Professional</Label>
+                <Select
+                  value={watch('assignedProfessional') || 'none'}
+                  onValueChange={(value) => setValue('assignedProfessional', value === 'none' ? '' : value)}
+                >
+                  <SelectTrigger className="text-base">
+                    <SelectValue placeholder="Select professional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {professionals.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="assignedFamily" className="text-base flex items-center gap-2">
                   Assigned Family / Caregiver

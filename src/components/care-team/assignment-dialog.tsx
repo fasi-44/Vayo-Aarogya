@@ -25,7 +25,8 @@ interface AssignmentDialogProps {
   onOpenChange: (open: boolean) => void
   volunteer: SafeUser | null
   elderly: SafeUser[]
-  onAssign: (elderlyIds: string[]) => Promise<void>
+  onAssign: (elderlyIds: string[], assignmentType: 'volunteer' | 'professional') => Promise<void>
+  assignmentType?: 'volunteer' | 'professional'
 }
 
 export function AssignmentDialog({
@@ -34,13 +35,16 @@ export function AssignmentDialog({
   volunteer,
   elderly,
   onAssign,
+  assignmentType = 'volunteer',
 }: AssignmentDialogProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Get current assigned elderly IDs
-  const currentAssigned = volunteer?.assignedElderly || []
+  // Get current assigned elderly IDs based on assignment type
+  const currentAssigned = assignmentType === 'volunteer'
+    ? (volunteer?.assignedElderly || [])
+    : ((volunteer as any)?.professionalElders || [])
   const assignedCount = currentAssigned.length
   const maxAssignments = volunteer?.maxAssignments || 10
   const remainingCapacity = maxAssignments - assignedCount
@@ -52,8 +56,14 @@ export function AssignmentDialog({
     }
   }, [open])
 
-  // Filter unassigned elderly (elderly array already contains only elderly role from getElderly)
-  const unassignedElderly = elderly.filter((e) => !e.assignedVolunteer)
+  // Filter unassigned elderly based on assignment type
+  const unassignedElderly = elderly.filter((e) => {
+    if (assignmentType === 'volunteer') {
+      return !e.assignedVolunteer
+    } else {
+      return !e.assignedProfessional
+    }
+  })
 
   // Filter by search query
   const filteredElderly = searchQuery.trim()
@@ -91,7 +101,7 @@ export function AssignmentDialog({
 
     setLoading(true)
     try {
-      await onAssign(selectedIds)
+      await onAssign(selectedIds, assignmentType)
       onOpenChange(false)
     } finally {
       setLoading(false)
@@ -104,9 +114,9 @@ export function AssignmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Assign Elders to {volunteer?.name}</DialogTitle>
+          <DialogTitle>Assign Elders to {volunteer?.name} ({assignmentType === 'volunteer' ? 'Volunteer' : 'Professional'})</DialogTitle>
           <DialogDescription>
-            Select elderly individuals to assign to this volunteer.
+            Select elderly individuals to assign to this {assignmentType === 'volunteer' ? 'volunteer' : 'professional'}.
             Current: {assignedCount}/{maxAssignments} (
             {remainingCapacity} remaining)
           </DialogDescription>
@@ -136,7 +146,7 @@ export function AssignmentDialog({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search unassigned elders..."
+              placeholder={`Search unassigned elders for ${assignmentType === 'volunteer' ? 'volunteer' : 'professional'}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"

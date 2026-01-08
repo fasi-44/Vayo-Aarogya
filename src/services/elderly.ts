@@ -23,6 +23,7 @@ export interface ElderlyFormData {
   emergencyContact?: string
   dateOfBirth?: string
   assignedVolunteer?: string
+  assignedProfessional?: string
   assignedFamily?: string
   // Location fields
   stateName?: string

@@ -63,6 +63,7 @@ export default function CareTeamPage() {
   const [viewAssignedDialogOpen, setViewAssignedDialogOpen] = useState(false)
   const [viewProfileDialogOpen, setViewProfileDialogOpen] = useState(false)
   const [selectedMember, setSelectedMember] = useState<SafeUser | null>(null)
+  const [assignmentType, setAssignmentType] = useState<'volunteer' | 'professional'>('volunteer')
 
   // Stats
   const [stats, setStats] = useState({
@@ -189,8 +190,9 @@ export default function CareTeamPage() {
     setViewProfileDialogOpen(true)
   }
 
-  const handleAssign = (member: SafeUser) => {
+  const handleAssign = (member: SafeUser, type: 'volunteer' | 'professional' = 'volunteer') => {
     setSelectedMember(member)
+    setAssignmentType(type)
     setAssignDialogOpen(true)
   }
 
@@ -436,6 +438,7 @@ export default function CareTeamPage() {
         volunteer={selectedMember}
         elderly={elderly}
         onAssign={handleAssignSubmit}
+        assignmentType={assignmentType}
       />
 
       {/* Bulk Assignment Dialog */}
@@ -445,6 +448,7 @@ export default function CareTeamPage() {
         volunteers={careTeamMembers}
         elderly={elderly}
         onBulkAssign={handleBulkAssign}
+        assignmentType={assignmentType}
       />
 
       {/* View Assigned Elderly Dialog */}
