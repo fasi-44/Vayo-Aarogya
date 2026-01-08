@@ -50,9 +50,10 @@ import { checkProfileCompleteness } from '@/lib/profile-validation'
 import { ElderlyAssessmentsAccordion } from './elderly-assessments-accordion'
 
 // Extended type for elderly with relations
-export interface ElderlyWithRelations extends Omit<SafeUser, 'assignedFamily' | 'assignedVolunteer'> {
+export interface ElderlyWithRelations extends Omit<SafeUser, 'assignedFamily' | 'assignedVolunteer' | 'assignedProfessional'> {
   assignedFamily?: { id: string; name: string; phone?: string; email?: string } | string
   assignedVolunteer?: { id: string; name: string; phone?: string } | string
+  assignedProfessional?: { id: string; name: string; phone?: string } | string
 }
 
 interface ElderlyTableProps {
@@ -85,6 +86,7 @@ export function ElderlyTable({
       ...elder,
       assignedFamily: typeof elder.assignedFamily === 'object' && elder.assignedFamily ? elder.assignedFamily.id : (elder.assignedFamily as string | undefined),
       assignedVolunteer: typeof elder.assignedVolunteer === 'object' && elder.assignedVolunteer ? elder.assignedVolunteer.id : (elder.assignedVolunteer as string | undefined),
+      assignedProfessional: typeof elder.assignedProfessional === 'object' && elder.assignedProfessional ? elder.assignedProfessional.id : (elder.assignedProfessional as string | undefined),
     }
   }
 
@@ -95,6 +97,15 @@ export function ElderlyTable({
       return vol?.name || 'Unknown'
     }
     return volunteer.name || 'Unknown'
+  }
+
+  const getProfessionalName = (professional?: ElderlyWithRelations['assignedProfessional']) => {
+    if (!professional) return null
+    if (typeof professional === 'string') {
+      const prof = volunteers.find(v => v.id === professional && v.role === 'professional')
+      return prof?.name || 'Unknown'
+    }
+    return professional.name || 'Unknown'
   }
 
   const getFamilyInfo = (elder: ElderlyWithRelations) => {
@@ -234,15 +245,23 @@ export function ElderlyTable({
                     }
                     return null
                   })()}
-                  {elder.age && (
+                  {elder.age && elder.gender ? (
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
-                      {elder.age} years old
+                      {elder.age}/{elder.gender.charAt(0).toUpperCase()}
                     </span>
-                  )}
-                  {elder.gender && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 capitalize">
-                      {elder.gender}
-                    </span>
+                  ) : (
+                    <>
+                      {elder.age && (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                          {elder.age} years old
+                        </span>
+                      )}
+                      {elder.gender && (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 capitalize">
+                          {elder.gender}
+                        </span>
+                      )}
+                    </>
                   )}
                   {elder.isActive ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
@@ -285,7 +304,7 @@ export function ElderlyTable({
                     </div>
                   </div>
 
-                  {/* Volunteer */}
+                  {/* Care Team - Volunteer */}
                   <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/50">
                     <div className="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center shrink-0">
                       <HandHeart className="w-4 h-4 text-teal-600 dark:text-teal-400" />
@@ -294,6 +313,23 @@ export function ElderlyTable({
                       <p className="text-xs text-muted-foreground mb-0.5">Assigned Volunteer</p>
                       {elder.assignedVolunteer ? (
                         <span className="text-sm font-medium">{getVolunteerName(elder.assignedVolunteer)}</span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                          Unassigned
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Care Team - Professional */}
+                  <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/50">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
+                      <HandHeart className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-0.5">Assigned Professional</p>
+                      {elder.assignedProfessional ? (
+                        <span className="text-sm font-medium">{getProfessionalName(elder.assignedProfessional)}</span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
                           Unassigned
@@ -346,7 +382,7 @@ export function ElderlyTable({
               <TableHead className="w-[220px]">Elder</TableHead>
               <TableHead>Age / Gender</TableHead>
               <TableHead>Caretaker / Family</TableHead>
-              <TableHead>Volunteer</TableHead>
+              <TableHead>Care Team</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Registered</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -394,19 +430,17 @@ export function ElderlyTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="space-y-1">
-                    {elder.age && (
-                      <span className="font-medium">{elder.age} years</span>
-                    )}
-                    {elder.gender && (
-                      <Badge variant="outline" className="ml-2 capitalize text-xs">
-                        {elder.gender}
-                      </Badge>
-                    )}
-                    {!elder.age && !elder.gender && (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </div>
+                  {elder.age && elder.gender ? (
+                    <span className="font-medium">
+                      {elder.age}/{elder.gender.charAt(0).toUpperCase()}
+                    </span>
+                  ) : elder.age ? (
+                    <span className="font-medium">{elder.age}</span>
+                  ) : elder.gender ? (
+                    <span className="font-medium capitalize">{elder.gender}</span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   {(() => {
@@ -448,18 +482,44 @@ export function ElderlyTable({
                   })()}
                 </TableCell>
                 <TableCell>
-                  {elder.assignedVolunteer ? (
+                  <div className="space-y-2">
+                    {/* Volunteer */}
                     <div className="flex items-center gap-2">
-                      <HandHeart className="w-4 h-4 text-teal-600" />
-                      <span className="text-sm font-medium">
-                        {getVolunteerName(elder.assignedVolunteer)}
-                      </span>
+                      {elder.assignedVolunteer ? (
+                        <>
+                          <HandHeart className="w-4 h-4 text-teal-600" />
+                          <span className="text-sm font-medium text-teal-700">
+                            {getVolunteerName(elder.assignedVolunteer)}
+                          </span>
+                          <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 text-xs ml-auto">
+                            Volunteer
+                          </Badge>
+                        </>
+                      ) : (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">
+                          No Volunteer
+                        </Badge>
+                      )}
                     </div>
-                  ) : (
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">
-                      Unassigned
-                    </Badge>
-                  )}
+                    {/* Professional */}
+                    <div className="flex items-center gap-2">
+                      {elder.assignedProfessional ? (
+                        <>
+                          <HandHeart className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-700">
+                            {getProfessionalName(elder.assignedProfessional)}
+                          </span>
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs ml-auto">
+                            Professional
+                          </Badge>
+                        </>
+                      ) : (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">
+                          No Professional
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
                 </TableCell>
                 <TableCell>
                   {elder.isActive ? (

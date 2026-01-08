@@ -45,9 +45,10 @@ export async function GET(
     const canViewOthers = hasPermission(requestUser.role, 'users:read')
     const canViewElderly = hasPermission(requestUser.role, 'elderly:read')
 
-    // Check if volunteer/family is viewing their assigned elderly
+    // Check if volunteer/professional/family is viewing their assigned elderly
     const isAssignedElderly = user.role === 'elderly' && (
       (requestUser.role === 'volunteer' && user.assignedVolunteer === requestUser.userId) ||
+      (requestUser.role === 'professional' && (user as any).assignedProfessional === requestUser.userId) ||
       (requestUser.role === 'family' && user.assignedFamily === requestUser.userId)
     )
 
@@ -96,9 +97,10 @@ export async function PUT(
     const canUpdateOthers = hasPermission(requestUser.role, 'users:update')
     const canUpdateElderly = hasPermission(requestUser.role, 'elderly:update')
 
-    // Check if volunteer/family is updating their assigned elderly
+    // Check if volunteer/professional/family is updating their assigned elderly
     const isAssignedElderly = existingUser.role === 'elderly' && (
       (requestUser.role === 'volunteer' && existingUser.assignedVolunteer === requestUser.userId) ||
+      (requestUser.role === 'professional' && (existingUser as any).assignedProfessional === requestUser.userId) ||
       (requestUser.role === 'family' && existingUser.assignedFamily === requestUser.userId)
     )
 
@@ -175,6 +177,9 @@ export async function PUT(
     // Assignment fields (admin only)
     if (body.assignedVolunteer !== undefined && canUpdateOthers) {
       updates.assignedVolunteer = body.assignedVolunteer || null
+    }
+    if (body.assignedProfessional !== undefined && canUpdateOthers) {
+      updates.assignedProfessional = body.assignedProfessional || null
     }
     if (body.assignedElderly !== undefined && canUpdateOthers) {
       updates.assignedElderly = body.assignedElderly
