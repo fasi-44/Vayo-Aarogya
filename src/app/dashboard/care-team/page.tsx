@@ -161,15 +161,20 @@ export default function CareTeamPage() {
     }
   }
 
-  const filteredVolunteers = volunteers.filter((volunteer) => {
+  const filteredMembers = careTeamMembers.filter((member) => {
     const matchesSearch =
-      volunteer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      volunteer.email.toLowerCase().includes(searchQuery.toLowerCase())
+      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.email.toLowerCase().includes(searchQuery.toLowerCase())
+
+    // Filter by role
+    if (filterRole !== 'all' && member.role !== filterRole) return false
 
     if (filterStatus === 'all') return matchesSearch
 
-    const assigned = volunteer.assignedElderly?.length || 0
-    const max = volunteer.maxAssignments || 10
+    const assigned = member.role === 'volunteer'
+      ? (member.assignedElderly?.length || 0)
+      : (member.professionalElders?.length || 0)
+    const max = member.maxAssignments || 10
     const percentage = (assigned / max) * 100
 
     if (filterStatus === 'available') return matchesSearch && percentage < 80
@@ -179,28 +184,31 @@ export default function CareTeamPage() {
     return matchesSearch
   })
 
-  const handleView = (volunteer: SafeUser) => {
-    setSelectedVolunteer(volunteer)
+  const handleView = (member: SafeUser) => {
+    setSelectedMember(member)
     setViewProfileDialogOpen(true)
   }
 
-  const handleAssign = (volunteer: SafeUser) => {
-    setSelectedVolunteer(volunteer)
+  const handleAssign = (member: SafeUser) => {
+    setSelectedMember(member)
     setAssignDialogOpen(true)
   }
 
-  const handleViewAssigned = (volunteer: SafeUser) => {
-    setSelectedVolunteer(volunteer)
+  const handleViewAssigned = (member: SafeUser) => {
+    setSelectedMember(member)
     setViewAssignedDialogOpen(true)
   }
 
-  const handleAssignSubmit = async (elderlyIds: string[]) => {
-    if (!selectedVolunteer) return
+  const handleAssignSubmit = async (elderlyIds: string[], assignmentType: 'volunteer' | 'professional' = 'volunteer') => {
+    if (!selectedMember) return
 
     try {
-      // Update each elderly to be assigned to this volunteer
+      // Update each elderly to be assigned to this care team member
       for (const elderlyId of elderlyIds) {
-        await updateUser(elderlyId, { assignedVolunteer: selectedVolunteer.id })
+        const updateField = assignmentType === 'volunteer'
+          ? { assignedVolunteer: selectedMember.id }
+          : { assignedProfessional: selectedMember.id }
+        await updateUser(elderlyId, updateField)
       }
       await fetchData()
     } catch (error) {
@@ -208,10 +216,13 @@ export default function CareTeamPage() {
     }
   }
 
-  const handleBulkAssign = async (volunteerId: string, elderlyIds: string[]) => {
+  const handleBulkAssign = async (memberId: string, elderlyIds: string[], assignmentType: 'volunteer' | 'professional' = 'volunteer') => {
     try {
       for (const elderlyId of elderlyIds) {
-        await updateUser(elderlyId, { assignedVolunteer: volunteerId })
+        const updateField = assignmentType === 'volunteer'
+          ? { assignedVolunteer: memberId }
+          : { assignedProfessional: memberId }
+        await updateUser(elderlyId, updateField)
       }
       await fetchData()
     } catch (error) {
@@ -219,13 +230,19 @@ export default function CareTeamPage() {
     }
   }
 
-  // Get assigned elderly for selected volunteer
+  // Get assigned elderly for selected member
   const getAssignedElderly = () => {
-    if (!selectedVolunteer) return []
-    // First try to use the assignedElderly array from the volunteer object
-    const volunteerWithElderly = selectedVolunteer as Omit<SafeUser, 'assignedElderly'> & { assignedElderly?: Array<{ id: string; name: string; vayoId?: string; age?: number; villageName?: string }> }
-    if (volunteerWithElderly.assignedElderly && volunteerWithElderly.assignedElderly.length > 0) {
-      return volunteerWithElderly.assignedElderly.map(e => ({
+    if (!selectedMember) return []
+
+    // Get the appropriate relationship based on role
+    const memberWithElderly = selectedMember as any
+
+    const elderlyList = selectedMember.role === 'volunteer'
+      ? memberWithElderly.assignedElderly
+      : memberWithElderly.professionalElders
+
+    if (elderlyList && elderlyList.length > 0) {
+      return elderlyList.map((e: any) => ({
         ...e,
         email: '',
         role: 'elderly' as const,
@@ -233,32 +250,41 @@ export default function CareTeamPage() {
         createdAt: new Date().toISOString(),
       })) as SafeUser[]
     }
+
     // Fallback: filter from the elderly list
-    return elderly.filter((e) => e.assignedVolunteer === selectedVolunteer.id)
+    return elderly.filter((e) => {
+      if (selectedMember.role === 'volunteer') {
+        return e.assignedVolunteer === selectedMember.id
+      } else {
+        return e.assignedProfessional === selectedMember.id
+      }
+    })
   }
 
-  const volunteerStatCards = [
-    { title: 'Total Volunteers', value: stats.total, icon: Users, color: 'bg-primary' },
-    { title: 'Available', value: stats.available, icon: UserCheck, color: 'bg-green-500' },
-    { title: 'Near Capacity', value: stats.nearCapacity, icon: AlertCircle, color: 'bg-yellow-500' },
-    { title: 'At Capacity', value: stats.atCapacity, icon: AlertCircle, color: 'bg-red-500' },
+  const careTeamStatCards = [
+    { title: 'Total Care Team', value: stats.totalCareTeam, icon: Users, color: 'bg-primary' },
+    { title: 'Volunteers', value: stats.totalVolunteers, icon: Users, color: 'bg-teal-500' },
+    { title: 'Professionals', value: stats.totalProfessionals, icon: Users, color: 'bg-blue-500' },
+    { title: 'Available', value: stats.availableVolunteers + stats.availableProfessionals, icon: UserCheck, color: 'bg-green-500' },
   ]
 
   const elderAssignmentCards = [
-    { title: 'Elders Assigned', value: stats.totalAssigned, icon: Users, color: 'bg-blue-500' },
-    { title: 'Unassigned Elders', value: stats.unassignedElderly, icon: UserPlus, color: 'bg-orange-500' },
+    { title: 'Assigned by Volunteers', value: stats.totalAssignedByVolunteers, icon: Users, color: 'bg-teal-500' },
+    { title: 'Assigned by Professionals', value: stats.totalAssignedByProfessionals, icon: Users, color: 'bg-blue-500' },
+    { title: 'Unassigned (Volunteer)', value: stats.unassignedElderlyVolunteer, icon: UserPlus, color: 'bg-orange-500' },
+    { title: 'Unassigned (Professional)', value: stats.unassignedElderlyProfessional, icon: UserPlus, color: 'bg-amber-500' },
   ]
 
   return (
     <DashboardLayout
-      title="Volunteer Management"
-      subtitle="Manage volunteers and their elder assignments"
+      title="Care Team Management"
+      subtitle="Manage volunteers and professionals and their elder assignments"
     >
-      {/* Volunteer Stats Section */}
+      {/* Care Team Stats Section */}
       <div className="mb-6">
-        <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Volunteer Stats</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Care Team Stats</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {volunteerStatCards.map((stat) => {
+          {careTeamStatCards.map((stat) => {
             const Icon = stat.icon
             return (
               <Card key={stat.title} className="border-0 shadow-soft">
@@ -365,8 +391,8 @@ export default function CareTeamPage() {
       ) : viewMode === 'table' ? (
         <Card className="border-0 shadow-soft">
           <CardContent className="p-0">
-            <VolunteerTable
-              volunteers={filteredVolunteers}
+            <CareTeamTable
+              members={filteredMembers}
               onView={handleView}
               onAssign={handleAssign}
               onViewAssigned={handleViewAssigned}
@@ -375,18 +401,18 @@ export default function CareTeamPage() {
         </Card>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredVolunteers.map((volunteer) => (
-            <VolunteerCard
-              key={volunteer.id}
-              volunteer={volunteer}
-              onView={() => handleView(volunteer)}
-              onAssign={() => handleAssign(volunteer)}
-              onViewAssigned={() => handleViewAssigned(volunteer)}
+          {filteredMembers.map((member) => (
+            <CareTeamCard
+              key={member.id}
+              member={member}
+              onView={() => handleView(member)}
+              onAssign={() => handleAssign(member)}
+              onViewAssigned={() => handleViewAssigned(member)}
             />
           ))}
-          {filteredVolunteers.length === 0 && (
+          {filteredMembers.length === 0 && (
             <div className="col-span-full text-center py-12 text-muted-foreground">
-              No volunteers found
+              No care team members found
             </div>
           )}
         </div>
@@ -396,7 +422,7 @@ export default function CareTeamPage() {
       <AssignmentDialog
         open={assignDialogOpen}
         onOpenChange={setAssignDialogOpen}
-        volunteer={selectedVolunteer}
+        volunteer={selectedMember}
         elderly={elderly}
         onAssign={handleAssignSubmit}
       />
@@ -405,7 +431,7 @@ export default function CareTeamPage() {
       <BulkAssignDialog
         open={bulkAssignDialogOpen}
         onOpenChange={setBulkAssignDialogOpen}
-        volunteers={volunteers}
+        volunteers={careTeamMembers}
         elderly={elderly}
         onBulkAssign={handleBulkAssign}
       />
