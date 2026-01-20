@@ -68,25 +68,25 @@ const domainIcons: Record<string, React.ElementType> = {
 
 const riskColors = {
   healthy: {
-    bg: 'bg-green-100',
-    border: 'border-green-300',
-    text: 'text-green-700',
-    icon: 'text-green-600',
-    ring: 'ring-green-400',
+    bg: 'bg-moss-100',
+    border: 'border-moss-300',
+    text: 'text-moss-700',
+    icon: 'text-moss-600',
+    ring: 'ring-moss-400',
   },
   at_risk: {
-    bg: 'bg-yellow-100',
-    border: 'border-yellow-300',
-    text: 'text-yellow-700',
-    icon: 'text-yellow-600',
-    ring: 'ring-yellow-400',
+    bg: 'bg-smoked-100',
+    border: 'border-smoked-300',
+    text: 'text-smoked-700',
+    icon: 'text-smoked-600',
+    ring: 'ring-smoked-400',
   },
   intervention: {
-    bg: 'bg-red-100',
-    border: 'border-red-300',
-    text: 'text-red-700',
-    icon: 'text-red-600',
-    ring: 'ring-red-400',
+    bg: 'bg-coral-100',
+    border: 'border-coral-300',
+    text: 'text-coral-700',
+    icon: 'text-coral-600',
+    ring: 'ring-coral-400',
   },
 }
 
@@ -187,15 +187,15 @@ export function DomainIndicatorLegend() {
   return (
     <div className="flex items-center gap-4 text-sm">
       <div className="flex items-center gap-1.5">
-        <div className="w-3 h-3 rounded-full bg-green-500" />
+        <div className="w-3 h-3 rounded-full bg-moss-500" />
         <span className="text-muted-foreground">Healthy</span>
       </div>
       <div className="flex items-center gap-1.5">
-        <div className="w-3 h-3 rounded-full bg-yellow-500" />
+        <div className="w-3 h-3 rounded-full bg-smoked-500" />
         <span className="text-muted-foreground">At Risk</span>
       </div>
       <div className="flex items-center gap-1.5">
-        <div className="w-3 h-3 rounded-full bg-red-500" />
+        <div className="w-3 h-3 rounded-full bg-coral-500" />
         <span className="text-muted-foreground">Intervention</span>
       </div>
     </div>
@@ -213,17 +213,17 @@ export function DomainSummaryGrid({ domainScores }: DomainSummaryGridProps) {
 
   return (
     <div className="grid grid-cols-3 gap-4">
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-        <p className="text-2xl font-bold text-green-700">{healthyCount}</p>
-        <p className="text-sm text-green-600">Healthy</p>
+      <div className="bg-moss-50 border border-moss-200 rounded-lg p-4 text-center">
+        <p className="text-2xl font-bold text-moss-700">{healthyCount}</p>
+        <p className="text-sm text-moss-600">Healthy</p>
       </div>
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-        <p className="text-2xl font-bold text-yellow-700">{atRiskCount}</p>
-        <p className="text-sm text-yellow-600">At Risk</p>
+      <div className="bg-smoked-50 border border-smoked-200 rounded-lg p-4 text-center">
+        <p className="text-2xl font-bold text-smoked-700">{atRiskCount}</p>
+        <p className="text-sm text-smoked-600">At Risk</p>
       </div>
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-        <p className="text-2xl font-bold text-red-700">{interventionCount}</p>
-        <p className="text-sm text-red-600">Intervention</p>
+      <div className="bg-coral-50 border border-coral-200 rounded-lg p-4 text-center">
+        <p className="text-2xl font-bold text-coral-700">{interventionCount}</p>
+        <p className="text-sm text-coral-600">Intervention</p>
       </div>
     </div>
   )

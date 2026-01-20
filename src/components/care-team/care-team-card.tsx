@@ -42,9 +42,9 @@ export function CareTeamCard({
   const isNearCapacity = capacityPercentage >= 80
 
   const getCapacityColor = () => {
-    if (isFull) return 'bg-red-500'
-    if (isNearCapacity) return 'bg-yellow-500'
-    return 'bg-green-500'
+    if (isFull) return 'bg-coral-500'
+    if (isNearCapacity) return 'bg-smoked-500'
+    return 'bg-moss-500'
   }
 
   if (compact) {
@@ -69,9 +69,9 @@ export function CareTeamCard({
           variant="outline"
           className={cn(
             'text-xs shrink-0',
-            isFull && 'bg-red-50 text-red-700 border-red-200',
-            !isFull && isNearCapacity && 'bg-yellow-50 text-yellow-700 border-yellow-200',
-            !isFull && !isNearCapacity && 'bg-green-50 text-green-700 border-green-200'
+            isFull && 'bg-coral-50 text-coral-700 border-coral-200',
+            !isFull && isNearCapacity && 'bg-smoked-50 text-smoked-700 border-smoked-200',
+            !isFull && !isNearCapacity && 'bg-moss-50 text-moss-700 border-moss-200'
           )}
         >
           {isFull ? 'Full' : isNearCapacity ? 'Near Capacity' : 'Available'}
@@ -104,7 +104,7 @@ export function CareTeamCard({
                 {member.role === 'volunteer' ? 'Volunteer' : 'Professional'}
               </Badge>
               {isFull && (
-                <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                <Badge variant="outline" className="text-xs bg-coral-50 text-coral-700 border-coral-200">
                   <AlertCircle className="w-3 h-3 mr-1" />
                   At Capacity
                 </Badge>

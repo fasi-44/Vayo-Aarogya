@@ -34,31 +34,31 @@ const riskConfig = {
     icon: CheckCircle2,
     title: 'Healthy',
     description: 'Continue current care plan',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
-    textColor: 'text-green-700',
-    iconColor: 'text-green-600',
-    badgeBg: 'bg-green-100',
+    bgColor: 'bg-moss-50',
+    borderColor: 'border-moss-200',
+    textColor: 'text-moss-700',
+    iconColor: 'text-moss-600',
+    badgeBg: 'bg-moss-100',
   },
   at_risk: {
     icon: AlertTriangle,
     title: 'At Risk',
     description: 'Schedule follow-up within 2 weeks',
-    bgColor: 'bg-yellow-50',
-    borderColor: 'border-yellow-200',
-    textColor: 'text-yellow-700',
-    iconColor: 'text-yellow-600',
-    badgeBg: 'bg-yellow-100',
+    bgColor: 'bg-smoked-50',
+    borderColor: 'border-smoked-200',
+    textColor: 'text-smoked-700',
+    iconColor: 'text-smoked-600',
+    badgeBg: 'bg-smoked-100',
   },
   intervention: {
     icon: AlertCircle,
     title: 'Needs Intervention',
     description: 'Immediate professional consultation required',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    textColor: 'text-red-700',
-    iconColor: 'text-red-600',
-    badgeBg: 'bg-red-100',
+    bgColor: 'bg-coral-50',
+    borderColor: 'border-coral-200',
+    textColor: 'text-coral-700',
+    iconColor: 'text-coral-600',
+    badgeBg: 'bg-coral-100',
   },
 }
 
@@ -185,7 +185,7 @@ export function HealthStatusCard({
             </Button>
           )}
           {onContact && riskLevel === 'intervention' && (
-            <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={onContact}>
+            <Button size="sm" className="bg-coral-600 hover:bg-coral-700" onClick={onContact}>
               <Phone className="w-4 h-4 mr-1" />
               Contact Now
             </Button>

@@ -60,7 +60,7 @@ export function RiskPieChart({ data, title = 'Risk Distribution', showLegend = t
                 cy="100"
                 r={radius}
                 fill="transparent"
-                stroke="#22c55e"
+                stroke="#65a30d"
                 strokeWidth="40"
                 strokeDasharray={`${healthyLength} ${circumference}`}
                 strokeDashoffset={healthyOffset}
@@ -72,7 +72,7 @@ export function RiskPieChart({ data, title = 'Risk Distribution', showLegend = t
                 cy="100"
                 r={radius}
                 fill="transparent"
-                stroke="#eab308"
+                stroke="#d4a574"
                 strokeWidth="40"
                 strokeDasharray={`${atRiskLength} ${circumference}`}
                 strokeDashoffset={atRiskOffset}
@@ -84,7 +84,7 @@ export function RiskPieChart({ data, title = 'Risk Distribution', showLegend = t
                 cy="100"
                 r={radius}
                 fill="transparent"
-                stroke="#ef4444"
+                stroke="#d64545"
                 strokeWidth="40"
                 strokeDasharray={`${interventionLength} ${circumference}`}
                 strokeDashoffset={interventionOffset}
@@ -115,21 +115,21 @@ export function RiskPieChart({ data, title = 'Risk Distribution', showLegend = t
           {showLegend && (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded-full bg-green-500" />
+                <div className="w-4 h-4 rounded-full bg-moss-500" />
                 <div>
                   <p className="font-medium">Healthy</p>
                   <p className="text-sm text-muted-foreground">{data.healthy} ({healthyPct}%)</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded-full bg-yellow-500" />
+                <div className="w-4 h-4 rounded-full bg-smoked-500" />
                 <div>
                   <p className="font-medium">At Risk</p>
                   <p className="text-sm text-muted-foreground">{data.at_risk} ({atRiskPct}%)</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded-full bg-red-500" />
+                <div className="w-4 h-4 rounded-full bg-coral-500" />
                 <div>
                   <p className="font-medium">Intervention</p>
                   <p className="text-sm text-muted-foreground">{data.intervention} ({interventionPct}%)</p>
@@ -157,9 +157,9 @@ export function RiskBarChart({ data, title = 'Risk Distribution' }: RiskBarChart
   const maxValue = Math.max(data.healthy, data.at_risk, data.intervention, 1)
 
   const items = [
-    { label: 'Healthy', value: data.healthy, color: 'bg-green-500' },
-    { label: 'At Risk', value: data.at_risk, color: 'bg-yellow-500' },
-    { label: 'Intervention', value: data.intervention, color: 'bg-red-500' },
+    { label: 'Healthy', value: data.healthy, color: 'bg-moss-500' },
+    { label: 'At Risk', value: data.at_risk, color: 'bg-smoked-500' },
+    { label: 'Intervention', value: data.intervention, color: 'bg-coral-500' },
   ]
 
   return (

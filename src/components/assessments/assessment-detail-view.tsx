@@ -190,9 +190,9 @@ export function AssessmentDetailView({
   // Generate print HTML content
   const generatePrintHTML = () => {
     const riskColorMap: Record<string, string> = {
-      healthy: '#22c55e',
-      at_risk: '#eab308',
-      intervention: '#ef4444',
+      healthy: '#65a30d',
+      at_risk: '#d4a574',
+      intervention: '#d64545',
     }
 
     return `
@@ -226,9 +226,9 @@ export function AssessmentDetailView({
             .domains-section h2 { font-size: 17px; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #111827; }
             .domain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
             .domain-item { padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 8px; }
-            .domain-item.healthy { background: #ecfdf5; border-color: #6ee7b7; }
-            .domain-item.at_risk { background: #fffbeb; border-color: #fcd34d; }
-            .domain-item.intervention { background: #fef2f2; border-color: #fca5a5; }
+            .domain-item.healthy { background: #f1f5e8; border-color: #a3d977; }
+            .domain-item.at_risk { background: #f5f1ed; border-color: #d4a574; }
+            .domain-item.intervention { background: #fef2f2; border-color: #e0a3a3; }
             .domain-name { font-weight: 600; font-size: 13px; margin-bottom: 5px; color: #111827; }
             .domain-status { font-size: 12px; color: #374151; font-weight: 500; }
             .domain-score { font-size: 11px; color: #6b7280; margin-top: 3px; }
@@ -242,8 +242,8 @@ export function AssessmentDetailView({
               body { padding: 12px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
               .info-card { break-inside: avoid; }
               .domain-item { break-inside: avoid; }
-              .domain-item.healthy { background-color: #ecfdf5 !important; -webkit-print-color-adjust: exact !important; }
-              .domain-item.at_risk { background-color: #fffbeb !important; -webkit-print-color-adjust: exact !important; }
+              .domain-item.healthy { background-color: #f1f5e8 !important; -webkit-print-color-adjust: exact !important; }
+              .domain-item.at_risk { background-color: #f5f1ed !important; -webkit-print-color-adjust: exact !important; }
               .domain-item.intervention { background-color: #fef2f2 !important; -webkit-print-color-adjust: exact !important; }
             }
 
@@ -430,18 +430,18 @@ export function AssessmentDetailView({
           {(assessment.overallRisk === 'intervention' || interventionDomains.length > 0) && (
             <div className={`flex items-center justify-between p-3 rounded-lg border ${
               allInterventionsCompleted
-                ? 'bg-green-50 border-green-200'
+                ? 'bg-moss-50 border-moss-200'
                 : hasInterventions
                   ? 'bg-amber-50 border-amber-200'
-                  : 'bg-red-50 border-red-200'
+                  : 'bg-coral-50 border-coral-200'
             }`}>
               <div className="flex items-center gap-2">
                 {isLoadingInterventions ? (
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                 ) : allInterventionsCompleted ? (
                   <>
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    <span className="text-sm font-medium text-green-700">
+                    <CheckCircle2 className="w-5 h-5 text-moss-600" />
+                    <span className="text-sm font-medium text-moss-700">
                       All Interventions Completed ({completedInterventions.length})
                     </span>
                   </>
@@ -455,8 +455,8 @@ export function AssessmentDetailView({
                   </>
                 ) : (
                   <>
-                    <AlertTriangle className="w-5 h-5 text-red-600" />
-                    <span className="text-sm font-medium text-red-700">
+                    <AlertTriangle className="w-5 h-5 text-coral-600" />
+                    <span className="text-sm font-medium text-coral-700">
                       Intervention Required - No interventions created yet
                     </span>
                   </>
@@ -597,15 +597,15 @@ export function AssessmentDetailView({
             </div>
             <div className="flex gap-3">
               <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                <div className="w-2.5 h-2.5 rounded-full bg-moss-500" />
                 <span className="text-xs">{domainCounts.healthy} Healthy</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+                <div className="w-2.5 h-2.5 rounded-full bg-smoked-500" />
                 <span className="text-xs">{domainCounts.at_risk} At Risk</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                <div className="w-2.5 h-2.5 rounded-full bg-coral-500" />
                 <span className="text-xs">{domainCounts.intervention} Intervention</span>
               </div>
             </div>
@@ -828,7 +828,7 @@ export function AssessmentDetailView({
             <DialogDescription>
               {interventions.length} intervention{interventions.length !== 1 ? 's' : ''} linked to this assessment
               {allInterventionsCompleted && (
-                <Badge variant="outline" className="ml-2 bg-green-100 text-green-700 border-green-200">
+                <Badge variant="outline" className="ml-2 bg-moss-100 text-moss-700 border-moss-200">
                   All Completed
                 </Badge>
               )}
@@ -852,7 +852,7 @@ export function AssessmentDetailView({
                       key={intervention.id}
                       className={`p-4 rounded-lg border ${
                         intervention.status === 'completed'
-                          ? 'bg-green-50/50 border-green-200'
+                          ? 'bg-moss-50/50 border-moss-200'
                           : 'bg-white border-gray-200'
                       }`}
                     >
@@ -899,7 +899,7 @@ export function AssessmentDetailView({
                               </span>
                             )}
                             {intervention.completedAt && (
-                              <span className="flex items-center gap-1 text-green-600">
+                              <span className="flex items-center gap-1 text-moss-600">
                                 <CheckCircle2 className="w-3 h-3" />
                                 Completed: {formatDate(intervention.completedAt)}
                               </span>
@@ -914,7 +914,7 @@ export function AssessmentDetailView({
                         </div>
 
                         {intervention.status === 'completed' && (
-                          <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                          <CheckCircle2 className="w-5 h-5 text-moss-500 flex-shrink-0" />
                         )}
                       </div>
                     </div>
@@ -1020,25 +1020,25 @@ function DomainDetailRow({ domain, compact = false }: DomainDetailRowProps) {
 
 function getBorderColor(riskLevel: RiskLevel): string {
   switch (riskLevel) {
-    case 'healthy': return 'border-green-300'
-    case 'at_risk': return 'border-yellow-300'
-    case 'intervention': return 'border-red-300'
+    case 'healthy': return 'border-moss-300'
+    case 'at_risk': return 'border-smoked-300'
+    case 'intervention': return 'border-coral-300'
   }
 }
 
 function getBorderColorLight(riskLevel: RiskLevel): string {
   switch (riskLevel) {
-    case 'healthy': return 'border-green-200'
-    case 'at_risk': return 'border-yellow-200'
-    case 'intervention': return 'border-red-200'
+    case 'healthy': return 'border-moss-200'
+    case 'at_risk': return 'border-smoked-200'
+    case 'intervention': return 'border-coral-200'
   }
 }
 
 function getIconBgColor(riskLevel: RiskLevel): string {
   switch (riskLevel) {
-    case 'healthy': return 'bg-green-200'
-    case 'at_risk': return 'bg-yellow-200'
-    case 'intervention': return 'bg-red-200'
+    case 'healthy': return 'bg-moss-200'
+    case 'at_risk': return 'bg-smoked-200'
+    case 'intervention': return 'bg-coral-200'
   }
 }
 

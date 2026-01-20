@@ -137,9 +137,9 @@ export function DraftAssessmentsList({ onResumeDraft, onDraftsChange }: DraftAss
 
   if (error) {
     return (
-      <Card className="border-red-200 bg-red-50">
+      <Card className="border-coral-200 bg-coral-50">
         <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-red-700">
+          <div className="flex items-center gap-2 text-coral-700">
             <AlertCircle className="w-5 h-5" />
             <span>{error}</span>
             <Button variant="outline" size="sm" onClick={loadDrafts} className="ml-auto">
@@ -217,7 +217,7 @@ export function DraftAssessmentsList({ onResumeDraft, onDraftsChange }: DraftAss
                     size="sm"
                     onClick={() => handleDeleteClick(draft)}
                     disabled={deletingId === draft.id}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-coral-600 hover:text-coral-700 hover:bg-coral-50"
                   >
                     {deletingId === draft.id ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -257,7 +257,7 @@ export function DraftAssessmentsList({ onResumeDraft, onDraftsChange }: DraftAss
             </Button>
             <Button
               onClick={handleConfirmDelete}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-coral-600 hover:bg-coral-700 text-white"
             >
               Delete Draft
             </Button>

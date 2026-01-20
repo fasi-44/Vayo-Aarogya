@@ -185,7 +185,7 @@ export function InterventionTable({
                   {intervention.status === 'completed' ? (
                     <Badge
                       variant="outline"
-                      className="gap-1 bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800"
+                      className="gap-1 bg-moss-50 text-moss-700 border-moss-300 dark:bg-moss-950/30 dark:text-moss-400 dark:border-moss-800"
                     >
                       <CheckCircle className="w-3.5 h-3.5" />
                       <span>Completed</span>
@@ -326,7 +326,7 @@ export function InterventionTable({
                     {intervention.status === 'completed' ? (
                       <Badge
                         variant="outline"
-                        className="gap-1 bg-green-50 text-green-700 border-green-300 dark:bg-green-100 dark:text-green-400 dark:border-green-800"
+                        className="gap-1 bg-moss-50 text-moss-700 border-moss-300 dark:bg-moss-100 dark:text-moss-400 dark:border-moss-800"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
                         <span>Completed</span>

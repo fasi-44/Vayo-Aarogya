@@ -139,9 +139,9 @@ export function AdminDashboard({
                   <Badge
                     variant="outline"
                     className={cn(
-                      assessment.overallRisk === 'healthy' && 'bg-green-50 text-green-700 border-green-200',
-                      assessment.overallRisk === 'at_risk' && 'bg-yellow-50 text-yellow-700 border-yellow-200',
-                      assessment.overallRisk === 'intervention' && 'bg-red-50 text-red-700 border-red-200'
+                      assessment.overallRisk === 'healthy' && 'bg-moss-50 text-moss-700 border-moss-200',
+                      assessment.overallRisk === 'at_risk' && 'bg-smoked-50 text-smoked-700 border-smoked-200',
+                      assessment.overallRisk === 'intervention' && 'bg-coral-50 text-coral-700 border-coral-200'
                     )}
                   >
                     {assessment.overallRisk === 'healthy' ? 'Healthy' : assessment.overallRisk === 'at_risk' ? 'At Risk' : 'Intervention'}
@@ -166,7 +166,7 @@ export function AdminDashboard({
                   <span>{riskDistribution.healthy} ({total > 0 ? Math.round((riskDistribution.healthy / total) * 100) : 0}%)</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-green-500 rounded-full" style={{ width: `${total > 0 ? (riskDistribution.healthy / total) * 100 : 0}%` }} />
+                  <div className="h-full bg-moss-500 rounded-full" style={{ width: `${total > 0 ? (riskDistribution.healthy / total) * 100 : 0}%` }} />
                 </div>
               </div>
               <div className="space-y-2">
@@ -175,7 +175,7 @@ export function AdminDashboard({
                   <span>{riskDistribution.atRisk} ({total > 0 ? Math.round((riskDistribution.atRisk / total) * 100) : 0}%)</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${total > 0 ? (riskDistribution.atRisk / total) * 100 : 0}%` }} />
+                  <div className="h-full bg-smoked-500 rounded-full" style={{ width: `${total > 0 ? (riskDistribution.atRisk / total) * 100 : 0}%` }} />
                 </div>
               </div>
               <div className="space-y-2">
@@ -184,7 +184,7 @@ export function AdminDashboard({
                   <span>{riskDistribution.intervention} ({total > 0 ? Math.round((riskDistribution.intervention / total) * 100) : 0}%)</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-red-500 rounded-full" style={{ width: `${total > 0 ? (riskDistribution.intervention / total) * 100 : 0}%` }} />
+                  <div className="h-full bg-coral-500 rounded-full" style={{ width: `${total > 0 ? (riskDistribution.intervention / total) * 100 : 0}%` }} />
                 </div>
               </div>
             </CardContent>
@@ -192,7 +192,7 @@ export function AdminDashboard({
 
           {/* Urgent Alerts */}
           {urgentAlerts.length > 0 && (
-            <Card className="border-0 shadow-soft border-l-4 border-l-red-500">
+            <Card className="border-0 shadow-soft border-l-4 border-l-coral-500">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <AlertCircle className="w-5 h-5 text-red-500" />
@@ -201,7 +201,7 @@ export function AdminDashboard({
               </CardHeader>
               <CardContent className="space-y-2">
                 {urgentAlerts.slice(0, 5).map((alert) => (
-                  <div key={alert.id} className="p-2 bg-red-50 rounded-lg text-sm text-red-700">
+                  <div key={alert.id} className="p-2 bg-coral-50 rounded-lg text-sm text-coral-700">
                     {alert.message}
                   </div>
                 ))}

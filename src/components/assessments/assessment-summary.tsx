@@ -89,13 +89,13 @@ export function AssessmentSummary({
                 <span className="text-muted-foreground">domains</span>
               </div>
               <div className="flex gap-2 mt-2">
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="bg-moss-50 text-moss-700 border-moss-200">
                   {result.domainScores.filter(d => d.riskLevel === 'healthy').length} Healthy
                 </Badge>
-                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                <Badge variant="outline" className="bg-smoked-50 text-smoked-700 border-smoked-200">
                   {result.domainScores.filter(d => d.riskLevel === 'at_risk').length} At Risk
                 </Badge>
-                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                <Badge variant="outline" className="bg-coral-50 text-coral-700 border-coral-200">
                   {result.domainScores.filter(d => d.riskLevel === 'intervention').length} Intervention
                 </Badge>
               </div>
@@ -205,33 +205,33 @@ function DomainScoreCard({ domainScore }: DomainScoreCardProps) {
 function getBorderColor(riskLevel: RiskLevel): string {
   switch (riskLevel) {
     case 'healthy':
-      return 'border-green-300'
+      return 'border-moss-300'
     case 'at_risk':
-      return 'border-yellow-300'
+      return 'border-smoked-300'
     case 'intervention':
-      return 'border-red-300'
+      return 'border-coral-300'
   }
 }
 
 function getBorderColorLight(riskLevel: RiskLevel): string {
   switch (riskLevel) {
     case 'healthy':
-      return 'border-green-200'
+      return 'border-moss-200'
     case 'at_risk':
-      return 'border-yellow-200'
+      return 'border-smoked-200'
     case 'intervention':
-      return 'border-red-200'
+      return 'border-coral-200'
   }
 }
 
 function getIconBgColor(riskLevel: RiskLevel): string {
   switch (riskLevel) {
     case 'healthy':
-      return 'bg-green-200'
+      return 'bg-moss-200'
     case 'at_risk':
-      return 'bg-yellow-200'
+      return 'bg-smoked-200'
     case 'intervention':
-      return 'bg-red-200'
+      return 'bg-coral-200'
   }
 }
 
@@ -355,9 +355,9 @@ export function AssessmentComparison({ previous, current }: AssessmentComparison
 function getTrendColor(trend: 'improved' | 'declined' | 'same'): string {
   switch (trend) {
     case 'improved':
-      return 'text-green-600'
+      return 'text-moss-600'
     case 'declined':
-      return 'text-red-600'
+      return 'text-coral-600'
     case 'same':
       return 'text-gray-500'
   }

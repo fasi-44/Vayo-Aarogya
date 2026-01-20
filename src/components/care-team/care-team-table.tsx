@@ -54,9 +54,9 @@ export function CareTeamTable({
 }: CareTeamTableProps) {
   const getCapacityStatus = (assigned: number, max: number) => {
     const percentage = (assigned / max) * 100
-    if (percentage >= 100) return { color: 'bg-red-500', status: 'Full' }
-    if (percentage >= 80) return { color: 'bg-yellow-500', status: 'Near Capacity' }
-    return { color: 'bg-green-500', status: 'Available' }
+    if (percentage >= 100) return { color: 'bg-coral-500', status: 'Full' }
+    if (percentage >= 80) return { color: 'bg-smoked-500', status: 'Near Capacity' }
+    return { color: 'bg-moss-500', status: 'Available' }
   }
 
   if (members.length === 0) {
@@ -112,8 +112,8 @@ export function CareTeamTable({
           const capacityStatus = getCapacityStatus(assignedCount, maxAssignments)
 
           const statusGradients: Record<string, string> = {
-            'Full': 'from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30',
-            'Near Capacity': 'from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30',
+            'Full': 'from-coral-50 to-rose-50 dark:from-coral-950/30 dark:to-rose-950/30',
+            'Near Capacity': 'from-smoked-50 to-amber-50 dark:from-smoked-950/30 dark:to-amber-950/30',
             'Available': 'from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30',
           }
 
@@ -158,9 +158,9 @@ export function CareTeamTable({
                     <Badge
                       variant="outline"
                       className={cn(
-                        capacityStatus.status === 'Full' && 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/50 dark:text-red-300',
-                        capacityStatus.status === 'Near Capacity' && 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300',
-                        capacityStatus.status === 'Available' && 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300'
+                        capacityStatus.status === 'Full' && 'bg-coral-100 text-coral-700 border-coral-200 dark:bg-coral-900/50 dark:text-coral-300',
+                        capacityStatus.status === 'Near Capacity' && 'bg-smoked-100 text-smoked-700 border-smoked-200 dark:bg-smoked-900/50 dark:text-smoked-300',
+                        capacityStatus.status === 'Available' && 'bg-moss-100 text-moss-700 border-moss-200 dark:bg-moss-900/50 dark:text-moss-300'
                       )}
                     >
                       {capacityStatus.status === 'Full' && <AlertCircle className="w-3 h-3 mr-1" />}
@@ -172,9 +172,9 @@ export function CareTeamTable({
                       value={capacityPercentage}
                       className={cn(
                         'h-3 rounded-full',
-                        capacityStatus.status === 'Full' && '[&>div]:bg-red-500',
-                        capacityStatus.status === 'Near Capacity' && '[&>div]:bg-yellow-500',
-                        capacityStatus.status === 'Available' && '[&>div]:bg-green-500'
+                        capacityStatus.status === 'Full' && '[&>div]:bg-coral-500',
+                        capacityStatus.status === 'Near Capacity' && '[&>div]:bg-smoked-500',
+                        capacityStatus.status === 'Available' && '[&>div]:bg-moss-500'
                       )}
                     />
                     <span className="absolute inset-0 flex items-center justify-center text-xs font-medium">
@@ -334,9 +334,9 @@ export function CareTeamTable({
                     <Badge
                       variant="outline"
                       className={cn(
-                        capacityStatus.status === 'Full' && 'bg-red-50 text-red-700 border-red-200',
-                        capacityStatus.status === 'Near Capacity' && 'bg-yellow-50 text-yellow-700 border-yellow-200',
-                        capacityStatus.status === 'Available' && 'bg-green-50 text-green-700 border-green-200'
+                        capacityStatus.status === 'Full' && 'bg-coral-50 text-coral-700 border-coral-200',
+                        capacityStatus.status === 'Near Capacity' && 'bg-smoked-50 text-smoked-700 border-smoked-200',
+                        capacityStatus.status === 'Available' && 'bg-moss-50 text-moss-700 border-moss-200'
                       )}
                     >
                       {capacityStatus.status === 'Full' && <AlertCircle className="w-3 h-3 mr-1" />}

@@ -49,7 +49,7 @@ export function DomainQuestionCard({
               {unansweredQuestions.length} left
             </Badge>
           ) : allAnswered ? (
-            <Badge className="flex items-center gap-1 text-sm px-3 py-1 bg-green-500">
+            <Badge className="flex items-center gap-1 text-sm px-3 py-1 bg-moss-500">
               <CheckCircle2 className="w-4 h-4" />
               Done
             </Badge>
@@ -108,7 +108,7 @@ function QuestionItem({ question, index, value, onChange, showError }: QuestionI
   return (
     <div className={cn(
       'rounded-xl p-5 transition-all',
-      showError ? 'bg-red-50 border-2 border-red-300 ring-2 ring-red-200' : 'bg-muted/40 border border-muted',
+      showError ? 'bg-coral-50 border-2 border-coral-300 ring-2 ring-coral-200' : 'bg-muted/40 border border-muted',
       value !== undefined && 'border-primary/30 bg-primary/5'
     )}>
       {/* Question Header with Emoji */}
@@ -139,18 +139,18 @@ function QuestionItem({ question, index, value, onChange, showError }: QuestionI
               className={cn(
                 'relative flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all min-h-[100px]',
                 'hover:scale-[1.02] active:scale-[0.98]',
-                isSelected && color === 'green' && 'border-green-500 bg-green-50 ring-2 ring-green-300',
-                isSelected && color === 'yellow' && 'border-yellow-500 bg-yellow-50 ring-2 ring-yellow-300',
-                isSelected && color === 'red' && 'border-red-500 bg-red-50 ring-2 ring-red-300',
+                isSelected && color === 'green' && 'border-moss-500 bg-moss-50 ring-2 ring-moss-300',
+                isSelected && color === 'yellow' && 'border-smoked-500 bg-smoked-50 ring-2 ring-smoked-300',
+                isSelected && color === 'red' && 'border-coral-500 bg-coral-50 ring-2 ring-coral-300',
                 !isSelected && 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
               )}
             >
               <span className="text-4xl mb-2">{option.emoji}</span>
               <span className={cn(
                 'text-sm font-semibold text-center leading-tight',
-                isSelected && color === 'green' && 'text-green-700',
-                isSelected && color === 'yellow' && 'text-yellow-700',
-                isSelected && color === 'red' && 'text-red-700',
+                isSelected && color === 'green' && 'text-moss-700',
+                isSelected && color === 'yellow' && 'text-smoked-700',
+                isSelected && color === 'red' && 'text-coral-700',
                 !isSelected && 'text-gray-600'
               )}>
                 {option.label}
@@ -158,9 +158,9 @@ function QuestionItem({ question, index, value, onChange, showError }: QuestionI
               {isSelected && (
                 <div className={cn(
                   'absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center',
-                  color === 'green' && 'bg-green-500',
-                  color === 'yellow' && 'bg-yellow-500',
-                  color === 'red' && 'bg-red-500'
+                  color === 'green' && 'bg-moss-500',
+                  color === 'yellow' && 'bg-smoked-500',
+                  color === 'red' && 'bg-coral-500'
                 )}>
                   <CheckCircle2 className="w-4 h-4 text-white" />
                 </div>
@@ -171,7 +171,7 @@ function QuestionItem({ question, index, value, onChange, showError }: QuestionI
       </div>
 
       {showError && (
-        <p className="text-sm text-red-600 mt-3 flex items-center gap-2">
+        <p className="text-sm text-coral-600 mt-3 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4" />
           Please select an answer
         </p>

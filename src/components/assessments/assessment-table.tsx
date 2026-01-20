@@ -119,9 +119,9 @@ export function AssessmentTable({
       <div className="md:hidden space-y-4">
         {assessments.map((assessment) => {
           const riskColors = {
-            healthy: 'from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30',
-            at_risk: 'from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30',
-            intervention: 'from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30',
+            healthy: 'from-moss-50 to-emerald-50 dark:from-moss-950/30 dark:to-emerald-950/30',
+            at_risk: 'from-smoked-50 to-amber-50 dark:from-smoked-950/30 dark:to-amber-950/30',
+            intervention: 'from-coral-50 to-rose-50 dark:from-coral-950/30 dark:to-rose-950/30',
           }
           const headerBg = assessment.status === 'draft'
             ? 'from-slate-50 to-gray-50 dark:from-slate-950/30 dark:to-gray-950/30'
@@ -303,15 +303,15 @@ function RiskBadge({ riskLevel, isDraft }: RiskBadgeProps) {
   const config: Record<RiskLevel, { label: string; className: string }> = {
     healthy: {
       label: 'Healthy',
-      className: 'bg-green-100 text-green-700 border-green-200',
+      className: 'bg-moss-100 text-moss-700 border-moss-200',
     },
     at_risk: {
       label: 'At Risk',
-      className: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+      className: 'bg-smoked-100 text-smoked-700 border-smoked-200',
     },
     intervention: {
       label: 'Intervention',
-      className: 'bg-red-100 text-red-700 border-red-200',
+      className: 'bg-coral-100 text-coral-700 border-coral-200',
     },
   }
 
@@ -342,17 +342,17 @@ function DomainSummary({ domains }: DomainSummaryProps) {
   return (
     <div className="flex gap-1">
       {counts.healthy > 0 && (
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+        <Badge variant="outline" className="bg-moss-50 text-moss-700 border-moss-200 text-xs">
           {counts.healthy}
         </Badge>
       )}
       {counts.at_risk > 0 && (
-        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-xs">
+        <Badge variant="outline" className="bg-smoked-50 text-smoked-700 border-smoked-200 text-xs">
           {counts.at_risk}
         </Badge>
       )}
       {counts.intervention > 0 && (
-        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">
+        <Badge variant="outline" className="bg-coral-50 text-coral-700 border-coral-200 text-xs">
           {counts.intervention}
         </Badge>
       )}

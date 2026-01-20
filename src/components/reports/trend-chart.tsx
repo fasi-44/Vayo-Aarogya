@@ -170,15 +170,15 @@ export function TrendStackedBarChart({ data, title = 'Monthly Risk Breakdown', h
           {/* Legend */}
           <div className="flex items-center justify-center gap-6 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-green-500" />
+              <div className="w-3 h-3 rounded bg-moss-500" />
               <span>Healthy</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-yellow-500" />
+              <div className="w-3 h-3 rounded bg-smoked-500" />
               <span>At Risk</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-red-500" />
+              <div className="w-3 h-3 rounded bg-coral-500" />
               <span>Intervention</span>
             </div>
           </div>
@@ -200,19 +200,19 @@ export function TrendStackedBarChart({ data, title = 'Monthly Risk Breakdown', h
                   >
                     {interventionHeight > 0 && (
                       <div
-                        className="w-full bg-red-500"
+                        className="w-full bg-coral-500"
                         style={{ height: `${(d.intervention / total) * 100}%` }}
                       />
                     )}
                     {atRiskHeight > 0 && (
                       <div
-                        className="w-full bg-yellow-500"
+                        className="w-full bg-smoked-500"
                         style={{ height: `${(d.atRisk / total) * 100}%` }}
                       />
                     )}
                     {healthyHeight > 0 && (
                       <div
-                        className="w-full bg-green-500"
+                        className="w-full bg-moss-500"
                         style={{ height: `${(d.healthy / total) * 100}%` }}
                       />
                     )}

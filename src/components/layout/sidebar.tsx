@@ -161,7 +161,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full bg-primary flex flex-col transition-all duration-300 ease-in-out",
+          "fixed top-0 left-0 z-50 h-full bg-dark-juniper-900 flex flex-col transition-all duration-300 ease-in-out",
           isCollapsed ? "lg:w-[72px]" : "lg:w-64",
           "w-[280px]",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
@@ -171,7 +171,7 @@ export function Sidebar() {
         {/* Logo Header */}
         <div
           className={cn(
-            "flex items-center h-16 border-b border-white/10 px-4",
+            "flex items-center h-16 border-b border-dark-juniper-700 px-4",
             isCollapsed ? "lg:justify-center lg:px-0" : "justify-between"
           )}
         >
@@ -182,8 +182,8 @@ export function Sidebar() {
               isCollapsed && "lg:justify-center"
             )}
           >
-            <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0 border border-white/10">
-              <HeartPulse className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-moss-500/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 border border-moss-500/30">
+              <HeartPulse className="w-6 h-6 text-moss-300" />
             </div>
             <div
               className={cn(
@@ -191,10 +191,10 @@ export function Sidebar() {
                 isCollapsed ? "lg:hidden" : "block"
               )}
             >
-              <h1 className="text-white font-bold text-lg leading-tight">
+              <h1 className="text-alabaster-50 font-bold text-lg leading-tight">
                 Vayo Aarogya
               </h1>
-              <p className="text-white/50 text-[10px] leading-tight">
+              <p className="text-alabaster-400 text-[10px] leading-tight">
                 Healthy Ageing
               </p>
             </div>
@@ -203,23 +203,23 @@ export function Sidebar() {
           {/* Mobile close button */}
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+            className="lg:hidden p-2 rounded-lg text-alabaster-300 hover:text-alabaster-50 hover:bg-dark-juniper-700 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* User Info - Mobile */}
-        <div className={cn("lg:hidden p-4 border-b border-white/10")}>
+        <div className={cn("lg:hidden p-4 border-b border-dark-juniper-700")}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold">
+            <div className="w-10 h-10 rounded-full bg-moss-500/30 flex items-center justify-center text-moss-200 font-semibold">
               {currentUser?.name?.charAt(0) || "U"}
             </div>
             <div>
-              <p className="text-white font-medium text-sm">
+              <p className="text-alabaster-50 font-medium text-sm">
                 {currentUser?.name || "User"}
               </p>
-              <p className="text-white/50 text-xs capitalize">
+              <p className="text-alabaster-400 text-xs capitalize">
                 {currentUser?.role?.replace("_", " ") || "Role"}
               </p>
             </div>
@@ -227,7 +227,7 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-4 px-3 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        <nav className="flex-1 py-4 px-3 overflow-y-auto scrollbar-thin scrollbar-thumb-dark-juniper-600 scrollbar-track-transparent">
           <ul className="space-y-1">
             {filteredMenuItems.map((item) => {
               const isActive =
@@ -243,19 +243,19 @@ export function Sidebar() {
                       "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
                       isCollapsed && "lg:justify-center lg:px-0",
                       isActive
-                        ? "bg-white/15 text-white shadow-lg"
-                        : "text-white/60 hover:text-white hover:bg-white/10"
+                        ? "bg-moss-500/15 text-alabaster-50 shadow-lg"
+                        : "text-alabaster-300 hover:text-alabaster-50 hover:bg-dark-juniper-700"
                     )}
                     title={isCollapsed ? item.title : undefined}
                   >
                     {/* Active indicator */}
                     {isActive && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-moss-400 rounded-r-full" />
                     )}
                     <item.icon
                       className={cn(
                         "w-5 h-5 flex-shrink-0 transition-all",
-                        isActive && "text-white"
+                        isActive && "text-moss-300"
                       )}
                     />
                     <span
@@ -274,12 +274,12 @@ export function Sidebar() {
         </nav>
 
         {/* Footer Actions */}
-        <div className="p-3 border-t border-white/10 space-y-1">
+        <div className="p-3 border-t border-dark-juniper-700 space-y-1">
           {/* Collapse toggle - desktop only */}
           <button
             onClick={toggleSidebarCollapse}
             className={cn(
-              "hidden lg:flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all",
+              "hidden lg:flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-alabaster-300 hover:text-alabaster-50 hover:bg-dark-juniper-700 transition-all",
               isCollapsed && "justify-center px-0"
             )}
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -304,7 +304,7 @@ export function Sidebar() {
           <button
             onClick={handleLogout}
             className={cn(
-              "flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-white/60 hover:text-red-300 hover:bg-red-500/10 transition-all",
+              "flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-alabaster-300 hover:text-coral-300 hover:bg-coral-500/10 transition-all",
               isCollapsed && "lg:justify-center lg:px-0"
             )}
             title={isCollapsed ? "Logout" : undefined}
