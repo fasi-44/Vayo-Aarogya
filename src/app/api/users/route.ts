@@ -297,6 +297,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       role,
       isActive,
       emailVerified: true, // Admin-created users are pre-verified
+      approvalStatus: 'approved',
       // Elderly-specific fields
       vayoId,
       age: age ? Number(age) : undefined,

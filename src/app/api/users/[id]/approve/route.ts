@@ -100,7 +100,7 @@ export async function POST(
         targetRole: existingUser.role,
         action,
         ...(category && { category }),
-        ...(updates.vayoId && { patientNumber: updates.vayoId }),
+        ...(updates.vayoId ? { patientNumber: String(updates.vayoId) } : {}),
       },
     })
 
