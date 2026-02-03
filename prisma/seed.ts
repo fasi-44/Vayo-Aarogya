@@ -222,7 +222,7 @@ async function main() {
   // Professionals (Doctors/Healthcare Workers)
   const doctor1 = await prisma.user.create({
     data: {
-      email: 'doctor@vayo.health',
+      email: 'coreclinicalteam@vayo.health',
       password: await hashPassword('Doctor@123'),
       name: 'Dr. Priya Sharma',
       phone: '+91 98765 43211',
@@ -1236,7 +1236,7 @@ async function main() {
   console.log('\n🔐 Demo Login Credentials:')
   console.log('-------------------------------------')
   console.log('Super Admin:   admin@vayo.health / Admin@123')
-  console.log('Professional:  doctor@vayo.health / Doctor@123')
+  console.log('Professional:  coreclinicalteam@vayo.health / Doctor@123')
   console.log('Volunteer:     volunteer@vayo.health / Volunteer@123')
   console.log('Family:        family@vayo.health / Family@123')
   console.log('Elderly:       elderly@vayo.health / Elderly@123')

@@ -35,6 +35,8 @@ export interface UserFormData {
   caregiverRelation?: string
   // Volunteer fields
   maxAssignments?: number
+  // Elderly category
+  category?: 'community' | 'clinic'
 }
 
 // Filter options for user list
@@ -42,6 +44,7 @@ export interface UserFilters {
   role?: string
   search?: string
   isActive?: boolean
+  approvalStatus?: string
   page?: number
   limit?: number
 }
@@ -56,6 +59,7 @@ export async function getUsers(filters?: UserFilters): Promise<ApiResponse<Users
   if (filters?.role) params.append('role', filters.role)
   if (filters?.search) params.append('search', filters.search)
   if (filters?.isActive !== undefined) params.append('isActive', String(filters.isActive))
+  if (filters?.approvalStatus) params.append('approvalStatus', filters.approvalStatus)
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.limit) params.append('limit', String(filters.limit))
 
@@ -139,6 +143,35 @@ export async function getElderlyUsers(): Promise<ApiResponse<UsersListResponse>>
 // Get family members (caregivers)
 export async function getFamilyMembers(): Promise<ApiResponse<UsersListResponse>> {
   return getUsers({ role: 'family', isActive: true, limit: 100 })
+}
+
+// Approve a pending user (category required for elderly)
+export async function approveUser(id: string, category?: 'community' | 'clinic'): Promise<ApiResponse<SafeUser>> {
+  const response = await fetch(`${API_BASE}/${id}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ action: 'approve', ...(category && { category }) }),
+  })
+
+  return response.json()
+}
+
+// Reject a pending user
+export async function rejectUser(id: string): Promise<ApiResponse<SafeUser>> {
+  const response = await fetch(`${API_BASE}/${id}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ action: 'reject' }),
+  })
+
+  return response.json()
+}
+
+// Get pending approval users
+export async function getPendingUsers(): Promise<ApiResponse<UsersListResponse>> {
+  return getUsers({ approvalStatus: 'pending', limit: 100 })
 }
 
 // Get elders for logged-in family member

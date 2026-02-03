@@ -209,6 +209,9 @@ export function ElderlyTable({
                     </Avatar>
                     <div>
                       <h3 className="font-semibold text-base text-foreground">{elder.name}</h3>
+                      {elder.vayoId && (
+                        <p className="text-xs font-mono text-primary font-medium">{elder.vayoId}</p>
+                      )}
                       <p className="text-sm text-muted-foreground">{elder.email}</p>
                     </div>
                   </div>
@@ -380,11 +383,11 @@ export function ElderlyTable({
           <TableHeader>
             <TableRow>
               <TableHead className="w-[220px]">Elder</TableHead>
+              <TableHead>Vayo ID</TableHead>
               <TableHead>Age / Gender</TableHead>
               <TableHead>Caretaker / Family</TableHead>
               <TableHead>Care Team</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Registered</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -428,6 +431,13 @@ export function ElderlyTable({
                       <div className="text-sm text-muted-foreground">{elder.email}</div>
                     </div>
                   </div>
+                </TableCell>
+                <TableCell>
+                  {elder.vayoId ? (
+                    <span className="font-mono font-medium text-primary">{elder.vayoId}</span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   {elder.age && elder.gender ? (
@@ -533,9 +543,6 @@ export function ElderlyTable({
                       Inactive
                     </Badge>
                   )}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(elder.createdAt)}
                 </TableCell>
                 <TableCell className="text-right">
                   <ActionMenu elder={elder} />

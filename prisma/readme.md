@@ -3,7 +3,7 @@ Demo Credentials
   | Role         | Email                 | Password      |
   |--------------|-----------------------|---------------|
   | Super Admin  | admin@vayo.health     | Admin@123     |
-  | Professional | doctor@vayo.health    | Doctor@123    |
+  | Professional | coreclinicalteam@vayo.health    | Doctor@123    |
   | Volunteer    | volunteer@vayo.health | Volunteer@123 |
   | Family       | family@vayo.health    | Family@123    |
   | Elderly      | elderly@vayo.health   | Elderly@123   |

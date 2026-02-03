@@ -187,12 +187,14 @@ export function Header({ title, subtitle }: HeaderProps) {
                                     Profile Settings
                                 </Link>
                             </DropdownMenuItem>
+                            {user?.role === 'super_admin' && (
                             <DropdownMenuItem asChild>
                                 <Link href="/dashboard/settings" className="flex items-center gap-2 cursor-pointer">
                                     <Settings className="w-4 h-4" />
-                                    Account Settings
+                                    Settings
                                 </Link>
                             </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem className="flex items-center gap-2 cursor-pointer lg:hidden">
                                 <HelpCircle className="w-4 h-4" />
                                 Help & Support

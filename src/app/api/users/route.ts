@@ -48,6 +48,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 
     const search = searchParams.get('search') || undefined
     const isActive = searchParams.get('isActive')
+    const approvalStatus = searchParams.get('approvalStatus') || undefined
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 100) // Max 100 per page
 
@@ -58,6 +59,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       page: number
       limit: number
       isActive?: boolean
+      approvalStatus?: string
       assignedVolunteerId?: string
       assignedProfessionalId?: string
       assignedFamilyId?: string
@@ -67,6 +69,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       page,
       limit,
       isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      approvalStatus,
     }
 
     // Volunteers can only see elderly assigned to them
@@ -106,34 +109,32 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
   }
 }
 
-// Role prefix mapping for Vayo ID
+// Role prefix mapping for Vayo ID (non-elderly roles)
 const ROLE_PREFIX_MAP: Record<string, string> = {
-  elderly: 'VAEL',
   family: 'VAFM',
   volunteer: 'VAVL',
   super_admin: 'VAAD',
   professional: 'VAHP',
 }
 
-// Helper to generate next Vayo ID based on role
+// Helper to generate next Vayo ID for non-elderly roles
 async function generateVayoId(role: string): Promise<string> {
   const prefix = ROLE_PREFIX_MAP[role] || 'VAXX'
 
-  // Get the highest existing vayoId for this role prefix
   const result = await db.getHighestVayoIdByPrefix(prefix)
   let nextNumber = 1
 
   if (result) {
-    // Extract number from VAEL0001 format
     const match = result.match(new RegExp(`${prefix}(\\d+)`))
     if (match) {
       nextNumber = parseInt(match[1], 10) + 1
     }
   }
 
-  // Format: VAEL0001, VAFM0001, etc.
   return `${prefix}${nextNumber.toString().padStart(4, '0')}`
 }
+
+// Elderly patient number generation is handled by db.generateElderlyPatientNumber()
 
 // POST /api/users - Create a new user
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<SafeUser>>> {
@@ -184,6 +185,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       needsLegalSupport,
       // Volunteer-specific
       maxAssignments,
+      // Elderly category
+      category,
     } = body
 
     // Validate required fields
@@ -239,11 +242,25 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       )
     }
 
+    // Validate category for elderly
+    if (role === 'elderly') {
+      if (!category || !['community', 'clinic'].includes(category)) {
+        return NextResponse.json(
+          { success: false, error: 'Category (community or clinic) is required for elderly users' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Hash password
     const hashedPassword = await hashPassword(password)
 
-    // Auto-generate Vayo ID for all users based on role
-    const vayoId = await generateVayoId(role)
+    // Generate Vayo ID based on role
+    // Elderly: YYYYCOM001 / YYYYCLI001 based on category
+    // Others: VAFM0001, VAVL0001, etc.
+    const vayoId = role === 'elderly'
+      ? await db.generateElderlyPatientNumber(category)
+      : await generateVayoId(role)
 
     // Determine assignments
     // If volunteer creates elderly, automatically assign to themselves
@@ -306,6 +323,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       needsLegalSupport,
       // Volunteer-specific
       maxAssignments: maxAssignments ? Number(maxAssignments) : undefined,
+      // Elderly category
+      category: role === 'elderly' ? category : undefined,
     })
 
     const safeUser = db.toSafeUser(user)

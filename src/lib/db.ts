@@ -18,6 +18,8 @@ function prismaUserToAppUser(prismaUser: PrismaUser): User {
     avatar: prismaUser.avatar ?? undefined,
     isActive: prismaUser.isActive,
     emailVerified: prismaUser.emailVerified,
+    approvalStatus: (prismaUser as any).approvalStatus ?? 'approved',
+    category: (prismaUser as any).category ?? undefined,
     createdAt: prismaUser.createdAt.toISOString(),
     updatedAt: prismaUser.updatedAt.toISOString(),
     lastLogin: prismaUser.lastLogin?.toISOString(),
@@ -82,6 +84,25 @@ class Database {
     return result?.vayoId ?? null
   }
 
+  // Generate elderly patient number: YYYYCOM001 or YYYYCLI001
+  async generateElderlyPatientNumber(category: string): Promise<string> {
+    const year = new Date().getFullYear().toString()
+    const catPrefix = category === 'clinic' ? 'CLI' : 'COM'
+    const prefix = `${year}${catPrefix}`
+
+    const result = await this.getHighestVayoIdByPrefix(prefix)
+    let nextNumber = 1
+
+    if (result) {
+      const match = result.match(new RegExp(`${prefix}(\\d+)`))
+      if (match) {
+        nextNumber = parseInt(match[1], 10) + 1
+      }
+    }
+
+    return `${prefix}${nextNumber.toString().padStart(3, '0')}`
+  }
+
   async findUserById(id: string): Promise<User | undefined> {
     const user = await prisma.user.findUnique({
       where: { id },
@@ -100,6 +121,8 @@ class Database {
         avatar: userData.avatar,
         isActive: userData.isActive ?? true,
         emailVerified: userData.emailVerified ?? false,
+        approvalStatus: userData.approvalStatus ?? 'approved',
+        category: userData.category ?? null,
         lastLogin: userData.lastLogin ? new Date(userData.lastLogin) : null,
         // Elderly-specific fields
         vayoId: userData.vayoId,
@@ -144,6 +167,8 @@ class Database {
       if (updates.avatar !== undefined) updateData.avatar = updates.avatar
       if (updates.isActive !== undefined) updateData.isActive = updates.isActive
       if (updates.emailVerified !== undefined) updateData.emailVerified = updates.emailVerified
+      if (updates.approvalStatus !== undefined) (updateData as any).approvalStatus = updates.approvalStatus
+      if (updates.category !== undefined) (updateData as any).category = updates.category
       if (updates.lastLogin !== undefined) updateData.lastLogin = new Date(updates.lastLogin)
       // Elderly-specific fields
       if (updates.vayoId !== undefined) updateData.vayoId = updates.vayoId
@@ -200,6 +225,7 @@ class Database {
     page?: number
     limit?: number
     isActive?: boolean
+    approvalStatus?: string
     assignedVolunteerId?: string
     assignedProfessionalId?: string
     assignedFamilyId?: string
@@ -213,6 +239,14 @@ class Database {
     if (options?.isActive !== undefined) {
       where.isActive = options.isActive
     }
+
+    // Default to only showing approved users unless explicitly requesting all or a specific status
+    if (options?.approvalStatus && options.approvalStatus !== 'all') {
+      (where as any).approvalStatus = options.approvalStatus
+    } else if (!options?.approvalStatus) {
+      (where as any).approvalStatus = 'approved'
+    }
+    // When approvalStatus === 'all', no filter is applied
 
     // Filter by assigned volunteer (for volunteers viewing their elderly)
     if (options?.assignedVolunteerId) {

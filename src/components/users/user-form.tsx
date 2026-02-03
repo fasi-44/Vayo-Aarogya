@@ -37,6 +37,7 @@ const userSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   phone: z.string().optional(),
   role: z.enum(['super_admin', 'professional', 'volunteer', 'family', 'elderly']),
+  category: z.enum(['community', 'clinic']).optional(),
   isActive: z.boolean().optional(),
   age: z.coerce.number().min(0).max(150).optional().or(z.literal('')),
   gender: z.enum(['male', 'female', 'other']).optional().or(z.literal('')),
@@ -232,6 +233,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
           name: user.name,
           phone: user.phone || '',
           role: user.role,
+          category: user.category || undefined,
           isActive: user.isActive,
           age: user.age || '',
           gender: user.gender || '',
@@ -368,6 +370,11 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
       // Only include password if provided
       if (data.password) {
         formData.password = data.password
+      }
+
+      // Include category for elderly
+      if (data.role === 'elderly' && data.category) {
+        formData.category = data.category as 'community' | 'clinic'
       }
 
       // Include elderly-specific fields
@@ -529,6 +536,51 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
               />
             </div>
           </div>
+
+          {/* Category selection for elderly */}
+          {selectedRole === 'elderly' && (
+            <div className="border-t pt-4 mt-4">
+              <h4 className="font-medium mb-3">Patient Category *</h4>
+              <div className="flex gap-4">
+                <label
+                  className={`flex-1 flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    watch('category') === 'community'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/40'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    value="community"
+                    {...register('category')}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <div>
+                    <p className="font-medium text-sm">Community</p>
+                    <p className="text-xs text-muted-foreground">NGO / Community outreach</p>
+                  </div>
+                </label>
+                <label
+                  className={`flex-1 flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    watch('category') === 'clinic'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/40'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    value="clinic"
+                    {...register('category')}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <div>
+                    <p className="font-medium text-sm">Clinic</p>
+                    <p className="text-xs text-muted-foreground">Clinic / OPD referral</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
 
           {/* Elderly-specific fields */}
           {selectedRole === 'elderly' && (

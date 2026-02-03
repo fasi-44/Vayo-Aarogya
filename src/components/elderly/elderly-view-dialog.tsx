@@ -159,6 +159,12 @@ export function ElderlyViewDialog({
               Personal Information
             </h4>
             <div className="grid gap-3">
+              {elderly.vayoId && (
+                <div className="flex items-center gap-3">
+                  <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                  <span>Vayo ID: <span className="font-mono font-medium text-primary">{elderly.vayoId}</span></span>
+                </div>
+              )}
               {(elderly.age || elderly.gender) && (
                 <div className="flex items-center gap-3">
                   <User className="h-4 w-4 text-muted-foreground" />

@@ -77,6 +77,8 @@ export interface User {
   lastLogin?: string
   isActive: boolean
   emailVerified: boolean
+  approvalStatus: 'pending' | 'approved' | 'rejected'
+  category?: 'community' | 'clinic'
   // Elderly-specific fields
   vayoId?: string // Auto-generated VA00001, VA00002, etc.
   age?: number

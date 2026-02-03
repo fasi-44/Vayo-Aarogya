@@ -27,6 +27,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Phone,
+  Mail,
 } from 'lucide-react'
 import { type SafeUser, type UserRole } from '@/types'
 import {
@@ -34,6 +39,8 @@ import {
   createUser,
   updateUser,
   deleteUser,
+  approveUser,
+  rejectUser,
   type UserFormData,
   type UserFilters,
 } from '@/services/users'
@@ -42,6 +49,7 @@ import {
   UserForm,
   UserDeleteDialog,
   UserViewDialog,
+  UserApprovalDialog,
 } from '@/components/users'
 
 export default function UserManagementPage() {
@@ -65,6 +73,13 @@ export default function UserManagementPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isViewOpen, setIsViewOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<SafeUser | null>(null)
+
+  // Pending approvals
+  const [pendingUsers, setPendingUsers] = useState<SafeUser[]>([])
+  const [pendingCount, setPendingCount] = useState(0)
+  const [isApproving, setIsApproving] = useState<string | null>(null)
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false)
+  const [userToApprove, setUserToApprove] = useState<SafeUser | null>(null)
 
   // Stats
   const [stats, setStats] = useState({
@@ -96,8 +111,15 @@ export default function UserManagementPage() {
 
       if (statusFilter === 'active') {
         filters.isActive = true
+        filters.approvalStatus = 'all'
       } else if (statusFilter === 'inactive') {
         filters.isActive = false
+        filters.approvalStatus = 'all'
+      } else if (statusFilter === 'pending') {
+        filters.approvalStatus = 'pending'
+      } else {
+        // Admin page: show all users regardless of approval status
+        filters.approvalStatus = 'all'
       }
 
       const result = await getUsers(filters)
@@ -121,11 +143,11 @@ export default function UserManagementPage() {
     try {
       // Load all users for stats (we could create a dedicated API endpoint for this)
       const [allUsers, elderly, volunteers, professionals, families] = await Promise.all([
-        getUsers({ limit: 1 }),
-        getUsers({ role: 'elderly', limit: 1 }),
-        getUsers({ role: 'volunteer', limit: 1 }),
-        getUsers({ role: 'professional', limit: 1 }),
-        getUsers({ role: 'family', limit: 1 }),
+        getUsers({ limit: 1, approvalStatus: 'all' }),
+        getUsers({ role: 'elderly', limit: 1, approvalStatus: 'all' }),
+        getUsers({ role: 'volunteer', limit: 1, approvalStatus: 'all' }),
+        getUsers({ role: 'professional', limit: 1, approvalStatus: 'all' }),
+        getUsers({ role: 'family', limit: 1, approvalStatus: 'all' }),
       ])
 
       setStats({
@@ -140,6 +162,79 @@ export default function UserManagementPage() {
     }
   }, [])
 
+  // Load pending users
+  const loadPendingUsers = useCallback(async () => {
+    try {
+      const result = await getUsers({ approvalStatus: 'pending', limit: 100 })
+      if (result.success && result.data) {
+        setPendingUsers(result.data.users)
+        setPendingCount(result.data.total)
+      }
+    } catch (err) {
+      console.error('Load pending users error:', err)
+    }
+  }, [])
+
+  // Handle approve click - open dialog for elderly, direct-approve for others
+  const handleApproveClick = (user: SafeUser) => {
+    if (user.role === 'elderly') {
+      setUserToApprove(user)
+      setApprovalDialogOpen(true)
+    } else {
+      handleDirectApprove(user.id)
+    }
+  }
+
+  // Direct approve (non-elderly users)
+  const handleDirectApprove = async (userId: string) => {
+    setIsApproving(userId)
+    try {
+      const result = await approveUser(userId)
+      if (result.success) {
+        loadPendingUsers()
+        loadUsers()
+        loadStats()
+      }
+    } catch (err) {
+      console.error('Approve user error:', err)
+    } finally {
+      setIsApproving(null)
+    }
+  }
+
+  // Approve with category (elderly users via dialog)
+  const handleApproveWithCategory = async (userId: string, category: 'community' | 'clinic') => {
+    setIsApproving(userId)
+    try {
+      const result = await approveUser(userId, category)
+      if (result.success) {
+        loadPendingUsers()
+        loadUsers()
+        loadStats()
+      }
+    } catch (err) {
+      console.error('Approve user error:', err)
+    } finally {
+      setIsApproving(null)
+    }
+  }
+
+  const handleReject = async (userId: string) => {
+    setIsApproving(userId)
+    try {
+      const result = await rejectUser(userId)
+      if (result.success) {
+        loadPendingUsers()
+        loadUsers()
+        loadStats()
+      }
+    } catch (err) {
+      console.error('Reject user error:', err)
+    } finally {
+      setIsApproving(null)
+    }
+  }
+
   // Load data on mount and filter change
   useEffect(() => {
     loadUsers()
@@ -148,6 +243,10 @@ export default function UserManagementPage() {
   useEffect(() => {
     loadStats()
   }, [loadStats])
+
+  useEffect(() => {
+    loadPendingUsers()
+  }, [loadPendingUsers])
 
   // Reset page when filters change
   useEffect(() => {
@@ -219,6 +318,7 @@ export default function UserManagementPage() {
   const handleRefresh = () => {
     loadUsers()
     loadStats()
+    loadPendingUsers()
   }
 
   // Permissions
@@ -231,7 +331,7 @@ export default function UserManagementPage() {
       subtitle="Manage users, roles, and permissions for Vayo Aarogya"
     >
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         <Card className="border-0 shadow-soft">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -241,6 +341,20 @@ export default function UserManagementPage() {
               <div>
                 <p className="text-xs text-muted-foreground">Total Users</p>
                 <p className="text-xl font-bold text-foreground">{stats.total}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={`border-0 shadow-soft ${pendingCount > 0 ? 'ring-2 ring-amber-400' : ''}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Pending</p>
+                <p className="text-xl font-bold text-foreground">{pendingCount}</p>
               </div>
             </div>
           </CardContent>
@@ -303,6 +417,91 @@ export default function UserManagementPage() {
         </Card>
       </div>
 
+      {/* Pending Approvals Section */}
+      {pendingCount > 0 && (
+        <Card className="border-0 shadow-soft mb-6 border-l-4 border-l-amber-500">
+          <CardHeader className="border-b border-border pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Pending Approvals</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {pendingCount} user{pendingCount !== 1 ? 's' : ''} waiting for approval
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              {pendingUsers.map((pendingUser) => (
+                <div
+                  key={pendingUser.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-amber-50/50 border border-amber-200/50"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-amber-800">
+                        {pendingUser.name?.charAt(0)?.toUpperCase() || '?'}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground truncate">{pendingUser.name}</p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Mail className="w-3 h-3" />
+                          {pendingUser.email}
+                        </span>
+                        {pendingUser.phone && (
+                          <a href={`tel:${pendingUser.phone}`} className="flex items-center gap-1 hover:text-primary">
+                            <Phone className="w-3 h-3" />
+                            {pendingUser.phone}
+                          </a>
+                        )}
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
+                          {pendingUser.role?.replace('_', ' ')}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Registered: {new Date(pendingUser.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0 sm:ml-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                      onClick={() => handleReject(pendingUser.id)}
+                      disabled={isApproving === pendingUser.id}
+                    >
+                      <XCircle className="w-4 h-4 mr-1" />
+                      Reject
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      onClick={() => handleApproveClick(pendingUser)}
+                      disabled={isApproving === pendingUser.id}
+                    >
+                      {isApproving === pendingUser.id ? (
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                      )}
+                      Approve
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Main Content */}
       <Card className="border-0 shadow-soft">
         <CardHeader className="border-b border-border pb-4">
@@ -346,6 +545,7 @@ export default function UserManagementPage() {
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="pending">Pending Approval</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -496,6 +696,17 @@ export default function UserManagementPage() {
         }}
         onConfirm={handleDeleteConfirm}
         user={selectedUser}
+      />
+
+      {/* Approval Dialog (elderly category selection) */}
+      <UserApprovalDialog
+        open={approvalDialogOpen}
+        onClose={() => {
+          setApprovalDialogOpen(false)
+          setUserToApprove(null)
+        }}
+        onConfirm={handleApproveWithCategory}
+        user={userToApprove}
       />
     </DashboardLayout>
   )

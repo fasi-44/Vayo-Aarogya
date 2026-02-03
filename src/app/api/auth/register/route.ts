@@ -92,18 +92,20 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await hashPassword(password)
 
-    // Auto-generate Vayo ID for all users based on role
-    const vayoId = await generateVayoId(role)
+    // Auto-generate Vayo ID for non-elderly roles only
+    // Elderly get their Vayo ID (patient number) when admin approves and selects a category
+    const vayoId = role === 'elderly' ? undefined : await generateVayoId(role)
 
-    // Create user
+    // Create user with pending approval (admin must approve before login)
     const user = await db.createUser({
       email: email.toLowerCase().trim(),
       password: hashedPassword,
       name: name.trim(),
       phone: phone?.trim(),
       role: role as UserRole,
-      isActive: true,
-      emailVerified: false, // Will need email verification in production
+      isActive: false,
+      emailVerified: false,
+      approvalStatus: 'pending',
       vayoId,
     })
 
@@ -121,7 +123,11 @@ export async function POST(request: NextRequest) {
     // Return safe user data (no tokens - user must login separately)
     const safeUser = db.toSafeUser(user)
 
-    return successResponse({ user: safeUser }, 'Registration successful. Please login with your credentials.', 201)
+    return successResponse(
+      { user: safeUser },
+      'Your registration request has been submitted successfully. An admin will review your request and you will receive a call shortly for further information. Once approved, you will be able to login.',
+      201
+    )
   } catch (error) {
     console.error('Registration error:', error)
     return errorResponse(Errors.internal('An error occurred during registration'))

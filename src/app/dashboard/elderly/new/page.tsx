@@ -167,6 +167,9 @@ export default function NewElderlyPage() {
     setError(null)
 
     try {
+      if (!formData.category) {
+        throw new Error('Please select a patient category')
+      }
       if (!formData.name || !formData.email || !formData.password) {
         throw new Error('Name, email, and password are required')
       }
@@ -247,6 +250,53 @@ export default function NewElderlyPage() {
                   {error}
                 </div>
               )}
+
+              {/* Patient Category */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-foreground">Patient Category *</h3>
+                <div className="flex gap-4">
+                  <label
+                    className={`flex-1 flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      formData.category === 'community'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/40'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="category"
+                      value="community"
+                      checked={formData.category === 'community'}
+                      onChange={() => setFormData(prev => ({ ...prev, category: 'community' }))}
+                      className="w-4 h-4 text-primary accent-primary"
+                    />
+                    <div>
+                      <p className="font-medium text-sm">Community</p>
+                      <p className="text-xs text-muted-foreground">Referred through NGO / Community outreach</p>
+                    </div>
+                  </label>
+                  <label
+                    className={`flex-1 flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      formData.category === 'clinic'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/40'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="category"
+                      value="clinic"
+                      checked={formData.category === 'clinic'}
+                      onChange={() => setFormData(prev => ({ ...prev, category: 'clinic' }))}
+                      className="w-4 h-4 text-primary accent-primary"
+                    />
+                    <div>
+                      <p className="font-medium text-sm">Clinic</p>
+                      <p className="text-xs text-muted-foreground">Referral from Clinic / OPD</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
 
               {/* Basic Information */}
               <div className="space-y-4">

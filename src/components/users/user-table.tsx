@@ -59,6 +59,39 @@ export function UserTable({ users, onEdit, onDelete, onView, currentUserId }: Us
   }
 
   // Action menu component to reuse in both views
+  const StatusBadge = ({ user }: { user: SafeUser }) => {
+    if (user.approvalStatus === 'pending') {
+      return (
+        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+          <Clock className="w-3 h-3 mr-1" />
+          Pending
+        </Badge>
+      )
+    }
+    if (user.approvalStatus === 'rejected') {
+      return (
+        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+          <UserX className="w-3 h-3 mr-1" />
+          Rejected
+        </Badge>
+      )
+    }
+    if (user.isActive) {
+      return (
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <UserCheck className="w-3 h-3 mr-1" />
+          Active
+        </Badge>
+      )
+    }
+    return (
+      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+        <UserX className="w-3 h-3 mr-1" />
+        Inactive
+      </Badge>
+    )
+  }
+
   const ActionMenu = ({ user }: { user: SafeUser }) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -139,17 +172,7 @@ export function UserTable({ users, onEdit, onDelete, onView, currentUserId }: Us
                   <Badge variant="outline" className={roleColors[user.role]}>
                     {roleLabels[user.role] || user.role}
                   </Badge>
-                  {user.isActive ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                      Active
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                      Inactive
-                    </span>
-                  )}
+                  <StatusBadge user={user} />
                 </div>
 
                 {/* Details Grid */}
@@ -243,17 +266,7 @@ export function UserTable({ users, onEdit, onDelete, onView, currentUserId }: Us
                   {user.phone || '-'}
                 </TableCell>
                 <TableCell>
-                  {user.isActive ? (
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                      <UserCheck className="w-3 h-3 mr-1" />
-                      Active
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                      <UserX className="w-3 h-3 mr-1" />
-                      Inactive
-                    </Badge>
-                  )}
+                  <StatusBadge user={user} />
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {formatDate(user.createdAt)}

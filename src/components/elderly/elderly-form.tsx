@@ -34,6 +34,7 @@ import { useAuthStore } from '@/store'
 
 // Validation schema
 const elderlySchema = z.object({
+  category: z.enum(['community', 'clinic'], { required_error: 'Please select a category' }),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters').optional().or(z.literal('')),
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -269,6 +270,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
 
     if (elderly) {
       reset({
+        category: elderly.category || undefined,
         email: elderly.email,
         password: '',
         name: elderly.name,
@@ -300,6 +302,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
         const karnataka = states.find(s => s.name === 'Karnataka')
 
         reset({
+          category: undefined,
           email: '',
           password: '',
           name: '',
@@ -415,6 +418,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
         name: data.name,
         phone: data.phone || undefined,
         isActive: data.isActive,
+        category: data.category,
       }
 
       // Only include password if provided
@@ -481,6 +485,54 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
               </div>
             </div>
           )}
+
+          {/* Category Selection */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-base text-muted-foreground uppercase tracking-wide">
+              Patient Category *
+            </h4>
+            <div className="flex gap-4">
+              <label
+                className={`flex-1 flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  watch('category') === 'community'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/40'
+                }`}
+              >
+                <input
+                  type="radio"
+                  value="community"
+                  {...register('category')}
+                  className="w-4 h-4 text-primary accent-primary"
+                />
+                <div>
+                  <p className="font-medium text-sm">Community</p>
+                  <p className="text-xs text-muted-foreground">Referred through NGO / Community outreach</p>
+                </div>
+              </label>
+              <label
+                className={`flex-1 flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  watch('category') === 'clinic'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/40'
+                }`}
+              >
+                <input
+                  type="radio"
+                  value="clinic"
+                  {...register('category')}
+                  className="w-4 h-4 text-primary accent-primary"
+                />
+                <div>
+                  <p className="font-medium text-sm">Clinic</p>
+                  <p className="text-xs text-muted-foreground">Referral from Clinic / OPD</p>
+                </div>
+              </label>
+            </div>
+            {errors.category && (
+              <p className="text-sm text-red-500">{errors.category.message}</p>
+            )}
+          </div>
 
           {/* Basic Information */}
           <div className="space-y-4">

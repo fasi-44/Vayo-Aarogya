@@ -128,7 +128,12 @@ export function ProfessionalDashboard({
               todayFollowUps.slice(0, 5).map((followUp) => (
                 <div key={followUp.id} className="p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-sm">{followUp.elderly?.name}</span>
+                    <div>
+                      <span className="font-medium text-sm">{followUp.elderly?.name}</span>
+                      {followUp.elderly?.vayoId && (
+                        <span className="ml-2 text-xs font-mono text-primary">{followUp.elderly.vayoId}</span>
+                      )}
+                    </div>
                     <Badge variant="outline" className="text-xs">{followUp.type}</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">{followUp.title}</p>
@@ -204,6 +209,9 @@ export function ProfessionalDashboard({
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{assessment.subject?.name}</p>
+                  {assessment.subject?.vayoId && (
+                    <p className="text-xs font-mono text-primary">{assessment.subject.vayoId}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">{formatDate(assessment.assessedAt)}</p>
                 </div>
                 <Badge

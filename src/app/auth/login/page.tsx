@@ -65,9 +65,8 @@ function LoginPageContent() {
 
     if (success) {
       router.push('/dashboard')
-    } else {
-      setError('Invalid email or password. Please try again.')
     }
+    // Error is handled by the store and synced via useEffect
   }
 
   return (
@@ -91,13 +90,13 @@ function LoginPageContent() {
 
       {/* Success Message */}
       {registered && (
-        <div className="mb-6 p-4 rounded-2xl bg-healthy-light border border-healthy/30 flex items-center gap-3 animate-slide-up">
-          <div className="w-10 h-10 rounded-full bg-healthy/20 flex items-center justify-center flex-shrink-0">
-            <CheckCircle2 className="w-5 h-5 text-healthy-dark" />
+        <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center gap-3 animate-slide-up">
+          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-amber-600" />
           </div>
           <div>
-            <p className="font-medium text-healthy-dark">Account created!</p>
-            <p className="text-sm text-healthy-dark/80">Please sign in to continue.</p>
+            <p className="font-medium text-amber-800">Registration submitted!</p>
+            <p className="text-sm text-amber-700">Your request is pending admin approval. You will receive a call shortly for further information.</p>
           </div>
         </div>
       )}
@@ -231,7 +230,7 @@ function LoginPageContent() {
               <div className="space-y-2.5">
                 {[
                   { role: 'Admin', email: 'admin@vayo.health', pass: 'Admin@123' },
-                  { role: 'Doctor', email: 'doctor@vayo.health', pass: 'Doctor@123' },
+                  { role: 'Professional', email: 'coreclinicalteam@vayo.health', pass: 'Doctor@123' },
                   { role: 'Volunteer', email: 'volunteer@vayo.health', pass: 'Volunteer@123' },
                   { role: 'Family', email: 'family@vayo.health', pass: 'Family@123' },
                 ].map((cred) => (

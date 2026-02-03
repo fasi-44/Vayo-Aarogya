@@ -133,6 +133,9 @@ export function AdminDashboard({
                     </Avatar>
                     <div>
                       <p className="font-medium text-sm">{assessment.subject?.name}</p>
+                      {assessment.subject?.vayoId && (
+                        <p className="text-xs font-mono text-primary">{assessment.subject.vayoId}</p>
+                      )}
                       <p className="text-xs text-muted-foreground">{formatDate(assessment.assessedAt)}</p>
                     </div>
                   </div>

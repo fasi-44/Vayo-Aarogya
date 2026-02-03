@@ -68,6 +68,35 @@ export async function POST(request: NextRequest) {
       return errorResponse(Errors.unauthorized('Invalid email or password'))
     }
 
+    // Check approval status
+    if (user.approvalStatus === 'pending') {
+      await db.createAuditLog({
+        userId: user.id,
+        action: 'login_failed',
+        entity: 'User',
+        entityId: user.id,
+        details: { reason: 'pending_approval' },
+        ipAddress: clientIP,
+        userAgent: getUserAgent(request),
+      })
+
+      return errorResponse(Errors.forbidden('Your account is pending approval. An admin will review your request and you will receive a call shortly. Please try again later.'))
+    }
+
+    if (user.approvalStatus === 'rejected') {
+      await db.createAuditLog({
+        userId: user.id,
+        action: 'login_failed',
+        entity: 'User',
+        entityId: user.id,
+        details: { reason: 'approval_rejected' },
+        ipAddress: clientIP,
+        userAgent: getUserAgent(request),
+      })
+
+      return errorResponse(Errors.forbidden('Your registration request has been rejected. Please contact the admin for more information.'))
+    }
+
     // Check if user is active
     if (!user.isActive) {
       // Log failed attempt

@@ -38,6 +38,8 @@ export interface ElderlyFormData {
   // Support requirements
   needsFinancialAssistance?: boolean
   needsLegalSupport?: boolean
+  // Category
+  category?: 'community' | 'clinic'
 }
 
 // Filter options for elderly list

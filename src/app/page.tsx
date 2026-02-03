@@ -87,13 +87,13 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-11 h-11 rounded-2xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/30 group-hover:shadow-glow transition-shadow duration-300">
-                <HeartPulse className="w-6 h-6 text-white" />
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/30 group-hover:shadow-glow transition-shadow duration-300">
+                <HeartPulse className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-foreground">Vayo Aarogya</h1>
-                <p className="text-[10px] text-muted-foreground leading-tight">Healthy Ageing Platform</p>
+                <h1 className="text-base sm:text-lg font-bold text-foreground">Vayo Aarogya</h1>
+                <p className="text-[10px] text-muted-foreground leading-tight hidden sm:block">Healthy Ageing Platform</p>
               </div>
             </Link>
 
@@ -114,16 +114,17 @@ export default function LandingPage() {
             </div>
 
             {/* Auth Buttons */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link href="/auth/login">
-                <Button variant="ghost" size="sm" className="hidden sm:flex text-foreground hover:text-primary hover:bg-primary/5">
+                <Button variant="ghost" size="sm" className="text-foreground hover:text-primary hover:bg-primary/5">
                   Login
                 </Button>
               </Link>
               <Link href="/auth/register">
                 <Button size="sm" className="gradient-primary text-white hover:opacity-90 shadow-lg shadow-primary/25 rounded-xl">
-                  Create New account
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <span className="hidden sm:inline">Create New account</span>
+                  <span className="sm:hidden">Register</span>
+                  <ArrowRight className="w-4 h-4 ml-1 sm:ml-2" />
                 </Button>
               </Link>
             </div>

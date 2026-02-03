@@ -50,6 +50,8 @@ model User {
   avatar         String?
   isActive       Boolean   @default(true) @map("is_active")
   emailVerified  Boolean   @default(false) @map("email_verified")
+  approvalStatus String    @default("approved") @map("approval_status") // pending, approved, rejected
+  category       String?   @map("category") // community, clinic (elderly only)
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
   lastLogin      DateTime? @map("last_login")
