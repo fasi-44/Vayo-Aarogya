@@ -10,10 +10,10 @@ export interface ElderlyListResponse {
 
 // Elderly create/update data
 export interface ElderlyFormData {
-  email: string
+  email?: string
   password?: string
   name: string
-  phone?: string
+  phone: string
   isActive?: boolean
   // Elderly-specific fields
   age?: number

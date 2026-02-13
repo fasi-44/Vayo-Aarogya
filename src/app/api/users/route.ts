@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { hashPassword, validatePassword, validateEmail } from '@/lib/auth'
+import { hashPassword, validatePassword, validatePhone } from '@/lib/auth'
 import { type ApiResponse, type SafeUser, type UserRole, rolePermissions } from '@/types'
 
 // Helper to get user from request headers (set by middleware)
 function getUserFromHeaders(request: NextRequest) {
   return {
     userId: request.headers.get('x-user-id'),
-    email: request.headers.get('x-user-email'),
+    phone: request.headers.get('x-user-phone'),
     role: request.headers.get('x-user-role') as UserRole | null,
   }
 }
@@ -190,22 +190,22 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     } = body
 
     // Validate required fields
-    if (!email || !password || !name || !role) {
+    if (!phone || !password || !name || !role) {
       return NextResponse.json(
-        { success: false, error: 'Email, password, name, and role are required' },
+        { success: false, error: 'Phone number, password, name, and role are required' },
         { status: 400 }
       )
     }
 
-    // Validate email format
-    if (!validateEmail(email)) {
+    // Validate phone format
+    if (!validatePhone(phone)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid email format' },
+        { success: false, error: 'Invalid phone number format. Must be at least 10 digits.' },
         { status: 400 }
       )
     }
 
-    // Validate password strength
+    // Validate password (4-digit PIN)
     const passwordValidation = validatePassword(password)
     if (!passwordValidation.valid) {
       return NextResponse.json(
@@ -214,11 +214,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       )
     }
 
-    // Check if email already exists
-    const existingUser = await db.findUserByEmail(email)
+    // Check if phone already exists
+    const normalizedPhone = phone.replace(/[\s\-]/g, '')
+    const existingUser = await db.findUserByPhone(normalizedPhone)
     if (existingUser) {
       return NextResponse.json(
-        { success: false, error: 'An account with this email already exists' },
+        { success: false, error: 'An account with this phone number already exists' },
         { status: 409 }
       )
     }
@@ -290,10 +291,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
     // Create user with all fields
     const user = await db.createUser({
-      email: email.toLowerCase().trim(),
+      email: email?.toLowerCase().trim() || undefined,
       password: hashedPassword,
       name: name.trim(),
-      phone: phone?.trim(),
+      phone: normalizedPhone,
       role,
       isActive,
       emailVerified: true, // Admin-created users are pre-verified

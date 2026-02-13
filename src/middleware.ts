@@ -158,7 +158,7 @@ export async function middleware(request: NextRequest) {
     // Add user info to headers for API routes
     const response = NextResponse.next()
     response.headers.set('x-user-id', payload.userId as string)
-    response.headers.set('x-user-email', payload.email as string)
+    response.headers.set('x-user-phone', (payload.phone || payload.email || '') as string)
     response.headers.set('x-user-role', userRole)
 
     return response

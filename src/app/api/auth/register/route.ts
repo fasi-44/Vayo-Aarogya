@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import {
   hashPassword,
   validatePassword,
-  validateEmail,
+  validatePhone,
   checkRateLimit,
 } from '@/lib/auth'
 import {
@@ -47,16 +47,16 @@ export async function POST(request: NextRequest) {
     const { email, password, name, phone, role = 'family' } = body
 
     // Validate required fields
-    if (!email || !password || !name) {
-      return errorResponse(Errors.badRequest('Email, password, and name are required'))
+    if (!phone || !password || !name) {
+      return errorResponse(Errors.badRequest('Phone number, password, and name are required'))
     }
 
-    // Validate email format
-    if (!validateEmail(email)) {
-      return errorResponse(Errors.badRequest('Invalid email format'))
+    // Validate phone format
+    if (!validatePhone(phone)) {
+      return errorResponse(Errors.badRequest('Invalid phone number format. Must be at least 10 digits.'))
     }
 
-    // Validate password strength
+    // Validate password (4-digit PIN)
     const passwordValidation = validatePassword(password)
     if (!passwordValidation.valid) {
       return errorResponse(Errors.badRequest(passwordValidation.errors.join('. ')))
@@ -83,10 +83,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if email already exists
-    const existingUser = await db.findUserByEmail(email)
+    // Check if phone already exists
+    const normalizedPhone = phone.replace(/[\s\-]/g, '')
+    const existingUser = await db.findUserByPhone(normalizedPhone)
     if (existingUser) {
-      return errorResponse(Errors.conflict('An account with this email already exists'))
+      return errorResponse(Errors.conflict('An account with this phone number already exists'))
     }
 
     // Hash password
@@ -98,10 +99,10 @@ export async function POST(request: NextRequest) {
 
     // Create user with pending approval (admin must approve before login)
     const user = await db.createUser({
-      email: email.toLowerCase().trim(),
+      email: email?.toLowerCase().trim() || undefined,
       password: hashedPassword,
       name: name.trim(),
-      phone: phone?.trim(),
+      phone: normalizedPhone,
       role: role as UserRole,
       isActive: false,
       emailVerified: false,

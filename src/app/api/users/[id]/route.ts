@@ -7,7 +7,7 @@ import { type ApiResponse, type SafeUser, type UserRole, rolePermissions } from 
 function getUserFromHeaders(request: NextRequest) {
   return {
     userId: request.headers.get('x-user-id'),
-    email: request.headers.get('x-user-email'),
+    phone: request.headers.get('x-user-phone'),
     role: request.headers.get('x-user-role') as UserRole | null,
   }
 }
@@ -116,7 +116,7 @@ export async function PUT(
 
     // Fields that users can update themselves
     if (body.name !== undefined) updates.name = body.name.trim()
-    if (body.phone !== undefined) updates.phone = body.phone?.trim()
+    if (body.phone !== undefined) updates.phone = body.phone?.replace(/[\s\-]/g, '')
     if (body.avatar !== undefined) updates.avatar = body.avatar
 
     // Password change

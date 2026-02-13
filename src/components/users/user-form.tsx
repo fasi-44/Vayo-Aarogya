@@ -32,12 +32,12 @@ import { locationsService, type LocationOption } from '@/services/locations'
 
 // Validation schema
 const userSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters').optional().or(z.literal('')),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  password: z.string().min(4, 'Password must be at least 4 digits').optional().or(z.literal('')),
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  phone: z.string().optional(),
+  phone: z.string().length(10, 'Phone number must be exactly 10 digits').regex(/^\d{10}$/, 'Phone number must be 10 digits'),
   role: z.enum(['super_admin', 'professional', 'volunteer', 'family', 'elderly']),
-  category: z.enum(['community', 'clinic']).optional(),
+  category: z.enum(['community', 'clinic'], { invalid_type_error: 'Please select a patient category' }).optional(),
   isActive: z.boolean().optional(),
   age: z.coerce.number().min(0).max(150).optional().or(z.literal('')),
   gender: z.enum(['male', 'female', 'other']).optional().or(z.literal('')),
@@ -360,9 +360,9 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
     setError(null)
     try {
       const formData: UserFormData = {
-        email: data.email,
+        email: data.email || undefined,
         name: data.name,
-        phone: data.phone || undefined,
+        phone: data.phone,
         role: data.role as UserRole,
         isActive: data.isActive,
       }
@@ -454,16 +454,17 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="phone">Phone Number *</Label>
               <Input
-                id="email"
-                type="email"
-                {...register('email')}
-                placeholder="email@example.com"
+                id="phone"
+                type="tel"
+                {...register('phone')}
+                placeholder="9876543210"
+                maxLength={10}
                 disabled={isEditing}
               />
-              {errors.email && (
-                <p className="text-sm text-red-500">{errors.email.message}</p>
+              {errors.phone && (
+                <p className="text-sm text-red-500">{errors.phone.message}</p>
               )}
             </div>
           </div>
@@ -478,7 +479,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   {...register('password')}
-                  placeholder={isEditing ? '••••••••' : 'Min 8 characters'}
+                  placeholder={isEditing ? '••••' : '4-digit PIN'}
                   className="pr-10"
                 />
                 <button
@@ -495,12 +496,16 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="email">Email <span className="text-muted-foreground text-xs">(Optional)</span></Label>
               <Input
-                id="phone"
-                {...register('phone')}
-                placeholder="+91 98765 43210"
+                id="email"
+                type="email"
+                {...register('email')}
+                placeholder="email@example.com"
               />
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email.message}</p>
+              )}
             </div>
           </div>
 
@@ -749,7 +754,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
                       <Input
                         id="caregiverPhone"
                         {...register('caregiverPhone')}
-                        placeholder="+91 98765 43210"
+                        placeholder="9876543210"
                         className="flex-1"
                       />
                       {caregiverPhone && (
@@ -802,7 +807,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
                     <Input
                       id="emergencyContact"
                       {...register('emergencyContact')}
-                      placeholder="+91 98765 43210"
+                      placeholder="9876543210"
                     />
                   </div>
 

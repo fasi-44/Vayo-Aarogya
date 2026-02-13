@@ -170,8 +170,8 @@ export default function NewElderlyPage() {
       if (!formData.category) {
         throw new Error('Please select a patient category')
       }
-      if (!formData.name || !formData.email || !formData.password) {
-        throw new Error('Name, email, and password are required')
+      if (!formData.name || !formData.phone || !formData.password) {
+        throw new Error('Name, phone number, and password are required')
       }
 
       const result = await createElderly(formData)
@@ -315,27 +315,40 @@ export default function NewElderlyPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="9876543210"
+                      maxLength={10}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email (Optional)</Label>
                     <Input
                       id="email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                       placeholder="Enter email address"
-                      required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password *</Label>
+                    <Label htmlFor="password">Password (4-digit PIN) *</Label>
                     <div className="relative">
                       <Input
                         id="password"
                         type={showPassword ? 'text' : 'password'}
                         value={formData.password || ''}
                         onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                        placeholder="Enter password"
+                        placeholder="Enter a 4-digit PIN"
                         required
+                        maxLength={4}
                         className="pr-10"
                       />
                       <button
@@ -346,17 +359,6 @@ export default function NewElderlyPage() {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="Enter phone number"
-                    />
                   </div>
 
                   <div className="space-y-2">
@@ -530,7 +532,8 @@ export default function NewElderlyPage() {
                       type="tel"
                       value={formData.caregiverPhone || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, caregiverPhone: e.target.value }))}
-                      placeholder="Enter caregiver phone"
+                      placeholder="9876543210"
+                      maxLength={10}
                     />
                   </div>
 

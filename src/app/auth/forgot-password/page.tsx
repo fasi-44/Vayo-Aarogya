@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, ArrowLeft, CheckCircle2, HeartPulse } from "lucide-react";
+import { Phone, ArrowLeft, CheckCircle2, HeartPulse } from "lucide-react";
 
 const forgotPasswordSchema = z.object({
-    email: z.string().email("Please enter a valid email address"),
+    phone: z.string().length(10, "Phone number must be exactly 10 digits").regex(/^\d{10}$/, "Phone number must be 10 digits"),
 });
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
@@ -20,7 +20,7 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export default function ForgotPasswordPage() {
     const [isLoading, setIsLoading] = React.useState(false);
     const [isSubmitted, setIsSubmitted] = React.useState(false);
-    const [submittedEmail, setSubmittedEmail] = React.useState("");
+    const [submittedPhone, setSubmittedPhone] = React.useState("");
 
     const {
         register,
@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
         await new Promise((resolve) => setTimeout(resolve, 1500));
         console.log("Forgot password data:", data);
         setIsLoading(false);
-        setSubmittedEmail(data.email);
+        setSubmittedPhone(data.phone);
         setIsSubmitted(true);
     };
 
@@ -48,22 +48,22 @@ export default function ForgotPasswordPage() {
                         <CheckCircle2 className="w-8 h-8 text-healthy" />
                     </div>
                     <h2 className="text-xl font-semibold text-foreground mb-2">
-                        Check your email
+                        Reset link sent
                     </h2>
                     <p className="text-muted-foreground mb-6">
                         We&apos;ve sent a password reset link to
                         <br />
-                        <span className="font-medium text-foreground">{submittedEmail}</span>
+                        <span className="font-medium text-foreground">{submittedPhone}</span>
                     </p>
                     <p className="text-sm text-muted-foreground mb-6">
-                        Didn&apos;t receive the email? Check your spam folder or
+                        Didn&apos;t receive the message? Please check and try again.
                     </p>
                     <Button
                         variant="outline"
                         onClick={() => setIsSubmitted(false)}
                         className="mb-4"
                     >
-                        Try another email
+                        Try another number
                     </Button>
                     <div className="mt-4">
                         <Link
@@ -97,18 +97,19 @@ export default function ForgotPasswordPage() {
             </CardHeader>
             <CardContent className="pt-4">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                    {/* Email */}
+                    {/* Phone */}
                     <div className="space-y-2">
-                        <Label htmlFor="email">
-                            Email Address <span className="text-destructive">*</span>
+                        <Label htmlFor="phone">
+                            Phone Number <span className="text-destructive">*</span>
                         </Label>
                         <Input
-                            id="email"
-                            type="email"
-                            placeholder="Enter your registered email"
-                            icon={<Mail className="w-4 h-4" />}
-                            error={errors.email?.message}
-                            {...register("email")}
+                            id="phone"
+                            type="tel"
+                            placeholder="9876543210"
+                            icon={<Phone className="w-4 h-4" />}
+                            error={errors.phone?.message}
+                            maxLength={10}
+                            {...register("phone")}
                         />
                     </div>
 

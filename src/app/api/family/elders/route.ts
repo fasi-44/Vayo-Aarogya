@@ -6,7 +6,7 @@ import type { ApiResponse, SafeUser } from '@/types'
 function getUserFromHeaders(request: NextRequest) {
   return {
     userId: request.headers.get('x-user-id'),
-    email: request.headers.get('x-user-email'),
+    phone: request.headers.get('x-user-phone'),
     role: request.headers.get('x-user-role'),
   }
 }

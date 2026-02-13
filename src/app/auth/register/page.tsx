@@ -29,15 +29,13 @@ import { Mail, Lock, User, Phone, ArrowRight, ArrowLeft, Shield, HeartPulse, Che
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  phone: z.string().min(10, 'Please enter a valid phone number'),
+  email: z.string().email('Please enter a valid email address').optional().or(z.literal('')),
+  phone: z.string().length(10, 'Phone number must be exactly 10 digits').regex(/^\d{10}$/, 'Phone number must be 10 digits'),
   role: z.string().min(1, 'Please select your role'),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number'),
+    .min(4, 'Password must be at least 4 digits')
+    .regex(/^\d+$/, 'Password must contain only digits'),
   confirmPassword: z.string(),
   terms: z.boolean().refine((val) => val === true, 'You must accept the terms'),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -80,10 +78,8 @@ export default function RegisterPage() {
   const password = watch('password', '')
 
   const passwordRequirements = [
-    { label: 'At least 8 characters', met: password.length >= 8 },
-    { label: 'One uppercase letter', met: /[A-Z]/.test(password) },
-    { label: 'One lowercase letter', met: /[a-z]/.test(password) },
-    { label: 'One number', met: /[0-9]/.test(password) },
+    { label: 'At least 4 digits', met: password.length >= 4 },
+    { label: 'Only digits (0-9)', met: /^\d+$/.test(password) },
   ]
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -98,8 +94,8 @@ export default function RegisterPage() {
         },
         body: JSON.stringify({
           name: data.name,
-          email: data.email,
           phone: data.phone,
+          email: data.email || undefined,
           role: data.role,
           password: data.password,
         }),
@@ -205,10 +201,27 @@ export default function RegisterPage() {
                       />
                     </div>
 
-                    {/* Email Field */}
+                    {/* Phone Field */}
+                    <div className="space-y-2">
+                      <Label htmlFor="phone" className="text-sm font-medium">
+                        Phone Number *
+                      </Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="9876543210"
+                        icon={<Phone className="w-4 h-4" />}
+                        error={errors.phone?.message}
+                        autoComplete="tel"
+                        maxLength={10}
+                        {...register('phone')}
+                      />
+                    </div>
+
+                    {/* Email Field (Optional) */}
                     <div className="space-y-2">
                       <Label htmlFor="email" className="text-sm font-medium">
-                        Email Address
+                        Email Address <span className="text-muted-foreground">(Optional)</span>
                       </Label>
                       <Input
                         id="email"
@@ -218,22 +231,6 @@ export default function RegisterPage() {
                         error={errors.email?.message}
                         autoComplete="email"
                         {...register('email')}
-                      />
-                    </div>
-
-                    {/* Phone Field */}
-                    <div className="space-y-2">
-                      <Label htmlFor="phone" className="text-sm font-medium">
-                        Phone Number
-                      </Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="+91 98765 43210"
-                        icon={<Phone className="w-4 h-4" />}
-                        error={errors.phone?.message}
-                        autoComplete="tel"
-                        {...register('phone')}
                       />
                     </div>
 
@@ -273,7 +270,7 @@ export default function RegisterPage() {
                         <Input
                           id="password"
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="Create a strong password"
+                          placeholder="Enter a 4-digit PIN"
                           icon={<Lock className="w-4 h-4" />}
                           error={errors.password?.message}
                           autoComplete="new-password"
@@ -318,7 +315,7 @@ export default function RegisterPage() {
                         <Input
                           id="confirmPassword"
                           type={showConfirmPassword ? 'text' : 'password'}
-                          placeholder="Confirm your password"
+                          placeholder="Confirm your PIN"
                           icon={<Lock className="w-4 h-4" />}
                           error={errors.confirmPassword?.message}
                           autoComplete="new-password"

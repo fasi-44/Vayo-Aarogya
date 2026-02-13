@@ -10,10 +10,10 @@ export interface UsersListResponse {
 
 // User create/update data
 export interface UserFormData {
-  email: string
+  email?: string
   password?: string
   name: string
-  phone?: string
+  phone: string
   role: UserRole
   isActive?: boolean
   // Elderly fields

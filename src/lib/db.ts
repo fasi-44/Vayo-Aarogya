@@ -10,10 +10,10 @@ import type { User as PrismaUser, Assessment as PrismaAssessment, Prisma, RiskLe
 function prismaUserToAppUser(prismaUser: PrismaUser): User {
   return {
     id: prismaUser.id,
-    email: prismaUser.email,
+    email: prismaUser.email ?? undefined,
     password: prismaUser.password,
     name: prismaUser.name,
-    phone: prismaUser.phone ?? undefined,
+    phone: prismaUser.phone ?? '',
     role: prismaUser.role as UserRole,
     avatar: prismaUser.avatar ?? undefined,
     isActive: prismaUser.isActive,
@@ -67,8 +67,16 @@ class Database {
   // ==========================================
 
   async findUserByEmail(email: string): Promise<User | undefined> {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: { email: email.toLowerCase() },
+    })
+    return user ? prismaUserToAppUser(user) : undefined
+  }
+
+  async findUserByPhone(phone: string): Promise<User | undefined> {
+    const normalizedPhone = phone.replace(/[\s\-]/g, '')
+    const user = await prisma.user.findUnique({
+      where: { phone: normalizedPhone },
     })
     return user ? prismaUserToAppUser(user) : undefined
   }
@@ -113,7 +121,7 @@ class Database {
   async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
     const user = await prisma.user.create({
       data: {
-        email: userData.email.toLowerCase(),
+        email: userData.email?.toLowerCase() || null,
         password: userData.password,
         name: userData.name,
         phone: userData.phone,
@@ -266,6 +274,7 @@ class Database {
     if (options?.search) {
       where.OR = [
         { name: { contains: options.search, mode: 'insensitive' } },
+        { phone: { contains: options.search } },
         { email: { contains: options.search, mode: 'insensitive' } },
       ]
     }

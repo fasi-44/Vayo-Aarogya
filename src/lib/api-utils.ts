@@ -67,12 +67,12 @@ export function errorResponse(
 // Get authenticated user from request headers (set by middleware)
 export function getAuthUser(request: NextRequest): {
   userId: string | null
-  email: string | null
+  phone: string | null
   role: UserRole | null
 } {
   return {
     userId: request.headers.get('x-user-id'),
-    email: request.headers.get('x-user-email'),
+    phone: request.headers.get('x-user-phone'),
     role: request.headers.get('x-user-role') as UserRole | null,
   }
 }
@@ -93,16 +93,16 @@ export function hasRole(userRole: UserRole | null, allowedRoles: UserRole[]): bo
 // Require authentication middleware helper
 export function requireAuth(request: NextRequest): {
   userId: string
-  email: string
+  phone: string
   role: UserRole
 } {
   const user = getAuthUser(request)
-  if (!user.userId || !user.email || !user.role) {
+  if (!user.userId || !user.role) {
     throw Errors.unauthorized('Authentication required')
   }
   return {
     userId: user.userId,
-    email: user.email,
+    phone: user.phone || '',
     role: user.role,
   }
 }
@@ -110,7 +110,7 @@ export function requireAuth(request: NextRequest): {
 // Require specific permission
 export function requirePermission(request: NextRequest, permission: Permission): {
   userId: string
-  email: string
+  phone: string
   role: UserRole
 } {
   const user = requireAuth(request)
@@ -123,7 +123,7 @@ export function requirePermission(request: NextRequest, permission: Permission):
 // Require specific roles
 export function requireRole(request: NextRequest, allowedRoles: UserRole[]): {
   userId: string
-  email: string
+  phone: string
   role: UserRole
 } {
   const user = requireAuth(request)

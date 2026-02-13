@@ -12,11 +12,11 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/store'
-import { Mail, Lock, HeartPulse, ArrowRight, Sparkles, ArrowLeft, Shield, AlertCircle, CheckCircle2, Leaf, Loader2, Eye, EyeOff } from 'lucide-react'
+import { Phone, Lock, HeartPulse, ArrowRight, Sparkles, ArrowLeft, Shield, AlertCircle, CheckCircle2, Leaf, Loader2, Eye, EyeOff } from 'lucide-react'
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  phone: z.string().length(10, 'Phone number must be exactly 10 digits').regex(/^\d{10}$/, 'Phone number must be 10 digits'),
+  password: z.string().min(4, 'Password must be at least 4 digits'),
   rememberMe: z.boolean().optional(),
 })
 
@@ -53,7 +53,7 @@ function LoginPageContent() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      phone: '',
       password: '',
       rememberMe: false,
     },
@@ -61,7 +61,7 @@ function LoginPageContent() {
 
   const onSubmit = async (data: LoginFormData) => {
     setError(null)
-    const success = await login(data.email, data.password)
+    const success = await login(data.phone, data.password)
 
     if (success) {
       router.push('/dashboard')
@@ -127,20 +127,21 @@ function LoginPageContent() {
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Email Field */}
+            {/* Phone Field */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-semibold text-foreground">
-                Email Address
+              <Label htmlFor="phone" className="text-sm font-semibold text-foreground">
+                Phone Number
               </Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                icon={<Mail className="w-4 h-4" />}
-                error={errors.email?.message}
-                autoComplete="email"
+                id="phone"
+                type="tel"
+                placeholder="9876543210"
+                icon={<Phone className="w-4 h-4" />}
+                error={errors.phone?.message}
+                autoComplete="tel"
+                maxLength={10}
                 className="h-12 rounded-xl"
-                {...register('email')}
+                {...register('phone')}
               />
             </div>
 
@@ -161,7 +162,7 @@ function LoginPageContent() {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
+                  placeholder="Enter your 4-digit PIN"
                   icon={<Lock className="w-4 h-4" />}
                   error={errors.password?.message}
                   autoComplete="current-password"
@@ -229,14 +230,14 @@ function LoginPageContent() {
               </div>
               <div className="space-y-2.5">
                 {[
-                  { role: 'Admin', email: 'admin@vayo.health', pass: 'Admin@123' },
-                  { role: 'Professional', email: 'coreclinicalteam@vayo.health', pass: 'Doctor@123' },
-                  { role: 'Volunteer', email: 'volunteer@vayo.health', pass: 'Volunteer@123' },
-                  { role: 'Family', email: 'family@vayo.health', pass: 'Family@123' },
+                  { role: 'Admin', phone: '9000000001', pass: '1234' },
+                  { role: 'Professional', phone: '9000000002', pass: '1234' },
+                  { role: 'Volunteer', phone: '9000000003', pass: '1234' },
+                  { role: 'Family', phone: '9000000004', pass: '1234' },
                 ].map((cred) => (
                   <div key={cred.role} className="flex justify-between items-center p-2.5 bg-white/80 rounded-xl border border-border/50">
                     <span className="text-xs font-medium text-muted-foreground w-16">{cred.role}</span>
-                    <code className="text-xs font-mono text-foreground">{cred.email} / {cred.pass}</code>
+                    <code className="text-xs font-mono text-foreground">{cred.phone} / {cred.pass}</code>
                   </div>
                 ))}
               </div>

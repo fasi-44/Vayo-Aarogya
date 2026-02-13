@@ -66,10 +66,10 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
 // User interface for database
 export interface User {
   id: string
-  email: string
+  email?: string
   password: string // hashed
   name: string
-  phone?: string
+  phone: string
   role: UserRole
   avatar?: string
   createdAt: string
@@ -215,7 +215,7 @@ export type SafeUser = Omit<User, 'password'>
 // JWT Payload
 export interface JWTPayload {
   userId: string
-  email: string
+  phone: string
   role: UserRole
   type: 'access' | 'refresh'
   iat?: number
@@ -232,7 +232,7 @@ export interface ApiResponse<T = unknown> {
 
 // Auth API types
 export interface LoginRequest {
-  email: string
+  phone: string
   password: string
   rememberMe?: boolean
 }
@@ -244,10 +244,10 @@ export interface LoginResponse {
 }
 
 export interface RegisterRequest {
-  email: string
+  phone: string
   password: string
   name: string
-  phone?: string
+  email?: string
   role?: UserRole
 }
 
@@ -261,7 +261,7 @@ export interface ChangePasswordRequest {
 }
 
 export interface ForgotPasswordRequest {
-  email: string
+  phone: string
 }
 
 export interface ResetPasswordRequest {

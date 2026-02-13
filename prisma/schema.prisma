@@ -42,10 +42,10 @@ enum AssessmentStatus {
 // User model
 model User {
   id             String    @id @default(cuid())
-  email          String    @unique
+  email          String?
   password       String
   name           String
-  phone          String?
+  phone          String    @unique
   role           UserRole  @default(family)
   avatar         String?
   isActive       Boolean   @default(true) @map("is_active")
@@ -121,7 +121,7 @@ model User {
   // Documents (prescriptions, medical records, etc.)
   documents Document[]
 
-  @@index([email])
+  @@index([phone])
   @@index([role])
   @@index([assignedVolunteerId])
   @@index([assignedProfessionalId])

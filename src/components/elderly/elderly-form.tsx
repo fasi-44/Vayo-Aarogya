@@ -34,11 +34,11 @@ import { useAuthStore } from '@/store'
 
 // Validation schema
 const elderlySchema = z.object({
-  category: z.enum(['community', 'clinic'], { required_error: 'Please select a category' }),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters').optional().or(z.literal('')),
+  category: z.enum(['community', 'clinic'], { required_error: 'Please select a patient category', invalid_type_error: 'Please select a patient category' }),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  password: z.string().min(4, 'Password must be at least 4 digits').optional().or(z.literal('')),
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  phone: z.string().optional(),
+  phone: z.string().length(10, 'Phone number must be exactly 10 digits').regex(/^\d{10}$/, 'Phone number must be 10 digits'),
   isActive: z.boolean().optional(),
   age: z.coerce.number().min(1).max(150).optional().or(z.literal('')),
   gender: z.enum(['male', 'female', 'other']).optional().or(z.literal('')),
@@ -414,9 +414,9 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
     setIsLoading(true)
     try {
       const formData: ElderlyFormData = {
-        email: data.email,
+        email: data.email || undefined,
         name: data.name,
-        phone: data.phone || undefined,
+        phone: data.phone,
         isActive: data.isActive,
         category: data.category,
       }
@@ -555,17 +555,18 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-base">Email *</Label>
+                <Label htmlFor="phone" className="text-base">Phone Number *</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  {...register('email')}
-                  placeholder="email@example.com"
+                  id="phone"
+                  type="tel"
+                  {...register('phone')}
+                  placeholder="9876543210"
+                  maxLength={10}
                   disabled={isEditing}
                   className="text-base"
                 />
-                {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                {errors.phone && (
+                  <p className="text-sm text-red-500">{errors.phone.message}</p>
                 )}
               </div>
             </div>
@@ -580,7 +581,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     {...register('password')}
-                    placeholder={isEditing ? '••••••••' : 'Min 8 characters'}
+                    placeholder={isEditing ? '••••' : '4-digit PIN'}
                     className="text-base pr-10"
                   />
                   <button
@@ -597,13 +598,17 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-base">Phone</Label>
+                <Label htmlFor="email" className="text-base">Email <span className="text-muted-foreground text-xs">(Optional)</span></Label>
                 <Input
-                  id="phone"
-                  {...register('phone')}
-                  placeholder="+91 98765 43210"
+                  id="email"
+                  type="email"
+                  {...register('email')}
+                  placeholder="email@example.com"
                   className="text-base"
                 />
+                {errors.email && (
+                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                )}
               </div>
             </div>
           </div>
@@ -620,7 +625,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                 <Input
                   id="emergencyContact"
                   {...register('emergencyContact')}
-                  placeholder="+91 98765 43210"
+                  placeholder="9876543210"
                   className="text-base"
                 />
               </div>
@@ -928,7 +933,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                   <Input
                     id="caregiverPhone"
                     {...register('caregiverPhone')}
-                    placeholder="+91 98765 43210"
+                    placeholder="9876543210"
                     className="text-base flex-1"
                   />
                   {caregiverPhone && (

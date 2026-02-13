@@ -205,9 +205,9 @@ async function main() {
   const admin = await prisma.user.create({
     data: {
       email: 'admin@vayo.health',
-      password: await hashPassword('Admin@123'),
+      password: await hashPassword('1234'),
       name: 'Dr. Rajesh Kumar',
-      phone: '+91 98765 43210',
+      phone: '9000000001',
       role: UserRole.super_admin,
       isActive: true,
       emailVerified: true,
@@ -223,9 +223,9 @@ async function main() {
   const doctor1 = await prisma.user.create({
     data: {
       email: 'coreclinicalteam@vayo.health',
-      password: await hashPassword('Doctor@123'),
+      password: await hashPassword('1234'),
       name: 'Dr. Priya Sharma',
-      phone: '+91 98765 43211',
+      phone: '9000000002',
       role: UserRole.professional,
       isActive: true,
       emailVerified: true,
@@ -240,9 +240,9 @@ async function main() {
   const doctor2 = await prisma.user.create({
     data: {
       email: 'dr.anita@vayo.health',
-      password: await hashPassword('Doctor@123'),
+      password: await hashPassword('1234'),
       name: 'Dr. Anita Verma',
-      phone: '+91 98765 43220',
+      phone: '9000000005',
       role: UserRole.professional,
       isActive: true,
       emailVerified: true,
@@ -257,9 +257,9 @@ async function main() {
   const doctor3 = await prisma.user.create({
     data: {
       email: 'dr.suresh@vayo.health',
-      password: await hashPassword('Doctor@123'),
+      password: await hashPassword('1234'),
       name: 'Dr. Suresh Patel',
-      phone: '+91 98765 43221',
+      phone: '9000000006',
       role: UserRole.professional,
       isActive: true,
       emailVerified: true,
@@ -275,9 +275,9 @@ async function main() {
   const volunteer1 = await prisma.user.create({
     data: {
       email: 'volunteer@vayo.health',
-      password: await hashPassword('Volunteer@123'),
+      password: await hashPassword('1234'),
       name: 'Amit Singh',
-      phone: '+91 98765 43212',
+      phone: '9000000003',
       role: UserRole.volunteer,
       isActive: true,
       emailVerified: true,
@@ -295,9 +295,9 @@ async function main() {
   const volunteer2 = await prisma.user.create({
     data: {
       email: 'meera.volunteer@vayo.health',
-      password: await hashPassword('Volunteer@123'),
+      password: await hashPassword('1234'),
       name: 'Meera Kumari',
-      phone: '+91 98765 43222',
+      phone: '9000000007',
       role: UserRole.volunteer,
       isActive: true,
       emailVerified: true,
@@ -315,9 +315,9 @@ async function main() {
   const volunteer3 = await prisma.user.create({
     data: {
       email: 'rahul.volunteer@vayo.health',
-      password: await hashPassword('Volunteer@123'),
+      password: await hashPassword('1234'),
       name: 'Rahul Gupta',
-      phone: '+91 98765 43223',
+      phone: '9000000008',
       role: UserRole.volunteer,
       isActive: true,
       emailVerified: true,
@@ -336,9 +336,9 @@ async function main() {
   const family1 = await prisma.user.create({
     data: {
       email: 'family@vayo.health',
-      password: await hashPassword('Family@123'),
+      password: await hashPassword('1234'),
       name: 'Sunita Devi',
-      phone: '+91 98765 43213',
+      phone: '9000000004',
       role: UserRole.family,
       isActive: true,
       emailVerified: true,
@@ -355,9 +355,9 @@ async function main() {
   const family2 = await prisma.user.create({
     data: {
       email: 'vikram.family@vayo.health',
-      password: await hashPassword('Family@123'),
+      password: await hashPassword('1234'),
       name: 'Vikram Prasad',
-      phone: '+91 98765 43224',
+      phone: '9000000009',
       role: UserRole.family,
       isActive: true,
       emailVerified: true,
@@ -374,9 +374,9 @@ async function main() {
   const family3 = await prisma.user.create({
     data: {
       email: 'neha.family@vayo.health',
-      password: await hashPassword('Family@123'),
+      password: await hashPassword('1234'),
       name: 'Neha Sharma',
-      phone: '+91 98765 43225',
+      phone: '9000000010',
       role: UserRole.family,
       isActive: true,
       emailVerified: true,
@@ -394,9 +394,9 @@ async function main() {
   const elderly1 = await prisma.user.create({
     data: {
       email: 'elderly@vayo.health',
-      password: await hashPassword('Elderly@123'),
+      password: await hashPassword('1234'),
       name: 'Shri Ram Prasad',
-      phone: '+91 98765 43214',
+      phone: '9000000011',
       role: UserRole.elderly,
       isActive: true,
       emailVerified: true,
@@ -420,9 +420,9 @@ async function main() {
   const elderly2 = await prisma.user.create({
     data: {
       email: 'kamla.devi@vayo.health',
-      password: await hashPassword('Elderly@123'),
+      password: await hashPassword('1234'),
       name: 'Kamla Devi',
-      phone: '+91 98765 43226',
+      phone: '9000000012',
       role: UserRole.elderly,
       isActive: true,
       emailVerified: true,
@@ -446,9 +446,9 @@ async function main() {
   const elderly3 = await prisma.user.create({
     data: {
       email: 'hari.om@vayo.health',
-      password: await hashPassword('Elderly@123'),
+      password: await hashPassword('1234'),
       name: 'Hari Om Sharma',
-      phone: '+91 98765 43227',
+      phone: '9000000013',
       role: UserRole.elderly,
       isActive: true,
       emailVerified: true,
@@ -472,9 +472,9 @@ async function main() {
   const elderly4 = await prisma.user.create({
     data: {
       email: 'savitri.singh@vayo.health',
-      password: await hashPassword('Elderly@123'),
+      password: await hashPassword('1234'),
       name: 'Savitri Singh',
-      phone: '+91 98765 43228',
+      phone: '9000000014',
       role: UserRole.elderly,
       isActive: true,
       emailVerified: true,
@@ -498,9 +498,9 @@ async function main() {
   const elderly5 = await prisma.user.create({
     data: {
       email: 'mohan.lal@vayo.health',
-      password: await hashPassword('Elderly@123'),
+      password: await hashPassword('1234'),
       name: 'Mohan Lal Agarwal',
-      phone: '+91 98765 43230',
+      phone: '9000000015',
       role: UserRole.elderly,
       isActive: true,
       emailVerified: true,
@@ -524,9 +524,9 @@ async function main() {
   const elderly6 = await prisma.user.create({
     data: {
       email: 'parvati.mishra@vayo.health',
-      password: await hashPassword('Elderly@123'),
+      password: await hashPassword('1234'),
       name: 'Parvati Mishra',
-      phone: '+91 98765 43232',
+      phone: '9000000016',
       role: UserRole.elderly,
       isActive: true,
       emailVerified: true,

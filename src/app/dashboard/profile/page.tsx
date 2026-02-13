@@ -227,7 +227,8 @@ export default function ProfilePage() {
                   <Input
                     id="phone"
                     {...registerProfile('phone')}
-                    placeholder="+91 98765 43210"
+                    placeholder="9876543210"
+                    maxLength={10}
                   />
                 </div>
 
@@ -236,7 +237,7 @@ export default function ProfilePage() {
                   <Input
                     id="emergencyContact"
                     {...registerProfile('emergencyContact')}
-                    placeholder="+91 98765 43210"
+                    placeholder="9876543210"
                   />
                 </div>
               </div>

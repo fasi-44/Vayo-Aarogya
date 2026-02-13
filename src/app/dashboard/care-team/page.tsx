@@ -165,7 +165,8 @@ export default function CareTeamPage() {
   const filteredMembers = careTeamMembers.filter((member) => {
     const matchesSearch =
       member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchQuery.toLowerCase())
+      (member.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+      (member.phone?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
 
     // Filter by role
     if (filterRole !== 'all' && member.role !== filterRole) return false
@@ -535,12 +536,14 @@ export default function CareTeamPage() {
 
               {/* Contact Info */}
               <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                {selectedMember.email && (
                 <div className="flex items-center gap-3 text-sm">
                   <Mail className="w-4 h-4 text-muted-foreground" />
                   <a href={`mailto:${selectedMember.email}`} className="text-primary hover:underline">
                     {selectedMember.email}
                   </a>
                 </div>
+                )}
                 {selectedMember.phone && (
                   <div className="flex items-center gap-3 text-sm">
                     <Phone className="w-4 h-4 text-muted-foreground" />

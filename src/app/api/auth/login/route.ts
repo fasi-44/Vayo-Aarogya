@@ -6,7 +6,7 @@ import {
   generateRefreshToken,
   setAuthCookies,
   checkRateLimit,
-  validateEmail,
+  validatePhone,
 } from '@/lib/auth'
 import {
   successResponse,
@@ -20,20 +20,21 @@ import { type LoginResponse } from '@/types'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password, rememberMe = false } = body
+    const { phone, password, rememberMe = false } = body
 
     // Validate input
-    if (!email || !password) {
-      return errorResponse(Errors.badRequest('Email and password are required'))
+    if (!phone || !password) {
+      return errorResponse(Errors.badRequest('Phone number and password are required'))
     }
 
-    if (!validateEmail(email)) {
-      return errorResponse(Errors.badRequest('Invalid email format'))
+    if (!validatePhone(phone)) {
+      return errorResponse(Errors.badRequest('Invalid phone number format'))
     }
 
     // Rate limiting
     const clientIP = getClientIP(request)
-    const rateLimitKey = `login:${clientIP}:${email.toLowerCase()}`
+    const normalizedPhone = phone.replace(/[\s\-]/g, '')
+    const rateLimitKey = `login:${clientIP}:${normalizedPhone}`
     const rateLimit = checkRateLimit(rateLimitKey, 5, 15 * 60 * 1000) // 5 attempts per 15 min
 
     if (!rateLimit.allowed) {
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
       await db.createAuditLog({
         action: 'login_rate_limited',
         entity: 'User',
-        details: { email, ip: clientIP },
+        details: { phone: normalizedPhone, ip: clientIP },
         ipAddress: clientIP,
         userAgent: getUserAgent(request),
       })
@@ -53,19 +54,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find user
-    const user = await db.findUserByEmail(email)
+    // Find user by phone
+    const user = await db.findUserByPhone(normalizedPhone)
     if (!user) {
       // Log failed attempt
       await db.createAuditLog({
         action: 'login_failed',
         entity: 'User',
-        details: { email, reason: 'user_not_found' },
+        details: { phone: normalizedPhone, reason: 'user_not_found' },
         ipAddress: clientIP,
         userAgent: getUserAgent(request),
       })
 
-      return errorResponse(Errors.unauthorized('Invalid email or password'))
+      return errorResponse(Errors.unauthorized('Invalid phone number or password'))
     }
 
     // Check approval status
@@ -127,13 +128,13 @@ export async function POST(request: NextRequest) {
         userAgent: getUserAgent(request),
       })
 
-      return errorResponse(Errors.unauthorized('Invalid email or password'))
+      return errorResponse(Errors.unauthorized('Invalid phone number or password'))
     }
 
     // Generate tokens
     const tokenPayload = {
       userId: user.id,
-      email: user.email,
+      phone: user.phone,
       role: user.role,
     }
 

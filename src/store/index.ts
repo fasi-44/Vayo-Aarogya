@@ -59,8 +59,8 @@ interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<boolean>
-  register: (email: string, password: string, name: string, phone?: string, role?: UserRole) => Promise<{ success: boolean; error?: string }>
+  login: (phone: string, password: string, rememberMe?: boolean) => Promise<boolean>
+  register: (phone: string, password: string, name: string, email?: string, role?: UserRole) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
   refreshAuth: () => Promise<boolean>
   fetchCurrentUser: () => Promise<void>
@@ -93,14 +93,14 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
 
-      login: async (email: string, password: string, rememberMe: boolean = false) => {
+      login: async (phone: string, password: string, rememberMe: boolean = false) => {
         set({ isLoading: true, error: null })
 
         try {
           const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, rememberMe }),
+            body: JSON.stringify({ phone, password, rememberMe }),
           })
 
           const data: ApiResponse<LoginResponse> = await response.json()
@@ -130,14 +130,14 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async (email: string, password: string, name: string, phone?: string, role?: UserRole) => {
+      register: async (phone: string, password: string, name: string, email?: string, role?: UserRole) => {
         set({ isLoading: true, error: null })
 
         try {
           const response = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, name, phone, role }),
+            body: JSON.stringify({ phone, password, name, email, role }),
           })
 
           const data: ApiResponse<LoginResponse> = await response.json()

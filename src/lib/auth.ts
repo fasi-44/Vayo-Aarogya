@@ -109,24 +109,15 @@ export async function getCurrentUser(): Promise<JWTPayload | null> {
   return payload
 }
 
-// Validate password strength
+// Validate password - simple 4-digit PIN
 export function validatePassword(password: string): { valid: boolean; errors: string[] } {
   const errors: string[] = []
 
-  if (password.length < 8) {
-    errors.push('Password must be at least 8 characters long')
+  if (!password || password.length < 4) {
+    errors.push('Password must be at least 4 digits')
   }
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter')
-  }
-  if (!/[a-z]/.test(password)) {
-    errors.push('Password must contain at least one lowercase letter')
-  }
-  if (!/[0-9]/.test(password)) {
-    errors.push('Password must contain at least one number')
-  }
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    errors.push('Password must contain at least one special character')
+  if (!/^\d+$/.test(password)) {
+    errors.push('Password must contain only digits')
   }
 
   return {
@@ -135,10 +126,17 @@ export function validatePassword(password: string): { valid: boolean; errors: st
   }
 }
 
-// Validate email format
+// Validate email format (optional field now)
 export function validateEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
+}
+
+// Validate phone number format
+export function validatePhone(phone: string): boolean {
+  // Allow digits, spaces, +, - (minimum 10 digits)
+  const digitsOnly = phone.replace(/[\s\-+]/g, '')
+  return digitsOnly.length >= 10 && /^\d+$/.test(digitsOnly)
 }
 
 // Rate limiting helper (simple in-memory, use Redis in production)

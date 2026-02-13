@@ -5,7 +5,7 @@ import { type ApiResponse, type SafeUser, type UserRole, rolePermissions } from 
 function getUserFromHeaders(request: NextRequest) {
   return {
     userId: request.headers.get('x-user-id'),
-    email: request.headers.get('x-user-email'),
+    phone: request.headers.get('x-user-phone'),
     role: request.headers.get('x-user-role') as UserRole | null,
   }
 }
@@ -96,7 +96,7 @@ export async function POST(
       entity: 'User',
       entityId: id,
       details: {
-        targetUser: existingUser.email,
+        targetUser: existingUser.phone,
         targetRole: existingUser.role,
         action,
         ...(category && { category }),
