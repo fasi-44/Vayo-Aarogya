@@ -232,20 +232,22 @@ export default function InterventionsPage() {
 
       {/* Filters and Actions */}
       <Card className="border-0 shadow-soft mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search interventions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+        <CardContent className="p-4 space-y-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search interventions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
 
+          {/* Row 1: Status + Priority */}
+          <div className="flex gap-3">
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -258,7 +260,7 @@ export default function InterventionsPage() {
             </Select>
 
             <Select value={filterPriority} onValueChange={setFilterPriority}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
               <SelectContent>
@@ -269,9 +271,12 @@ export default function InterventionsPage() {
                 <SelectItem value="low">Low</SelectItem>
               </SelectContent>
             </Select>
+          </div>
 
+          {/* Row 2: Domain + View toggle + New button */}
+          <div className="flex gap-3">
             <Select value={filterDomain} onValueChange={setFilterDomain}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Domain" />
               </SelectTrigger>
               <SelectContent>
@@ -303,9 +308,9 @@ export default function InterventionsPage() {
               </Button>
             </div>
 
-            <Button onClick={handleCreate}>
+            <Button onClick={handleCreate} className="whitespace-nowrap">
               <Plus className="w-4 h-4 mr-2" />
-              New Intervention
+              New
             </Button>
           </div>
         </CardContent>

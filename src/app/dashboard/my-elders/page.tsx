@@ -107,15 +107,20 @@ function MyEldersPageContent() {
         const eldersWithData = await Promise.all(
           result.data.map(async (elder) => {
             const [assessmentsRes, interventionsRes, followUpsRes] = await Promise.all([
-              fetch(`/api/assessments?elderlyId=${elder.id}&limit=10`).then(r => r.json()),
-              fetch(`/api/interventions?elderlyId=${elder.id}`).then(r => r.json()),
+              fetch(`/api/assessments?subjectId=${elder.id}&limit=10`).then(r => r.json()),
+              fetch(`/api/interventions?userId=${elder.id}`).then(r => r.json()),
               fetch(`/api/followups?elderlyId=${elder.id}`).then(r => r.json()),
             ])
 
             let volunteerData = null
             if (elder.assignedVolunteer) {
-              const volRes = await fetch(`/api/users/${elder.assignedVolunteer}`).then(r => r.json())
-              if (volRes.success) volunteerData = volRes.data
+              const volunteerId = typeof elder.assignedVolunteer === 'object'
+                ? (elder.assignedVolunteer as any).id
+                : elder.assignedVolunteer
+              if (volunteerId) {
+                const volRes = await fetch(`/api/users/${volunteerId}`).then(r => r.json())
+                if (volRes.success) volunteerData = volRes.data
+              }
             }
 
             const rawAssessments = assessmentsRes.success ? assessmentsRes.data?.assessments || [] : []
@@ -387,7 +392,7 @@ function MyEldersPageContent() {
 
       {/* Elder Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-3">
               {selectedElder && (
@@ -416,13 +421,15 @@ function MyEldersPageContent() {
           {selectedElder && (
             <div className="flex-1 overflow-y-auto">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-                <TabsList className="grid grid-cols-5 w-full">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="assessments">Assessments</TabsTrigger>
-                  <TabsTrigger value="followups">Follow-ups</TabsTrigger>
-                  <TabsTrigger value="interventions">Care Plans</TabsTrigger>
-                  <TabsTrigger value="summary">Summary</TabsTrigger>
-                </TabsList>
+                <div className="overflow-x-auto -mx-1 px-1">
+                  <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-5 sm:w-full">
+                    <TabsTrigger value="overview" className="text-sm px-3">Overview</TabsTrigger>
+                    <TabsTrigger value="assessments" className="text-sm px-3">Assessments</TabsTrigger>
+                    <TabsTrigger value="followups" className="text-sm px-3">Follow-ups</TabsTrigger>
+                    <TabsTrigger value="interventions" className="text-sm px-3">Care Plans</TabsTrigger>
+                    <TabsTrigger value="summary" className="text-sm px-3">Summary</TabsTrigger>
+                  </TabsList>
+                </div>
 
                 {/* Overview Tab */}
                 <TabsContent value="overview" className="mt-4 space-y-4">
@@ -579,48 +586,51 @@ function MyEldersPageContent() {
                                 key={assessment.id}
                                 className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                               >
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="flex items-center gap-3">
-                                    <div className={cn(
-                                      "w-10 h-10 rounded-lg flex items-center justify-center",
-                                      riskLevel === 'healthy' && "bg-healthy/20",
-                                      riskLevel === 'at_risk' && "bg-at-risk/20",
-                                      riskLevel === 'intervention' && "bg-intervention/20"
-                                    )}>
-                                      <ClipboardCheck className={cn(
-                                        "w-5 h-5",
-                                        riskLevel === 'healthy' && "text-healthy",
-                                        riskLevel === 'at_risk' && "text-at-risk",
-                                        riskLevel === 'intervention' && "text-intervention"
-                                      )} />
-                                    </div>
-                                    <div>
-                                      <p className="font-medium">
-                                        Assessment #{selectedElder.assessments!.length - index}
-                                      </p>
-                                      <p className="text-sm text-muted-foreground">
-                                        {formatDate(assessment.assessedAt || assessment.createdAt)}
-                                      </p>
-                                    </div>
+                                {/* Top: Icon + Title */}
+                                <div className="flex items-center gap-3">
+                                  <div className={cn(
+                                    "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                                    riskLevel === 'healthy' && "bg-healthy/20",
+                                    riskLevel === 'at_risk' && "bg-at-risk/20",
+                                    riskLevel === 'intervention' && "bg-intervention/20"
+                                  )}>
+                                    <ClipboardCheck className={cn(
+                                      "w-5 h-5",
+                                      riskLevel === 'healthy' && "text-healthy",
+                                      riskLevel === 'at_risk' && "text-at-risk",
+                                      riskLevel === 'intervention' && "text-intervention"
+                                    )} />
                                   </div>
-                                  <div className="flex items-center gap-3">
-                                    {scoreDiff !== 0 && (
-                                      <div className={cn(
-                                        "flex items-center gap-1 text-sm",
-                                        scoreDiff < 0 ? "text-healthy" : "text-intervention"
-                                      )}>
-                                        {scoreDiff < 0 ? (
-                                          <TrendingDown className="w-4 h-4" />
-                                        ) : (
-                                          <TrendingUp className="w-4 h-4" />
-                                        )}
-                                        {Math.abs(scoreDiff)} pts
-                                      </div>
-                                    )}
-                                    {getRiskBadge(riskLevel)}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-base">
+                                      Assessment #{selectedElder.assessments!.length - index}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {formatDate(assessment.assessedAt || assessment.createdAt)}
+                                    </p>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-4 mt-3 text-sm">
+
+                                {/* Status + Trend */}
+                                <div className="flex items-center gap-3 mt-3">
+                                  {getRiskBadge(riskLevel)}
+                                  {scoreDiff !== 0 && (
+                                    <div className={cn(
+                                      "flex items-center gap-1 text-sm",
+                                      scoreDiff < 0 ? "text-healthy" : "text-intervention"
+                                    )}>
+                                      {scoreDiff < 0 ? (
+                                        <TrendingDown className="w-4 h-4" />
+                                      ) : (
+                                        <TrendingUp className="w-4 h-4" />
+                                      )}
+                                      {Math.abs(scoreDiff)} pts
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Domain stats */}
+                                <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t text-sm">
                                   <span className="text-muted-foreground">
                                     Score: <strong>{assessment.totalScore || 0}</strong>
                                   </span>
@@ -662,28 +672,28 @@ function MyEldersPageContent() {
                               key={followUp.id}
                               className="p-4 border rounded-lg"
                             >
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3">
-                                  <div className={cn(
-                                    "w-10 h-10 rounded-lg flex items-center justify-center",
-                                    followUp.status === 'completed' && "bg-healthy/20",
-                                    followUp.status === 'scheduled' && "bg-primary/20",
-                                    followUp.status === 'missed' && "bg-intervention/20"
-                                  )}>
-                                    <Calendar className={cn(
-                                      "w-5 h-5",
-                                      followUp.status === 'completed' && "text-healthy",
-                                      followUp.status === 'scheduled' && "text-primary",
-                                      followUp.status === 'missed' && "text-intervention"
-                                    )} />
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">{followUp.type || 'Follow-up'}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {formatDate(followUp.scheduledDate)}
-                                    </p>
-                                  </div>
+                              <div className="flex items-center gap-3">
+                                <div className={cn(
+                                  "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                                  followUp.status === 'completed' && "bg-healthy/20",
+                                  followUp.status === 'scheduled' && "bg-primary/20",
+                                  followUp.status === 'missed' && "bg-intervention/20"
+                                )}>
+                                  <Calendar className={cn(
+                                    "w-5 h-5",
+                                    followUp.status === 'completed' && "text-healthy",
+                                    followUp.status === 'scheduled' && "text-primary",
+                                    followUp.status === 'missed' && "text-intervention"
+                                  )} />
                                 </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-base">{followUp.type || 'Follow-up'}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {formatDate(followUp.scheduledDate)}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="mt-2">
                                 <Badge variant="outline" className={cn(
                                   followUp.status === 'completed' && "bg-healthy/10 text-healthy border-healthy/30",
                                   followUp.status === 'scheduled' && "bg-primary/10 text-primary border-primary/30",
@@ -722,42 +732,40 @@ function MyEldersPageContent() {
                               key={intervention.id}
                               className="p-4 border rounded-lg"
                             >
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3">
-                                  <div className={cn(
-                                    "w-10 h-10 rounded-lg flex items-center justify-center",
-                                    intervention.priority === 'high' && "bg-intervention/20",
-                                    intervention.priority === 'medium' && "bg-at-risk/20",
-                                    intervention.priority === 'low' && "bg-healthy/20"
-                                  )}>
-                                    <Activity className={cn(
-                                      "w-5 h-5",
-                                      intervention.priority === 'high' && "text-intervention",
-                                      intervention.priority === 'medium' && "text-at-risk",
-                                      intervention.priority === 'low' && "text-healthy"
-                                    )} />
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">{intervention.title}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {intervention.domain && `${intervention.domain} • `}
-                                      {formatDate(intervention.createdAt)}
-                                    </p>
-                                  </div>
+                              <div className="flex items-center gap-3">
+                                <div className={cn(
+                                  "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                                  intervention.priority === 'high' && "bg-intervention/20",
+                                  intervention.priority === 'medium' && "bg-at-risk/20",
+                                  intervention.priority === 'low' && "bg-healthy/20"
+                                )}>
+                                  <Activity className={cn(
+                                    "w-5 h-5",
+                                    intervention.priority === 'high' && "text-intervention",
+                                    intervention.priority === 'medium' && "text-at-risk",
+                                    intervention.priority === 'low' && "text-healthy"
+                                  )} />
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className={cn(
-                                    intervention.priority === 'high' && "bg-intervention/10 text-intervention",
-                                    intervention.priority === 'medium' && "bg-at-risk/10 text-at-risk",
-                                    intervention.priority === 'low' && "bg-healthy/10 text-healthy"
-                                  )}>
-                                    {intervention.priority}
-                                  </Badge>
-                                  <Badge variant="outline">
-                                    {intervention.status}
-                                  </Badge>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-base">{intervention.title}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {intervention.domain && `${intervention.domain} • `}
+                                    {formatDate(intervention.createdAt)}
+                                  </p>
                                 </div>
                               </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className={cn(
+                                  intervention.priority === 'high' && "bg-intervention/10 text-intervention",
+                                  intervention.priority === 'medium' && "bg-at-risk/10 text-at-risk",
+                                  intervention.priority === 'low' && "bg-healthy/10 text-healthy"
+                                )}>
+                                  {intervention.priority}
+                                </Badge>
+                                <Badge variant="outline">
+                                  {intervention.status}
+                                  </Badge>
+                                </div>
                               {intervention.description && (
                                 <p className="text-sm text-muted-foreground mt-2">{intervention.description}</p>
                               )}

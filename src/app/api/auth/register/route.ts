@@ -83,11 +83,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if phone already exists
+    // Check for duplicate registration
+    // Elderly: multiple allowed per phone (elder + family can share phone, multiple elders too)
+    // Family/Volunteer: only one per phone per role
     const normalizedPhone = phone.replace(/[\s\-]/g, '')
-    const existingUser = await db.findUserByPhone(normalizedPhone)
-    if (existingUser) {
-      return errorResponse(Errors.conflict('An account with this phone number already exists'))
+    if (role !== 'elderly') {
+      const existingUsers = await db.findUsersByPhone(normalizedPhone)
+      const existingSameRole = existingUsers.find(u => u.role === role)
+      if (existingSameRole) {
+        return errorResponse(Errors.conflict(`An account with this phone number already exists for the role: ${role}`))
+      }
     }
 
     // Hash password

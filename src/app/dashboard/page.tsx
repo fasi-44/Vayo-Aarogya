@@ -60,8 +60,8 @@ interface DashboardData {
 }
 
 const quickActions = [
+  { title: 'Add Elder', href: '/dashboard/elderly?action=add', icon: UserPlus, color: 'bg-secondary' },
   { title: 'New Assessment', href: '/dashboard/assessments/new', icon: ClipboardCheck, color: 'bg-primary' },
-  { title: 'Add Elder', href: '/dashboard/elderly/new', icon: UserPlus, color: 'bg-secondary' },
   { title: 'View Reports', href: '/dashboard/reports', icon: BarChart3, color: 'bg-accent' },
   { title: 'Schedule Follow-up', href: '/dashboard/followups/new', icon: Calendar, color: 'bg-healthy' },
 ]
@@ -121,8 +121,13 @@ export default function DashboardPage() {
 
         let volunteer = null
         if (currentUser.assignedVolunteer) {
-          const volunteerRes = await fetch(`/api/users/${currentUser.assignedVolunteer}`).then(r => r.json())
-          if (volunteerRes.success) volunteer = volunteerRes.data
+          const volunteerId = typeof currentUser.assignedVolunteer === 'object'
+            ? (currentUser.assignedVolunteer as any).id
+            : currentUser.assignedVolunteer
+          if (volunteerId) {
+            const volunteerRes = await fetch(`/api/users/${volunteerId}`).then(r => r.json())
+            if (volunteerRes.success) volunteer = volunteerRes.data
+          }
         }
 
         setElderlyData({
@@ -366,23 +371,23 @@ export default function DashboardPage() {
       subtitle="Here's the health overview of your elderly community"
     >
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
         {stats.map((stat) => {
           const Icon = stat.icon
 
           return (
             <Card key={stat.title} className="border-0 shadow-soft hover:shadow-soft-md transition-shadow">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">{stat.title}</p>
-                    <p className="text-2xl lg:text-3xl font-bold text-foreground">{stat.value}</p>
-                    <div className="flex items-center gap-1 mt-2">
-                      <span className="text-xs text-muted-foreground">{stat.description}</span>
+              <CardContent className="p-3 lg:p-5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs lg:text-sm font-medium text-muted-foreground mb-0.5 lg:mb-1 truncate">{stat.title}</p>
+                    <p className="text-xl lg:text-3xl font-bold text-foreground">{stat.value}</p>
+                    <div className="flex items-center gap-1 mt-1 lg:mt-2">
+                      <span className="text-[10px] lg:text-xs text-muted-foreground">{stat.description}</span>
                     </div>
                   </div>
-                  <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center', `bg-${stat.color}/10`)}>
-                    <Icon className={cn('w-6 h-6', `text-${stat.color}`)} />
+                  <div className={cn('w-9 h-9 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center flex-shrink-0', `bg-${stat.color}/10`)}>
+                    <Icon className={cn('w-4 h-4 lg:w-6 lg:h-6', `text-${stat.color}`)} />
                   </div>
                 </div>
               </CardContent>
@@ -392,22 +397,22 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Quick Actions</h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="mb-4 lg:mb-6">
+        <h3 className="text-xs lg:text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2 lg:mb-3">Quick Actions</h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {quickActions.map((action) => {
             const Icon = action.icon
             return (
               <Link key={action.title} href={action.href}>
                 <Card className="border-0 shadow-soft hover:shadow-soft-md transition-all hover:-translate-y-0.5 cursor-pointer group">
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center text-white', action.color)}>
-                      <Icon className="w-5 h-5" />
+                  <CardContent className="p-3 lg:p-4 flex items-center gap-2.5 lg:gap-4">
+                    <div className={cn('w-8 h-8 lg:w-10 lg:h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0', action.color)}>
+                      <Icon className="w-4 h-4 lg:w-5 lg:h-5" />
                     </div>
-                    <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                    <span className="font-medium text-xs lg:text-base text-foreground group-hover:text-primary transition-colors truncate">
                       {action.title}
                     </span>
-                    <ArrowUpRight className="w-4 h-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ArrowUpRight className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   </CardContent>
                 </Card>
               </Link>
@@ -417,69 +422,69 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Recent Assessments */}
         <div className="lg:col-span-2">
           <Card className="border-0 shadow-soft h-full">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 lg:px-6">
               <div>
-                <CardTitle className="text-lg">Recent Assessments</CardTitle>
-                <CardDescription>Latest health evaluations completed</CardDescription>
+                <CardTitle className="text-base lg:text-lg">Recent Assessments</CardTitle>
+                <CardDescription className="text-xs lg:text-sm">Latest health evaluations</CardDescription>
               </div>
               <Link href="/dashboard/assessments">
-                <Button variant="ghost" size="sm" className="text-primary">
+                <Button variant="ghost" size="sm" className="text-primary text-xs lg:text-sm">
                   View All
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
                 </Button>
               </Link>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 px-4 lg:px-6">
               {dashboardData.recentAssessments.map((assessment) => (
                 <Link
                   key={assessment.id}
                   href={`/dashboard/assessments/${assessment.id}`}
-                  className="block p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer group"
+                  className="block p-3 lg:p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer group"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                  <div className="flex items-start justify-between gap-2 mb-2 lg:mb-3">
+                    <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+                      <Avatar className="w-8 h-8 lg:w-10 lg:h-10 flex-shrink-0">
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs lg:text-sm font-medium">
                           {getInitials(assessment.subject?.name || 'Unknown')}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                      <div className="min-w-0">
+                        <h4 className="font-semibold text-sm lg:text-base text-foreground group-hover:text-primary transition-colors truncate">
                           {assessment.subject?.name || 'Unknown Elder'}
                         </h4>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                          {assessment.subject?.vayoId && <span>{assessment.subject.vayoId}</span>}
-                          <span className="flex items-center gap-1">
-                            <HandHeart className="w-3.5 h-3.5" />
-                            {assessment.assessor?.name || 'Unknown'}
+                        <div className="flex items-center gap-2 lg:gap-3 text-xs lg:text-sm text-muted-foreground">
+                          {assessment.subject?.vayoId && <span className="truncate">{assessment.subject.vayoId}</span>}
+                          <span className="hidden sm:flex items-center gap-1">
+                            <HandHeart className="w-3 h-3" />
+                            <span className="truncate">{assessment.assessor?.name || 'Unknown'}</span>
                           </span>
                         </div>
                       </div>
                     </div>
                     {getRiskBadge(assessment.overallRisk as RiskLevel)}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {assessment.domains?.slice(0, 3).map((domain) => (
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                      {assessment.domains?.slice(0, 2).map((domain) => (
                         <span
                           key={domain.id}
-                          className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground capitalize"
+                          className="text-[10px] lg:text-xs px-1.5 lg:px-2 py-0.5 lg:py-1 bg-muted rounded-md text-muted-foreground capitalize"
                         >
                           {domain.domain}
                         </span>
                       ))}
-                      {(assessment.domains?.length || 0) > 3 && (
-                        <span className="text-xs text-muted-foreground">
-                          +{(assessment.domains?.length || 0) - 3} more
+                      {(assessment.domains?.length || 0) > 2 && (
+                        <span className="text-[10px] lg:text-xs text-muted-foreground">
+                          +{(assessment.domains?.length || 0) - 2} more
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
+                    <span className="text-[10px] lg:text-xs text-muted-foreground flex items-center gap-1 flex-shrink-0">
+                      <Calendar className="w-3 h-3" />
                       {formatDate(assessment.assessedAt)}
                     </span>
                   </div>
@@ -487,9 +492,9 @@ export default function DashboardPage() {
               ))}
 
               {dashboardData.recentAssessments.length === 0 && (
-                <div className="text-center py-8">
-                  <ClipboardCheck className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-                  <p className="text-muted-foreground">No assessments yet</p>
+                <div className="text-center py-6 lg:py-8">
+                  <ClipboardCheck className="w-10 h-10 lg:w-12 lg:h-12 text-muted-foreground/50 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">No assessments yet</p>
                   <Link href="/dashboard/assessments/new">
                     <Button variant="outline" size="sm" className="mt-4">
                       <Plus className="w-4 h-4 mr-2" />
@@ -503,22 +508,22 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 lg:space-y-6">
           {/* Risk Distribution */}
           <Card className="border-0 shadow-soft">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Risk Distribution</CardTitle>
-              <CardDescription>Health status of all elders</CardDescription>
+            <CardHeader className="pb-2 px-4 lg:px-6">
+              <CardTitle className="text-base lg:text-lg">Risk Distribution</CardTitle>
+              <CardDescription className="text-xs lg:text-sm">Health status of all elders</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="px-4 lg:px-6">
+              <div className="space-y-3 lg:space-y-4">
                 {riskDistribution.map((item) => (
-                  <div key={item.level} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
+                  <div key={item.level} className="space-y-1.5 lg:space-y-2">
+                    <div className="flex items-center justify-between text-xs lg:text-sm">
                       <span className="font-medium text-foreground">{item.level}</span>
-                      <span className="text-muted-foreground">{item.count} elders</span>
+                      <span className="text-muted-foreground">{item.count}</span>
                     </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-1.5 lg:h-2 bg-muted rounded-full overflow-hidden">
                       <div
                         className={cn('h-full rounded-full transition-all', item.color)}
                         style={{ width: `${item.percentage}%` }}
@@ -527,10 +532,10 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-              <div className="mt-4 pt-4 border-t border-border">
-                <div className="flex items-center justify-between text-sm">
+              <div className="mt-3 lg:mt-4 pt-3 lg:pt-4 border-t border-border">
+                <div className="flex items-center justify-between text-xs lg:text-sm">
                   <span className="text-muted-foreground">Total Assessed</span>
-                  <span className="font-semibold text-foreground">156 elders</span>
+                  <span className="font-semibold text-foreground">{dashboardData.riskDistribution.healthy + dashboardData.riskDistribution.at_risk + dashboardData.riskDistribution.intervention}</span>
                 </div>
               </div>
             </CardContent>
@@ -538,10 +543,10 @@ export default function DashboardPage() {
 
           {/* Upcoming Follow-ups */}
           <Card className="border-0 shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 lg:px-6">
               <div>
-                <CardTitle className="text-lg">Upcoming Follow-ups</CardTitle>
-                <CardDescription>Scheduled visits</CardDescription>
+                <CardTitle className="text-base lg:text-lg">Upcoming Follow-ups</CardTitle>
+                <CardDescription className="text-xs lg:text-sm">Scheduled visits</CardDescription>
               </div>
               <Link href="/dashboard/followups">
                 <Button variant="ghost" size="icon" className="text-primary">
@@ -549,29 +554,29 @@ export default function DashboardPage() {
                 </Button>
               </Link>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 lg:space-y-3 px-4 lg:px-6">
               {dashboardData.upcomingFollowUps.length > 0 ? (
                 dashboardData.upcomingFollowUps.map((followup) => (
                   <Link
                     key={followup.id}
                     href={`/dashboard/followups`}
-                    className="block p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                    className="block p-2.5 lg:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-foreground text-sm">
+                    <div className="flex items-center justify-between mb-1 gap-2">
+                      <span className="font-medium text-foreground text-xs lg:text-sm truncate">
                         {followup.elderly?.name || 'Unknown'}
                       </span>
-                      <Badge variant="outline" className="text-xs">{followup.type}</Badge>
+                      <Badge variant="outline" className="text-[10px] lg:text-xs flex-shrink-0">{followup.type}</Badge>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 lg:gap-3 text-[10px] lg:text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         {formatDate(followup.scheduledDate)}
                       </span>
                       {followup.assignee && (
-                        <span className="flex items-center gap-1">
+                        <span className="hidden sm:flex items-center gap-1">
                           <HandHeart className="w-3 h-3" />
-                          {followup.assignee.name}
+                          <span className="truncate">{followup.assignee.name}</span>
                         </span>
                       )}
                     </div>
@@ -580,7 +585,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="text-center py-4">
                   <Calendar className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No upcoming follow-ups</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground">No upcoming follow-ups</p>
                 </div>
               )}
             </CardContent>
@@ -589,39 +594,40 @@ export default function DashboardPage() {
       </div>
 
       {/* Domain Assessment Stats */}
-      <div className="mt-6">
+      <div className="mt-4 lg:mt-6">
         <Card className="border-0 shadow-soft">
-          <CardHeader>
-            <div className="flex items-center justify-between">
+          <CardHeader className="px-4 lg:px-6">
+            <div className="flex items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-lg">Assessment Domains Overview</CardTitle>
-                <CardDescription>Key health domains being monitored</CardDescription>
+                <CardTitle className="text-base lg:text-lg">Assessment Domains Overview</CardTitle>
+                <CardDescription className="text-xs lg:text-sm">Key health domains being monitored</CardDescription>
               </div>
               <Link href="/dashboard/assessments">
-                <Button variant="outline" size="sm">
-                  View All Assessments
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                <Button variant="outline" size="sm" className="text-xs lg:text-sm">
+                  <span className="hidden sm:inline">View All Assessments</span>
+                  <span className="sm:hidden">View All</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
                 </Button>
               </Link>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardContent className="px-4 lg:px-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               {domainIcons.map((domain) => {
                 const Icon = domain.icon
                 return (
                   <div
                     key={domain.name}
-                    className="p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                    className="p-3 lg:p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer"
                   >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-primary" />
+                    <div className="flex items-center gap-2 lg:gap-3 mb-2 lg:mb-3">
+                      <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-4 h-4 lg:w-5 lg:h-5 text-primary" />
                       </div>
-                      <span className="font-medium text-foreground">{domain.name}</span>
+                      <span className="font-medium text-sm lg:text-base text-foreground">{domain.name}</span>
                     </div>
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center justify-between text-xs lg:text-sm">
                         <span className="text-muted-foreground">Status</span>
                         <span className="font-medium text-foreground">Active</span>
                       </div>
@@ -636,21 +642,21 @@ export default function DashboardPage() {
 
       {/* Alerts Section */}
       {safeHasRole(['super_admin', 'professional']) && (
-        <Card className="border-0 shadow-soft mt-6 border-l-4 border-l-intervention">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-intervention/10 flex items-center justify-center flex-shrink-0">
-                <AlertCircle className="w-5 h-5 text-intervention" />
+        <Card className="border-0 shadow-soft mt-4 lg:mt-6 border-l-4 border-l-intervention">
+          <CardContent className="p-3 lg:p-4">
+            <div className="flex items-start gap-3 lg:gap-4">
+              <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-intervention/10 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-4 h-4 lg:w-5 lg:h-5 text-intervention" />
               </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-foreground mb-1">Urgent Attention Required</h4>
-                <p className="text-sm text-muted-foreground">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-sm lg:text-base text-foreground mb-1">Urgent Attention Required</h4>
+                <p className="text-xs lg:text-sm text-muted-foreground">
                   <strong>5 elders</strong> have been flagged as needing immediate intervention based on their latest assessments.
                   Please review their care plans promptly.
                 </p>
               </div>
-              <Link href="/dashboard/interventions?urgent=true">
-                <Button variant="outline" size="sm">
+              <Link href="/dashboard/interventions?urgent=true" className="flex-shrink-0">
+                <Button variant="outline" size="sm" className="text-xs lg:text-sm">
                   Review Now
                 </Button>
               </Link>

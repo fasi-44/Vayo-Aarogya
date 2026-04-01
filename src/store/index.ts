@@ -53,13 +53,27 @@ export const assessmentDomains = [
   { id: 'palliative', name: 'Palliative Care', icon: 'Flower2', description: 'End-of-life care needs' },
 ] as const
 
+// Profile selection for multi-profile login
+export interface LoginProfile {
+  id: string
+  name: string
+  role: UserRole
+  vayoId?: string
+  avatar?: string
+}
+
 // Auth store interface
 interface AuthState {
   user: SafeUser | null
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
+  // Multi-profile login support
+  pendingProfiles: LoginProfile[] | null
+  pendingLoginCredentials: { phone: string; password: string; rememberMe: boolean } | null
   login: (phone: string, password: string, rememberMe?: boolean) => Promise<boolean>
+  loginWithProfile: (profileId: string) => Promise<boolean>
+  clearPendingProfiles: () => void
   register: (phone: string, password: string, name: string, email?: string, role?: UserRole) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
   refreshAuth: () => Promise<boolean>
@@ -92,9 +106,11 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      pendingProfiles: null,
+      pendingLoginCredentials: null,
 
       login: async (phone: string, password: string, rememberMe: boolean = false) => {
-        set({ isLoading: true, error: null })
+        set({ isLoading: true, error: null, pendingProfiles: null, pendingLoginCredentials: null })
 
         try {
           const response = await fetch('/api/auth/login', {
@@ -103,14 +119,27 @@ export const useAuthStore = create<AuthState>()(
             body: JSON.stringify({ phone, password, rememberMe }),
           })
 
-          const data: ApiResponse<LoginResponse> = await response.json()
+          const data: ApiResponse<any> = await response.json()
 
           if (data.success && data.data) {
+            // Check if multiple profiles need selection
+            if (data.data.requiresProfileSelection && data.data.profiles) {
+              set({
+                isLoading: false,
+                pendingProfiles: data.data.profiles,
+                pendingLoginCredentials: { phone, password, rememberMe },
+              })
+              return false // Not logged in yet, needs profile selection
+            }
+
+            // Single profile login
             set({
               user: data.data.user,
               isAuthenticated: true,
               isLoading: false,
               error: null,
+              pendingProfiles: null,
+              pendingLoginCredentials: null,
             })
             return true
           } else {
@@ -128,6 +157,60 @@ export const useAuthStore = create<AuthState>()(
           })
           return false
         }
+      },
+
+      loginWithProfile: async (profileId: string) => {
+        const credentials = get().pendingLoginCredentials
+        if (!credentials) {
+          set({ error: 'No pending login. Please try again.' })
+          return false
+        }
+
+        set({ isLoading: true, error: null })
+
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: credentials.phone,
+              password: credentials.password,
+              rememberMe: credentials.rememberMe,
+              profileId,
+            }),
+          })
+
+          const data: ApiResponse<LoginResponse> = await response.json()
+
+          if (data.success && data.data) {
+            set({
+              user: data.data.user,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+              pendingProfiles: null,
+              pendingLoginCredentials: null,
+            })
+            return true
+          } else {
+            set({
+              isLoading: false,
+              error: data.error || 'Login failed',
+            })
+            return false
+          }
+        } catch (error) {
+          console.error('Login with profile error:', error)
+          set({
+            isLoading: false,
+            error: 'Network error. Please try again.',
+          })
+          return false
+        }
+      },
+
+      clearPendingProfiles: () => {
+        set({ pendingProfiles: null, pendingLoginCredentials: null })
       },
 
       register: async (phone: string, password: string, name: string, email?: string, role?: UserRole) => {

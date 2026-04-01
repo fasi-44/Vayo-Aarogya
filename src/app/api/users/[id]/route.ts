@@ -52,7 +52,36 @@ export async function GET(
       (requestUser.role === 'family' && user.assignedFamily === requestUser.userId)
     )
 
-    if (!isOwnProfile && !canViewOthers && !(canViewElderly && isAssignedElderly)) {
+    // Check if elderly/family is viewing their assigned care team (volunteer/professional)
+    let isViewingOwnCareTeam = false
+    if (requestUser.role === 'elderly' || requestUser.role === 'family') {
+      const requestingUser = await db.findUserById(requestUser.userId!)
+      if (requestingUser) {
+        // Elderly viewing their assigned volunteer or professional
+        if (requestingUser.role === 'elderly') {
+          isViewingOwnCareTeam = (
+            (user.role === 'volunteer' && requestingUser.assignedVolunteer === id) ||
+            (user.role === 'professional' && (requestingUser as any).assignedProfessional === id)
+          )
+        }
+        // Family viewing volunteer/professional assigned to their elders
+        if (requestingUser.role === 'family') {
+          const familyElders = await db.getElderlyByFamily(requestUser.userId!)
+          isViewingOwnCareTeam = familyElders.some(elder => {
+            // assignedVolunteer can be string ID or relation object { id, name, phone }
+            const volId = typeof elder.assignedVolunteer === 'object' && elder.assignedVolunteer
+              ? (elder.assignedVolunteer as any).id
+              : elder.assignedVolunteer
+            const profId = typeof (elder as any).assignedProfessional === 'object' && (elder as any).assignedProfessional
+              ? (elder as any).assignedProfessional.id
+              : (elder as any).assignedProfessional
+            return volId === id || profId === id
+          })
+        }
+      }
+    }
+
+    if (!isOwnProfile && !canViewOthers && !(canViewElderly && isAssignedElderly) && !isViewingOwnCareTeam) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions' },
         { status: 403 }
@@ -174,12 +203,16 @@ export async function PUT(
     if (body.needsFinancialAssistance !== undefined) updates.needsFinancialAssistance = body.needsFinancialAssistance ?? null
     if (body.needsLegalSupport !== undefined) updates.needsLegalSupport = body.needsLegalSupport ?? null
 
-    // Assignment fields (admin only)
-    if (body.assignedVolunteer !== undefined && canUpdateOthers) {
+    // Assignment fields (admin/professional or anyone who can update elderly)
+    const canAssign = canUpdateOthers || canUpdateElderly
+    if (body.assignedVolunteer !== undefined && canAssign) {
       updates.assignedVolunteer = body.assignedVolunteer || null
     }
-    if (body.assignedProfessional !== undefined && canUpdateOthers) {
+    if (body.assignedProfessional !== undefined && canAssign) {
       updates.assignedProfessional = body.assignedProfessional || null
+    }
+    if (body.assignedFamily !== undefined && canAssign) {
+      updates.assignedFamily = body.assignedFamily || null
     }
     if (body.assignedElderly !== undefined && canUpdateOthers) {
       updates.assignedElderly = body.assignedElderly

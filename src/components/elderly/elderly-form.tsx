@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Loader2, Phone, Lock, Eye, EyeOff } from 'lucide-react'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { type SafeUser, type Location } from '@/types'
 import { type ElderlyFormData } from '@/services/elderly'
 import { getVolunteers, getFamilyMembers } from '@/services/users'
@@ -41,7 +42,7 @@ const elderlySchema = z.object({
   phone: z.string().length(10, 'Phone number must be exactly 10 digits').regex(/^\d{10}$/, 'Phone number must be 10 digits'),
   isActive: z.boolean().optional(),
   age: z.coerce.number().min(1).max(150).optional().or(z.literal('')),
-  gender: z.enum(['male', 'female', 'other']).optional().or(z.literal('')),
+  gender: z.enum(['male', 'female', 'other'], { required_error: 'Please select gender', invalid_type_error: 'Please select gender' }),
   dateOfBirth: z.string().min(1, 'Date of Birth is required'),
   address: z.string().min(5, 'Full address is required'),
   pincode: z.string().min(1, 'Pincode is required'),
@@ -116,7 +117,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
       phone: '',
       isActive: true,
       age: '',
-      gender: '',
+      gender: undefined,
       dateOfBirth: '',
       address: '',
       pincode: '',
@@ -144,6 +145,23 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
   const selectedStateId = watch('stateId')
   const selectedDistrictId = watch('districtId')
   const selectedTalukId = watch('talukId')
+  const watchedDob = watch('dateOfBirth')
+
+  // Auto-calculate age from DOB
+  useEffect(() => {
+    if (watchedDob) {
+      const dob = new Date(watchedDob)
+      const today = new Date()
+      let calculatedAge = today.getFullYear() - dob.getFullYear()
+      const monthDiff = today.getMonth() - dob.getMonth()
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        calculatedAge--
+      }
+      if (calculatedAge > 0 && calculatedAge <= 150) {
+        setValue('age', calculatedAge)
+      }
+    }
+  }, [watchedDob, setValue])
 
   // Load volunteers and family members for assignment (only for admin/professional)
   useEffect(() => {
@@ -277,14 +295,14 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
         phone: elderly.phone || '',
         isActive: elderly.isActive,
         age: elderly.age || '',
-        gender: elderly.gender || '',
+        gender: elderly.gender || undefined,
         dateOfBirth: elderly.dateOfBirth ? elderly.dateOfBirth.split('T')[0] : '',
         address: elderly.address || '',
         pincode: (elderly as any).pincode || '',
         emergencyContact: elderly.emergencyContact || '',
-        assignedVolunteer: elderly.assignedVolunteer || '',
-        assignedProfessional: (elderly as any).assignedProfessional || '',
-        assignedFamily: elderly.assignedFamily || '',
+        assignedVolunteer: typeof elderly.assignedVolunteer === 'object' && elderly.assignedVolunteer ? (elderly.assignedVolunteer as any).id : (elderly.assignedVolunteer || ''),
+        assignedProfessional: typeof (elderly as any).assignedProfessional === 'object' && (elderly as any).assignedProfessional ? (elderly as any).assignedProfessional.id : ((elderly as any).assignedProfessional || ''),
+        assignedFamily: typeof elderly.assignedFamily === 'object' && elderly.assignedFamily ? (elderly.assignedFamily as any).id : (elderly.assignedFamily || ''),
         stateName: elderly.stateName || '',
         districtName: elderly.districtName || '',
         talukName: elderly.talukName || '',
@@ -309,7 +327,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
           phone: '',
           isActive: true,
           age: '',
-          gender: '',
+          gender: undefined,
           dateOfBirth: '',
           address: '',
           pincode: '',
@@ -475,7 +493,10 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onFormSubmit, (validationErrors) => {
+          console.log('❌ Elder form validation failed:', validationErrors)
+          console.log('Form values:', watch())
+        })} className="space-y-6">
           {/* Vayo ID Display */}
           {elderly?.vayoId && (
             <div className="bg-primary/10 rounded-lg p-4 flex items-center justify-between">
@@ -540,7 +561,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
               Basic Information
             </h4>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-base">Full Name *</Label>
                 <Input
@@ -571,7 +592,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-base">
                   Password {isEditing ? '(leave blank to keep)' : '*'}
@@ -619,7 +640,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
               Emergency Contact & Assignment
             </h4>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="emergencyContact" className="text-base">Emergency Contact</Label>
                 <Input
@@ -643,22 +664,12 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                   </div>
                 ) : (
                   // Admin/Professional - can select any volunteer
-                  <Select
-                    value={watch('assignedVolunteer') || 'none'}
-                    onValueChange={(value) => setValue('assignedVolunteer', value === 'none' ? '' : value)}
-                  >
-                    <SelectTrigger className="text-base">
-                      <SelectValue placeholder="Select volunteer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {volunteers.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    options={volunteers.map((v) => ({ value: v.id, label: v.name, sublabel: v.phone }))}
+                    value={watch('assignedVolunteer') || ''}
+                    onValueChange={(value) => setValue('assignedVolunteer', value)}
+                    placeholder="Search volunteer..."
+                  />
                 )}
                 {isVolunteerUserCreating && (
                   <p className="text-xs text-muted-foreground">
@@ -669,26 +680,16 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
 
               <div className="space-y-2">
                 <Label htmlFor="assignedProfessional" className="text-base">Assigned Professional</Label>
-                <Select
-                  value={watch('assignedProfessional') || 'none'}
-                  onValueChange={(value) => setValue('assignedProfessional', value === 'none' ? '' : value)}
-                >
-                  <SelectTrigger className="text-base">
-                    <SelectValue placeholder="Select professional" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {professionals.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={professionals.map((p) => ({ value: p.id, label: p.name, sublabel: p.phone }))}
+                  value={watch('assignedProfessional') || ''}
+                  onValueChange={(value) => setValue('assignedProfessional', value)}
+                  placeholder="Search professional..."
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="assignedFamily" className="text-base flex items-center gap-2">
                   Assigned Family / Caregiver
@@ -702,22 +703,12 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                   </div>
                 ) : (
                   // Admin/Professional - can select any family member
-                  <Select
-                    value={watch('assignedFamily') || 'none'}
-                    onValueChange={(value) => setValue('assignedFamily', value === 'none' ? '' : value)}
-                  >
-                    <SelectTrigger className="text-base">
-                      <SelectValue placeholder="Select family member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {familyMembers.map((f) => (
-                        <SelectItem key={f.id} value={f.id}>
-                          {f.name} {f.phone && `(${f.phone})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    options={familyMembers.map((f) => ({ value: f.id, label: f.name, sublabel: f.phone }))}
+                    value={watch('assignedFamily') || ''}
+                    onValueChange={(value) => setValue('assignedFamily', value)}
+                    placeholder="Search family member..."
+                  />
                 )}
                 <p className="text-xs text-muted-foreground">
                   {isFamilyUserCreating
@@ -743,38 +734,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
               Personal Information
             </h4>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="age" className="text-base">Age</Label>
-                <Input
-                  id="age"
-                  type="number"
-                  {...register('age')}
-                  placeholder="65"
-                  min={1}
-                  max={150}
-                  className="text-base"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="gender" className="text-base">Gender</Label>
-                <Select
-                  value={watch('gender') || 'none'}
-                  onValueChange={(value) => setValue('gender', value === 'none' ? '' : value as 'male' | 'female' | 'other')}
-                >
-                  <SelectTrigger className="text-base">
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Select gender</SelectItem>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="dateOfBirth" className="text-base">Date of Birth *</Label>
                 <DateInput
@@ -786,33 +746,42 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                   <p className="text-sm text-red-500">{errors.dateOfBirth.message}</p>
                 )}
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="address" className="text-base">Full Address *</Label>
-              <Textarea
-                id="address"
-                {...register('address')}
-                placeholder="Full address"
-                rows={2}
-                className="text-base"
-              />
-              {errors.address && (
-                <p className="text-sm text-red-500">{errors.address.message}</p>
-              )}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="age" className="text-base">Age</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  {...register('age')}
+                  placeholder="Auto-calculated"
+                  min={1}
+                  max={150}
+                  className="text-base"
+                  readOnly
+                />
+                <p className="text-xs text-muted-foreground">Auto-calculated from DOB</p>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="pincode" className="text-base">Pincode *</Label>
-              <Input
-                id="pincode"
-                {...register('pincode')}
-                placeholder="Enter pincode"
-                className="text-base"
-              />
-              {errors.pincode && (
-                <p className="text-sm text-red-500">{errors.pincode.message}</p>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="gender" className="text-base">Gender *</Label>
+                <Select
+                  value={watch('gender') || 'none'}
+                  onValueChange={(value) => setValue('gender', value === 'none' ? undefined as any : value as 'male' | 'female' | 'other')}
+                >
+                  <SelectTrigger className="text-base">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Select gender</SelectItem>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.gender && (
+                  <p className="text-sm text-red-500">{errors.gender.message}</p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -822,50 +791,27 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
               Location
             </h4>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-base">State</Label>
-                <Select
-                  value={watch('stateId') || 'none'}
-                  onValueChange={handleStateChange}
-                >
-                  <SelectTrigger className="text-base">
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Select state</SelectItem>
-                    {states.map((state) => (
-                      <SelectItem key={state.id} value={state.id}>
-                        {state.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  value="Karnataka"
+                  readOnly
+                  className="text-base bg-muted"
+                />
               </div>
 
               <div className="space-y-2">
                 <Label className="text-base">District</Label>
-                <Select
-                  value={watch('districtId') || 'none'}
-                  onValueChange={handleDistrictChange}
-                  disabled={!selectedStateId || loadingLocations}
-                >
-                  <SelectTrigger className="text-base">
-                    <SelectValue placeholder={selectedStateId ? 'Select district' : 'Select state first'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Select district</SelectItem>
-                    {districts.map((district) => (
-                      <SelectItem key={district.id} value={district.id}>
-                        {district.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  value="Bangalore Urban"
+                  readOnly
+                  className="text-base bg-muted"
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-base">Taluk</Label>
                 <Select
@@ -874,7 +820,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                   disabled={!selectedDistrictId || loadingLocations}
                 >
                   <SelectTrigger className="text-base">
-                    <SelectValue placeholder={selectedDistrictId ? 'Select taluk' : 'Select district first'} />
+                    <SelectValue placeholder={selectedDistrictId ? 'Select taluk' : 'Loading...'} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Select taluk</SelectItem>
@@ -908,6 +854,33 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
                 </Select>
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address" className="text-base">Full Address *</Label>
+              <Textarea
+                id="address"
+                {...register('address')}
+                placeholder="Full address"
+                rows={2}
+                className="text-base"
+              />
+              {errors.address && (
+                <p className="text-sm text-red-500">{errors.address.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pincode" className="text-base">Pincode *</Label>
+              <Input
+                id="pincode"
+                {...register('pincode')}
+                placeholder="Enter pincode"
+                className="text-base"
+              />
+              {errors.pincode && (
+                <p className="text-sm text-red-500">{errors.pincode.message}</p>
+              )}
+            </div>
           </div>
 
           {/* Caregiver Information */}
@@ -916,7 +889,7 @@ export function ElderlyForm({ open, onClose, onSubmit, elderly }: ElderlyFormPro
               Caregiver Details
             </h4>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="caregiverName" className="text-base">Caregiver Name</Label>
                 <Input

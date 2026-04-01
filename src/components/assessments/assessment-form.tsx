@@ -54,9 +54,10 @@ import {
 import { DomainQuestionCard } from './domain-question-card'
 import { AssessmentSummary } from './assessment-summary'
 import { createAssessment, saveDraft, updateDraft, completeDraft, deleteAssessment, checkExistingDraft, type AssessmentFormData } from '@/services/assessments'
-import { getElderly } from '@/services/elderly'
+import { getElderly, updateElderly, type ElderlyFormData } from '@/services/elderly'
 import { formatDate } from '@/lib/utils'
 import { checkProfileCompleteness } from '@/lib/profile-validation'
+import { ElderlyForm } from '@/components/elderly/elderly-form'
 
 // Group domains into logical categories for wizard steps (ICOPE-based)
 const DOMAIN_GROUPS = [
@@ -152,6 +153,8 @@ export function AssessmentForm({
   // Profile validation
   const [profileError, setProfileError] = useState<string | null>(null)
   const [profileMissingFields, setProfileMissingFields] = useState<string[]>([])
+  const [isProfileFormOpen, setIsProfileFormOpen] = useState(false)
+  const [profileEditElderly, setProfileEditElderly] = useState<SafeUser | null>(null)
 
   // Domain answers: { [domainId]: { answers: { [questionId]: number }, notes: string } }
   const [domainData, setDomainData] = useState<Record<string, { answers: Record<string, number>; notes: string }>>({})
@@ -265,9 +268,10 @@ export function AssessmentForm({
     const profileCheck = checkProfileCompleteness(elderly)
 
     if (!profileCheck.isComplete) {
-      // Profile is incomplete - show error
+      // Profile is incomplete - show error with option to update
       setProfileError(`Cannot conduct assessment. Profile is incomplete. Missing fields: ${profileCheck.missingFields.join(', ')}`)
       setProfileMissingFields(profileCheck.missingFields)
+      setProfileEditElderly(elderly)
       setSelectedElderly(null) // Don't select if profile is incomplete
       return
     }
@@ -645,12 +649,22 @@ export function AssessmentForm({
               {profileError && (
                 <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex gap-3">
                   <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <p className="font-medium text-red-900">{profileError}</p>
                     {profileMissingFields.length > 0 && (
                       <p className="text-sm text-red-800">
                         Please complete the profile: <strong>{profileMissingFields.join(', ')}</strong>
                       </p>
+                    )}
+                    {profileEditElderly && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                        onClick={() => setIsProfileFormOpen(true)}
+                      >
+                        Update Profile
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -1081,30 +1095,28 @@ export function AssessmentForm({
         )}
 
         {/* Main navigation buttons */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
           <Button
             variant="outline"
-            size="lg"
             onClick={handlePrevious}
             disabled={(selfAssessment || isResumingDraft) ? currentStep === 1 : currentStep === 0 || isSavingDraft}
-            className="text-lg px-6 py-6 h-auto"
+            className="text-sm sm:text-lg px-3 sm:px-6 py-3 sm:py-6 h-auto"
           >
-            <ChevronLeft className="w-6 h-6 mr-2" />
+            <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6 mr-1 sm:mr-2" />
             Back
           </Button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Close button - shown during assessment steps (not on step 0 or summary) */}
             {currentStep >= 1 && currentStep < totalSteps - 1 && (
               <Button
                 variant="outline"
-                size="lg"
                 onClick={handleClose}
                 disabled={isSavingDraft}
-                className="text-lg px-6 py-6 h-auto border-gray-300 text-gray-600 hover:bg-gray-50"
+                className="text-sm sm:text-lg px-3 sm:px-6 py-3 sm:py-6 h-auto border-gray-300 text-gray-600 hover:bg-gray-50"
               >
-                <X className="w-6 h-6 mr-2" />
-                Close
+                <X className="w-4 h-4 sm:w-6 sm:h-6 sm:mr-2" />
+                <span className="hidden sm:inline">Close</span>
               </Button>
             )}
 
@@ -1112,18 +1124,17 @@ export function AssessmentForm({
               <Button
                 onClick={handleNext}
                 disabled={isSavingDraft}
-                size="lg"
-                className="text-lg px-8 py-6 h-auto"
+                className="text-sm sm:text-lg px-4 sm:px-8 py-3 sm:py-6 h-auto"
               >
                 {isSavingDraft ? (
                   <>
-                    <Loader2 className="w-6 h-6 mr-2 animate-spin" />
-                    Saving...
+                    <Loader2 className="w-4 h-4 sm:w-6 sm:h-6 mr-1 sm:mr-2 animate-spin" />
+                    <span className="hidden sm:inline">Saving...</span>
                   </>
                 ) : (
                   <>
                     Next
-                    <ChevronRight className="w-6 h-6 ml-2" />
+                    <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6 ml-1 sm:ml-2" />
                   </>
                 )}
               </Button>
@@ -1131,18 +1142,18 @@ export function AssessmentForm({
               <Button
                 onClick={handleSave}
                 disabled={isSaving}
-                size="lg"
-                className="gradient-medical text-white text-lg px-8 py-6 h-auto"
+                className="gradient-medical text-white text-sm sm:text-lg px-4 sm:px-8 py-3 sm:py-6 h-auto"
               >
                 {isSaving ? (
                   <>
-                    <Loader2 className="w-6 h-6 mr-2 animate-spin" />
-                    Completing...
+                    <Loader2 className="w-4 h-4 sm:w-6 sm:h-6 mr-1 sm:mr-2 animate-spin" />
+                    <span className="hidden sm:inline">Completing...</span>
                   </>
                 ) : (
                   <>
-                    <span className="text-xl mr-2">✅</span>
-                    Complete Assessment
+                    <span className="text-base sm:text-xl mr-1 sm:mr-2">✅</span>
+                    <span className="hidden sm:inline">Complete Assessment</span>
+                    <span className="sm:hidden">Complete</span>
                   </>
                 )}
               </Button>
@@ -1213,6 +1224,42 @@ export function AssessmentForm({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Profile Update Dialog */}
+      <ElderlyForm
+        open={isProfileFormOpen}
+        onClose={() => {
+          setIsProfileFormOpen(false)
+        }}
+        onSubmit={async (data: ElderlyFormData) => {
+          if (!profileEditElderly) return
+          const result = await updateElderly(profileEditElderly.id, data)
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to update profile')
+          }
+          // Re-fetch elderly list and clear profile error
+          const elderlyResult = await getElderly({ limit: 1000 })
+          if (elderlyResult.success && elderlyResult.data) {
+            setElderlyList(elderlyResult.data.users)
+            // Find the updated elderly and re-validate
+            const updated = elderlyResult.data.users.find(e => e.id === profileEditElderly.id)
+            if (updated) {
+              const recheck = checkProfileCompleteness(updated)
+              if (recheck.isComplete) {
+                setProfileError(null)
+                setProfileMissingFields([])
+                setProfileEditElderly(null)
+                // Auto-select the now-complete profile
+                handleElderlySelect(updated)
+              } else {
+                setProfileError(`Profile still incomplete. Missing: ${recheck.missingFields.join(', ')}`)
+                setProfileMissingFields(recheck.missingFields)
+              }
+            }
+          }
+        }}
+        elderly={profileEditElderly}
+      />
     </div>
   )
 }

@@ -69,6 +69,7 @@ interface UserFormProps {
   onSubmit: (data: UserFormData) => Promise<void>
   user?: SafeUser | null
   currentUserRole?: UserRole
+  onSwitchToElderlyForm?: () => void
 }
 
 const roles = [
@@ -79,7 +80,7 @@ const roles = [
   { value: 'elderly', label: 'Elderly' },
 ]
 
-export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: UserFormProps) {
+export function UserForm({ open, onClose, onSubmit, user, currentUserRole, onSwitchToElderlyForm }: UserFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [volunteers, setVolunteers] = useState<SafeUser[]>([])
@@ -135,6 +136,18 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
   const selectedDistrictId = watch('districtId')
   const selectedTalukId = watch('talukId')
   const caregiverPhone = watch('caregiverPhone')
+
+  // Handle role change - switch to ElderlyForm when "elderly" is selected
+  const handleRoleChange = (value: string) => {
+    if (value === 'elderly' && !user && onSwitchToElderlyForm) {
+      // Reset role back so it doesn't stick as "elderly" next time
+      setValue('role', 'family')
+      onClose()
+      onSwitchToElderlyForm()
+      return
+    }
+    setValue('role', value as UserRole)
+  }
 
   // Load states on mount (for elderly role)
   useEffect(() => {
@@ -240,7 +253,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
           dateOfBirth: user.dateOfBirth ? user.dateOfBirth.split('T')[0] : '',
           address: user.address || '',
           emergencyContact: user.emergencyContact || '',
-          assignedVolunteer: user.assignedVolunteer || '',
+          assignedVolunteer: typeof user.assignedVolunteer === 'object' && user.assignedVolunteer ? (user.assignedVolunteer as any).id : (user.assignedVolunteer || ''),
           maxAssignments: user.maxAssignments || 10,
           stateName: user.stateName || '',
           districtName: user.districtName || '',
@@ -439,8 +452,42 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
             </div>
           )}
 
+          {/* Role & Status */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="role">Role *</Label>
+              <Select
+                value={watch('role')}
+                onValueChange={handleRoleChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableRoles.map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.role && (
+                <p className="text-sm text-red-500">{errors.role.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2 flex items-center justify-between sm:pt-6">
+              <Label htmlFor="isActive">Active Status</Label>
+              <Switch
+                id="isActive"
+                checked={watch('isActive')}
+                onCheckedChange={(checked) => setValue('isActive', checked)}
+              />
+            </div>
+          </div>
+
           {/* Basic Information */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name *</Label>
               <Input
@@ -469,7 +516,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="password">
                 Password {isEditing ? '(leave blank to keep)' : '*'}
@@ -506,39 +553,6 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
               {errors.email && (
                 <p className="text-sm text-red-500">{errors.email.message}</p>
               )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="role">Role *</Label>
-              <Select
-                value={watch('role')}
-                onValueChange={(value) => setValue('role', value as UserRole)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableRoles.map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
-                      {role.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.role && (
-                <p className="text-sm text-red-500">{errors.role.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2 flex items-center justify-between pt-6">
-              <Label htmlFor="isActive">Active Status</Label>
-              <Switch
-                id="isActive"
-                checked={watch('isActive')}
-                onCheckedChange={(checked) => setValue('isActive', checked)}
-              />
             </div>
           </div>
 
@@ -593,7 +607,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
               {/* Personal Information */}
               <div className="border-t pt-4 mt-4">
                 <h4 className="font-medium mb-3">Personal Information</h4>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="age">Age</Label>
                     <Input
@@ -647,7 +661,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
               {/* Location Information */}
               <div className="border-t pt-4 mt-4">
                 <h4 className="font-medium mb-3">Location</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>State</Label>
                     <Select
@@ -690,7 +704,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                   <div className="space-y-2">
                     <Label>Taluk</Label>
                     <Select
@@ -738,7 +752,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
               {/* Caregiver Details */}
               <div className="border-t pt-4 mt-4">
                 <h4 className="font-medium mb-3">Caregiver Details</h4>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="caregiverName">Caregiver Name</Label>
                     <Input
@@ -801,7 +815,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole }: Use
               {/* Emergency & Assignment */}
               <div className="border-t pt-4 mt-4">
                 <h4 className="font-medium mb-3">Emergency Contact & Assignment</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="emergencyContact">Emergency Contact</Label>
                     <Input

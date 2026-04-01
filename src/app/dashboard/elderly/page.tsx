@@ -55,6 +55,8 @@ import {
   type ElderlyWithRelations,
 } from '@/components/elderly'
 import { checkProfileCompleteness, isProfileOverOneWeekOld } from '@/lib/profile-validation'
+import { FollowUpForm, type FollowUpFormData as FollowUpDialogData } from '@/components/followups/followup-form'
+import { createFollowUp } from '@/services/followups'
 
 export default function ElderlyRecordsPage() {
   return (
@@ -104,6 +106,8 @@ function ElderlyRecordsPageContent() {
   const [selectedElderly, setSelectedElderly] = useState<SafeUser | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
   const [expandedAssessmentsId, setExpandedAssessmentsId] = useState<string | null>(null)
+  const [isFollowupOpen, setIsFollowupOpen] = useState(false)
+  const [followupElderly, setFollowupElderly] = useState<SafeUser | null>(null)
 
   // Stats
   const [stats, setStats] = useState({
@@ -366,6 +370,25 @@ function ElderlyRecordsPageContent() {
     }
   }
 
+  const handleScheduleFollowup = (elder: ElderlyWithRelations) => {
+    setFollowupElderly(normalizeElder(elder))
+    setIsFollowupOpen(true)
+  }
+
+  const handleFollowupSubmit = async (data: FollowUpDialogData) => {
+    const scheduledDate = `${data.scheduledDate}T${data.scheduledTime || '10:00'}:00`
+    await createFollowUp({
+      elderlyId: data.elderlyId,
+      assigneeId: data.assigneeId || undefined,
+      type: data.type,
+      title: data.title,
+      description: data.description || undefined,
+      scheduledDate,
+      status: data.status || 'scheduled',
+      notes: data.notes || undefined,
+    })
+  }
+
   const handleRefresh = () => {
     loadElderly()
     loadStats()
@@ -579,6 +602,7 @@ function ElderlyRecordsPageContent() {
                 onViewAssessments={handleViewAssessments}
                 onAssessment={handleNewAssessment}
                 onDocuments={handleDocuments}
+                onScheduleFollowup={handleScheduleFollowup}
                 expandedAssessmentsId={expandedAssessmentsId}
                 onCloseExpanded={handleCloseExpanded}
               />
@@ -690,6 +714,19 @@ function ElderlyRecordsPageContent() {
         onSuccess={() => {
           loadElderly()
         }}
+      />
+
+      {/* Follow-up Scheduling Dialog */}
+      <FollowUpForm
+        open={isFollowupOpen}
+        onOpenChange={(open) => {
+          setIsFollowupOpen(open)
+          if (!open) setFollowupElderly(null)
+        }}
+        onSubmit={handleFollowupSubmit}
+        elderly={elderly}
+        volunteers={volunteers}
+        preselectedElderlyId={followupElderly?.id}
       />
 
       {/* Validation Error Dialog */}

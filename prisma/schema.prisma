@@ -45,7 +45,7 @@ model User {
   email          String?
   password       String
   name           String
-  phone          String    @unique
+  phone          String
   role           UserRole  @default(family)
   avatar         String?
   isActive       Boolean   @default(true) @map("is_active")

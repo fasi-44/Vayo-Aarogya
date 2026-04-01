@@ -54,10 +54,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find user by phone
-    const user = await db.findUserByPhone(normalizedPhone)
-    if (!user) {
-      // Log failed attempt
+    // Find all users by phone (supports multiple profiles per phone)
+    const allUsers = await db.findUsersByPhone(normalizedPhone)
+    if (allUsers.length === 0) {
       await db.createAuditLog({
         action: 'login_failed',
         entity: 'User',
@@ -65,9 +64,72 @@ export async function POST(request: NextRequest) {
         ipAddress: clientIP,
         userAgent: getUserAgent(request),
       })
-
       return errorResponse(Errors.unauthorized('Invalid phone number or password'))
     }
+
+    // If profileId is provided, login as specific profile
+    const { profileId } = body
+    let matchedUsers = allUsers
+
+    if (profileId) {
+      matchedUsers = allUsers.filter(u => u.id === profileId)
+      if (matchedUsers.length === 0) {
+        return errorResponse(Errors.unauthorized('Invalid profile selection'))
+      }
+    }
+
+    // Verify password against matched users
+    const validUsers = []
+    for (const u of matchedUsers) {
+      const isValid = await verifyPassword(password, u.password)
+      if (isValid) {
+        validUsers.push(u)
+      }
+    }
+
+    if (validUsers.length === 0) {
+      await db.createAuditLog({
+        action: 'login_failed',
+        entity: 'User',
+        details: { phone: normalizedPhone, reason: 'invalid_password' },
+        ipAddress: clientIP,
+        userAgent: getUserAgent(request),
+      })
+      return errorResponse(Errors.unauthorized('Invalid phone number or password'))
+    }
+
+    // If multiple valid profiles and no profileId selected, return profiles for selection
+    if (validUsers.length > 1 && !profileId) {
+      const profiles = validUsers
+        .filter(u => u.isActive && u.approvalStatus === 'approved')
+        .map(u => ({
+          id: u.id,
+          name: u.name,
+          role: u.role,
+          vayoId: u.vayoId,
+          avatar: u.avatar,
+        }))
+
+      if (profiles.length > 1) {
+        return successResponse(
+          { profiles, requiresProfileSelection: true },
+          'Multiple profiles found. Please select a profile.'
+        )
+      }
+
+      // If only one active/approved profile after filtering, use that
+      if (profiles.length === 1) {
+        const selectedUser = validUsers.find(u => u.id === profiles[0].id)!
+        matchedUsers = [selectedUser]
+      } else {
+        return errorResponse(Errors.forbidden('No active profiles found for this phone number.'))
+      }
+    }
+
+    // Use the single matched user (or profileId-selected user)
+    const user = profileId
+      ? validUsers.find(u => u.id === profileId)!
+      : validUsers[0]
 
     // Check approval status
     if (user.approvalStatus === 'pending') {
@@ -80,7 +142,6 @@ export async function POST(request: NextRequest) {
         ipAddress: clientIP,
         userAgent: getUserAgent(request),
       })
-
       return errorResponse(Errors.forbidden('Your account is pending approval. An admin will review your request and you will receive a call shortly. Please try again later.'))
     }
 
@@ -94,13 +155,10 @@ export async function POST(request: NextRequest) {
         ipAddress: clientIP,
         userAgent: getUserAgent(request),
       })
-
       return errorResponse(Errors.forbidden('Your registration request has been rejected. Please contact the admin for more information.'))
     }
 
-    // Check if user is active
     if (!user.isActive) {
-      // Log failed attempt
       await db.createAuditLog({
         userId: user.id,
         action: 'login_failed',
@@ -110,25 +168,7 @@ export async function POST(request: NextRequest) {
         ipAddress: clientIP,
         userAgent: getUserAgent(request),
       })
-
       return errorResponse(Errors.forbidden('Your account has been deactivated. Please contact support.'))
-    }
-
-    // Verify password
-    const isValidPassword = await verifyPassword(password, user.password)
-    if (!isValidPassword) {
-      // Log failed attempt
-      await db.createAuditLog({
-        userId: user.id,
-        action: 'login_failed',
-        entity: 'User',
-        entityId: user.id,
-        details: { reason: 'invalid_password' },
-        ipAddress: clientIP,
-        userAgent: getUserAgent(request),
-      })
-
-      return errorResponse(Errors.unauthorized('Invalid phone number or password'))
     }
 
     // Generate tokens
@@ -141,7 +181,7 @@ export async function POST(request: NextRequest) {
     const accessToken = await generateAccessToken(tokenPayload)
     const refreshToken = await generateRefreshToken(tokenPayload, rememberMe)
 
-    // Store refresh token (7 days or 30 days if rememberMe)
+    // Store refresh token
     const refreshTokenExpiry = new Date(Date.now() + (rememberMe ? 30 : 7) * 24 * 60 * 60 * 1000)
     await db.storeRefreshToken(refreshToken, user.id, refreshTokenExpiry)
 
@@ -162,9 +202,7 @@ export async function POST(request: NextRequest) {
       userAgent: getUserAgent(request),
     })
 
-    // Return safe user data
     const safeUser = db.toSafeUser(user)
-
     const response: LoginResponse = {
       user: safeUser,
       accessToken,

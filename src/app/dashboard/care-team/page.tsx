@@ -285,21 +285,21 @@ export default function CareTeamPage() {
       subtitle="Manage volunteers and professionals and their elder assignments"
     >
       {/* Care Team Stats Section */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Care Team Stats</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="mb-4 lg:mb-6">
+        <h3 className="text-xs lg:text-sm font-semibold text-muted-foreground mb-2 lg:mb-3 uppercase tracking-wide">Care Team Stats</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
           {careTeamStatCards.map((stat) => {
             const Icon = stat.icon
             return (
               <Card key={stat.title} className="border-0 shadow-soft">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg ${stat.color} flex items-center justify-center`}>
-                      <Icon className="w-5 h-5 text-white" />
+                <CardContent className="p-3 lg:p-4">
+                  <div className="flex items-center gap-2 lg:gap-3">
+                    <div className={`w-8 h-8 lg:w-10 lg:h-10 rounded-lg ${stat.color} flex items-center justify-center flex-shrink-0`}>
+                      <Icon className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
                     </div>
-                    <div>
-                      <p className="text-xl font-bold">{stat.value}</p>
-                      <p className="text-xs text-muted-foreground">{stat.title}</p>
+                    <div className="min-w-0">
+                      <p className="text-lg lg:text-xl font-bold">{stat.value}</p>
+                      <p className="text-[10px] lg:text-xs text-muted-foreground truncate">{stat.title}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -310,21 +310,21 @@ export default function CareTeamPage() {
       </div>
 
       {/* Elder Assignment Stats Section */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Elder Assignments</h3>
-        <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+      <div className="mb-4 lg:mb-6">
+        <h3 className="text-xs lg:text-sm font-semibold text-muted-foreground mb-2 lg:mb-3 uppercase tracking-wide">Elder Assignments</h3>
+        <div className="grid grid-cols-2 gap-3 lg:gap-4">
           {elderAssignmentCards.map((stat) => {
             const Icon = stat.icon
             return (
               <Card key={stat.title} className="border-0 shadow-soft">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center`}>
-                      <Icon className="w-6 h-6 text-white" />
+                <CardContent className="p-3 lg:p-6">
+                  <div className="flex items-center gap-2.5 lg:gap-4">
+                    <div className={`w-9 h-9 lg:w-12 lg:h-12 rounded-lg ${stat.color} flex items-center justify-center flex-shrink-0`}>
+                      <Icon className="w-4 h-4 lg:w-6 lg:h-6 text-white" />
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold">{stat.value}</p>
-                      <p className="text-sm text-muted-foreground">{stat.title}</p>
+                    <div className="min-w-0">
+                      <p className="text-xl lg:text-2xl font-bold">{stat.value}</p>
+                      <p className="text-xs lg:text-sm text-muted-foreground truncate">{stat.title}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -336,20 +336,20 @@ export default function CareTeamPage() {
 
       {/* Filters and Actions */}
       <Card className="border-0 shadow-soft mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search volunteers..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+        <CardContent className="p-4 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search volunteers..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
 
+          <div className="flex gap-3">
             <Select value={filterRole} onValueChange={setFilterRole}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
               <SelectContent>
@@ -360,7 +360,7 @@ export default function CareTeamPage() {
             </Select>
 
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -370,7 +370,9 @@ export default function CareTeamPage() {
                 <SelectItem value="full">At Capacity</SelectItem>
               </SelectContent>
             </Select>
+          </div>
 
+          <div className="flex gap-3">
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -390,7 +392,7 @@ export default function CareTeamPage() {
               </Button>
             </div>
 
-            <Button onClick={() => setBulkAssignDialogOpen(true)}>
+            <Button onClick={() => setBulkAssignDialogOpen(true)} className="flex-1">
               <UserPlus className="w-4 h-4 mr-2" />
               Bulk Assign
             </Button>

@@ -27,30 +27,29 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     const role = searchParams.get('role') || undefined
 
     // Check permissions based on requested role filter
-    // - 'elderly:read' allows reading elderly users
-    // - 'users:read' allows reading all users
+    // - 'elderly:read' allows reading elderly, volunteer, professional, and family users
+    //   (needed for elderly management: viewing care team, assignments, etc.)
+    // - 'users:read' allows reading all users (admin/professional)
     const canReadElderly = hasPermission(user.role, 'elderly:read')
     const canReadUsers = hasPermission(user.role, 'users:read')
 
-    if (role === 'elderly') {
-      if (!canReadElderly && !canReadUsers) {
+    // Roles that elderly:read holders can access (for care team management)
+    const elderlyRelatedRoles = ['elderly', 'volunteer', 'professional', 'family']
+
+    if (!canReadUsers) {
+      if (!canReadElderly || (role && !elderlyRelatedRoles.includes(role))) {
         return NextResponse.json(
           { success: false, error: 'Insufficient permissions' },
           { status: 403 }
         )
       }
-    } else if (!canReadUsers) {
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions' },
-        { status: 403 }
-      )
     }
 
     const search = searchParams.get('search') || undefined
     const isActive = searchParams.get('isActive')
     const approvalStatus = searchParams.get('approvalStatus') || undefined
     const page = parseInt(searchParams.get('page') || '1', 10)
-    const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 100) // Max 100 per page
+    const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 1000) // Max 1000 per page
 
     // Build filter options
     const filterOptions: {
@@ -77,10 +76,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       filterOptions.assignedVolunteerId = user.userId
     }
 
-    // Professionals can only see elderly assigned to them
-    if (user.role === 'professional' && role === 'elderly' && user.userId) {
-      filterOptions.assignedProfessionalId = user.userId
-    }
+    // Professionals can see all elderly (they have users:read permission)
+    // No filtering needed for professionals
 
     // Family members can only see elderly assigned to them
     if (user.role === 'family' && role === 'elderly' && user.userId) {
@@ -214,14 +211,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       )
     }
 
-    // Check if phone already exists
+    // Check for duplicate phone numbers
+    // For non-elderly roles (admin, professional, volunteer, family): only 1 account per phone+role
+    // For elderly: multiple elders can share the same phone (e.g. husband & wife using daughter's phone)
     const normalizedPhone = phone.replace(/[\s\-]/g, '')
-    const existingUser = await db.findUserByPhone(normalizedPhone)
-    if (existingUser) {
-      return NextResponse.json(
-        { success: false, error: 'An account with this phone number already exists' },
-        { status: 409 }
-      )
+    const existingUsers = await db.findUsersByPhone(normalizedPhone)
+    if (role !== 'elderly') {
+      const existingSameRole = existingUsers.find(u => u.role === role)
+      if (existingSameRole) {
+        return NextResponse.json(
+          { success: false, error: `An account with this phone number already exists for the role: ${role}` },
+          { status: 409 }
+        )
+      }
     }
 
     // Users with only 'elderly:create' permission can only create elderly

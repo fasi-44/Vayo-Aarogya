@@ -44,7 +44,7 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
   volunteer: [
     'assessments:read', 'assessments:create', 'assessments:update',
     'elderly:read', 'elderly:create', 'elderly:update',
-    'interventions:read',
+    'interventions:read', 'interventions:create', 'interventions:update',
   ],
   family: [
     'assessments:read',

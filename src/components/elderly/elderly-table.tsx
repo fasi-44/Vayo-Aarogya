@@ -65,6 +65,7 @@ interface ElderlyTableProps {
   onAssessment?: (elderly: ElderlyWithRelations) => void
   onViewAssessments?: (elderly: ElderlyWithRelations) => void
   onDocuments?: (elderly: ElderlyWithRelations) => void
+  onScheduleFollowup?: (elderly: ElderlyWithRelations) => void
   expandedAssessmentsId?: string | null
   onCloseExpanded?: () => void
 }
@@ -78,6 +79,7 @@ export function ElderlyTable({
   onAssessment,
   onViewAssessments,
   onDocuments,
+  onScheduleFollowup,
   expandedAssessmentsId,
   onCloseExpanded,
 }: ElderlyTableProps) {
@@ -158,6 +160,12 @@ export function ElderlyTable({
           <DropdownMenuItem onClick={() => onViewAssessments(elder)}>
             <ClipboardCheck className="mr-2 h-4 w-4" />
             View Assessments
+          </DropdownMenuItem>
+        )}
+        {onScheduleFollowup && (
+          <DropdownMenuItem onClick={() => onScheduleFollowup(elder)}>
+            <Calendar className="mr-2 h-4 w-4" />
+            Schedule Follow-up
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />

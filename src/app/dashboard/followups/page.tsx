@@ -165,8 +165,11 @@ export default function FollowUpsPage() {
     }
   }
 
+  const [isRescheduling, setIsRescheduling] = useState(false)
+
   const handleReschedule = (followUp: FollowUp) => {
     setSelectedFollowUp(followUp)
+    setIsRescheduling(true)
     setFormOpen(true)
   }
 
@@ -178,7 +181,20 @@ export default function FollowUpsPage() {
         scheduledDate: scheduledDate.toISOString(),
       }
 
-      if (selectedFollowUp) {
+      if (isRescheduling && selectedFollowUp) {
+        // Rescheduling: mark old as "rescheduled", create new with "scheduled"
+        await updateFollowUp(selectedFollowUp.id, {
+          ...submitData,
+          status: 'rescheduled',
+          scheduledDate: selectedFollowUp.scheduledDate, // keep old date
+        })
+        // Create new followup with new date
+        await createFollowUp({
+          ...submitData,
+          status: 'scheduled',
+        })
+        setIsRescheduling(false)
+      } else if (selectedFollowUp) {
         await updateFollowUp(selectedFollowUp.id, submitData)
       } else {
         await createFollowUp(submitData)
@@ -219,19 +235,19 @@ export default function FollowUpsPage() {
       subtitle="Schedule and track follow-up visits"
     >
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4 mb-6">
         {statCards.map((stat) => {
           const Icon = stat.icon
           return (
             <Card key={stat.title} className="border-0 shadow-soft">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg ${stat.color} flex items-center justify-center`}>
-                    <Icon className="w-5 h-5 text-white" />
+              <CardContent className="p-3 lg:p-4">
+                <div className="flex items-center gap-2 lg:gap-3">
+                  <div className={`w-9 h-9 lg:w-10 lg:h-10 rounded-lg ${stat.color} flex items-center justify-center flex-shrink-0`}>
+                    <Icon className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                    <p className="text-xs text-muted-foreground">{stat.title}</p>
+                  <div className="min-w-0">
+                    <p className="text-xl lg:text-2xl font-bold">{stat.value}</p>
+                    <p className="text-[10px] lg:text-xs text-muted-foreground truncate">{stat.title}</p>
                   </div>
                 </div>
               </CardContent>
@@ -242,20 +258,20 @@ export default function FollowUpsPage() {
 
       {/* Filters and Actions */}
       <Card className="border-0 shadow-soft mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search follow-ups..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+        <CardContent className="p-4 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search follow-ups..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
 
+          <div className="flex gap-3">
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -269,7 +285,7 @@ export default function FollowUpsPage() {
             </Select>
 
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
@@ -281,7 +297,9 @@ export default function FollowUpsPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
 
+          <div className="flex gap-3">
             <Tabs
               value={viewMode}
               onValueChange={(v) => setViewMode(v as 'list' | 'calendar')}
@@ -299,9 +317,10 @@ export default function FollowUpsPage() {
               </TabsList>
             </Tabs>
 
-            <Button onClick={handleCreate}>
+            <Button onClick={handleCreate} className="flex-1 whitespace-nowrap">
               <Plus className="w-4 h-4 mr-2" />
-              Schedule Follow-up
+              <span className="hidden sm:inline">Schedule Follow-up</span>
+              <span className="sm:hidden">Schedule</span>
             </Button>
           </div>
         </CardContent>
@@ -346,11 +365,18 @@ export default function FollowUpsPage() {
       {/* Follow-up Form Dialog */}
       <FollowUpForm
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onOpenChange={(open) => {
+          setFormOpen(open)
+          if (!open) {
+            setIsRescheduling(false)
+            setSelectedFollowUp(null)
+          }
+        }}
         onSubmit={handleFormSubmit}
-        followUp={selectedFollowUp}
+        followUp={isRescheduling ? null : selectedFollowUp}
         elderly={elderly}
         volunteers={volunteers}
+        preselectedElderlyId={isRescheduling && selectedFollowUp ? selectedFollowUp.elderlyId : undefined}
       />
 
       {/* Delete Confirmation Dialog */}

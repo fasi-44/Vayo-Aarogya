@@ -129,8 +129,8 @@ export function InterventionForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-[700px] max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>
             {isEdit ? 'Edit Intervention' : 'Create New Intervention'}
           </DialogTitle>
@@ -141,167 +141,169 @@ export function InterventionForm({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="userId">Elder</Label>
-            <Select
-              value={formData.userId}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, userId: value }))
-              }
-              disabled={isEdit}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select elder" />
-              </SelectTrigger>
-              <SelectContent>
-                {elderly.map((elder) => (
-                  <SelectItem key={elder.id} value={elder.id}>
-                    {elder.name} {elder.vayoId && `(${elder.vayoId})`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex-1 overflow-y-auto -mx-6 px-6 py-1">
+          <form id="intervention-form" onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="userId">Elder</Label>
+                <Select
+                  value={formData.userId}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, userId: value }))
+                  }
+                  disabled={isEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select elder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {elderly.map((elder) => (
+                      <SelectItem key={elder.id} value={elder.id}>
+                        {elder.name} {elder.vayoId && `(${elder.vayoId})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, title: e.target.value }))
-              }
-              placeholder="Enter intervention title"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, description: e.target.value }))
-              }
-              placeholder="Describe the intervention"
-              rows={3}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="domain">Domain</Label>
-              <Select
-                value={formData.domain}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, domain: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select domain" />
-                </SelectTrigger>
-                <SelectContent>
-                  {domains.map((domain) => (
-                    <SelectItem key={domain.value} value={domain.value}>
-                      {domain.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                  placeholder="Enter intervention title"
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select
-                value={formData.priority}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    priority: value as InterventionFormData['priority'],
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  {priorities.map((priority) => (
-                    <SelectItem key={priority.value} value={priority.value}>
-                      {priority.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    status: value as InterventionFormData['status'],
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statuses.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dueDate">Due Date</Label>
-              <DateInput
-                id="dueDate"
-                value={formData.dueDate}
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, dueDate: e.target.value }))
+                  setFormData((prev) => ({ ...prev, description: e.target.value }))
                 }
+                placeholder="Describe the intervention"
+                rows={2}
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Clinical Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, notes: e.target.value }))
-              }
-              placeholder="Add clinical notes..."
-              rows={3}
-            />
-          </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="domain">Domain</Label>
+                <Select
+                  value={formData.domain}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, domain: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Domain" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {domains.map((domain) => (
+                      <SelectItem key={domain.value} value={domain.value}>
+                        {domain.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || !formData.userId || !formData.title}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEdit ? 'Update' : 'Create'} Intervention
-            </Button>
-          </DialogFooter>
-        </form>
+              <div className="space-y-2">
+                <Label htmlFor="priority">Priority</Label>
+                <Select
+                  value={formData.priority}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      priority: value as InterventionFormData['priority'],
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorities.map((priority) => (
+                      <SelectItem key={priority.value} value={priority.value}>
+                        {priority.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      status: value as InterventionFormData['status'],
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statuses.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dueDate">Due Date</Label>
+                <DateInput
+                  id="dueDate"
+                  value={formData.dueDate}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, dueDate: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Clinical Notes</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, notes: e.target.value }))
+                }
+                placeholder="Add clinical notes..."
+                rows={2}
+              />
+            </div>
+          </form>
+        </div>
+
+        <DialogFooter className="flex-shrink-0 pt-4 border-t mt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" form="intervention-form" disabled={loading || !formData.userId || !formData.title}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEdit ? 'Update' : 'Create'} Intervention
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

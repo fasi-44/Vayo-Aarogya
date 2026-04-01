@@ -9,7 +9,13 @@
       "Bash(npx tsc:*)",
       "Bash(node check-locations.js:*)",
       "Bash(node check-domains.js:*)",
-      "Bash(node test-api.js:*)"
+      "Bash(node test-api.js:*)",
+      "Bash(npm install:*)",
+      "Bash(npx next build:*)",
+      "Bash(tasklist:*)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(node -e \":*)",
+      "Bash(ls:*)"
     ]
   }
 }

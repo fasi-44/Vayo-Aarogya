@@ -10,7 +10,6 @@ export function checkProfileCompleteness(user: SafeUser): ProfileCompleteness {
   const requiredFields: (keyof SafeUser)[] = [
     'name',
     'phone',
-    'age',
     'gender',
     'address',
     'pincode',

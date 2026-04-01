@@ -391,12 +391,13 @@ async function main() {
   })
 
   // Elderly Users
+  // NOTE: elderly1 shares phone with family1 (Sunita Devi) - demonstrates multi-profile login
   const elderly1 = await prisma.user.create({
     data: {
       email: 'elderly@vayo.health',
       password: await hashPassword('1234'),
       name: 'Shri Ram Prasad',
-      phone: '9000000011',
+      phone: '9000000004', // Same phone as family1 (Sunita Devi) - her father
       role: UserRole.elderly,
       isActive: true,
       emailVerified: true,
@@ -404,25 +405,27 @@ async function main() {
       age: 72,
       gender: Gender.male,
       address: 'Block A, Yelahanka, Bangalore 560064',
-      emergencyContact: '+91 98765 43213',
+      emergencyContact: '9000000004',
       dateOfBirth: new Date('1952-05-15'),
       stateName: 'Karnataka',
       districtName: 'Bangalore Urban',
       talukName: 'Bangalore North',
       villageName: 'Yelahanka',
       caregiverName: 'Sunita Devi',
-      caregiverPhone: '+91 98765 43213',
+      caregiverPhone: '9000000004',
       caregiverRelation: 'daughter',
       assignedVolunteerId: volunteer1.id,
+      assignedFamilyId: family1.id,
     },
   })
 
+  // NOTE: elderly2 shares phone with family2 (Vikram Prasad) - demonstrates multi-profile login with 2 elders
   const elderly2 = await prisma.user.create({
     data: {
       email: 'kamla.devi@vayo.health',
       password: await hashPassword('1234'),
       name: 'Kamla Devi',
-      phone: '9000000012',
+      phone: '9000000009', // Same phone as family2 (Vikram Prasad) - his mother
       role: UserRole.elderly,
       isActive: true,
       emailVerified: true,
@@ -430,16 +433,45 @@ async function main() {
       age: 68,
       gender: Gender.female,
       address: '45, JP Nagar 7th Phase, Bangalore 560078',
-      emergencyContact: '+91 98765 43224',
+      emergencyContact: '9000000009',
       dateOfBirth: new Date('1956-08-20'),
       stateName: 'Karnataka',
       districtName: 'Bangalore Urban',
       talukName: 'Bangalore South',
       villageName: 'JP Nagar',
       caregiverName: 'Vikram Prasad',
-      caregiverPhone: '+91 98765 43224',
+      caregiverPhone: '9000000009',
       caregiverRelation: 'son',
       assignedVolunteerId: volunteer1.id,
+      assignedFamilyId: family2.id,
+    },
+  })
+
+  // elderly7 - Vikram's father, also shares phone 9000000009 (3 profiles on one phone)
+  const elderly7 = await prisma.user.create({
+    data: {
+      email: 'gopal.prasad@vayo.health',
+      password: await hashPassword('1234'),
+      name: 'Gopal Prasad',
+      phone: '9000000009', // Same phone as family2 (Vikram) and elderly2 (Kamla) - his father
+      role: UserRole.elderly,
+      isActive: true,
+      emailVerified: true,
+      vayoId: 'VAEL0007',
+      age: 74,
+      gender: Gender.male,
+      address: '45, JP Nagar 7th Phase, Bangalore 560078',
+      emergencyContact: '9000000009',
+      dateOfBirth: new Date('1950-02-14'),
+      stateName: 'Karnataka',
+      districtName: 'Bangalore Urban',
+      talukName: 'Bangalore South',
+      villageName: 'JP Nagar',
+      caregiverName: 'Vikram Prasad',
+      caregiverPhone: '9000000009',
+      caregiverRelation: 'son',
+      assignedVolunteerId: volunteer1.id,
+      assignedFamilyId: family2.id,
     },
   })
 
@@ -547,7 +579,7 @@ async function main() {
     },
   })
 
-  console.log(`✅ Created ${16} users`)
+  console.log(`✅ Created ${17} users (including multi-profile demo accounts)`)
 
   // ========================================
   // 2. SEED ASSESSMENTS
@@ -1227,19 +1259,31 @@ async function main() {
   console.log('=====================================')
   console.log('📊 Seed Data Summary:')
   console.log('-------------------------------------')
-  console.log(`👤 Users: 16 (1 admin, 3 doctors, 3 volunteers, 3 family, 6 elderly)`)
+  console.log(`👤 Users: 17 (1 admin, 3 doctors, 3 volunteers, 3 family, 7 elderly)`)
   console.log(`📋 Assessments: 7`)
   console.log(`🏥 Assessment Domains: 21`)
   console.log(`💊 Interventions: 18`)
   console.log(`📝 Audit Logs: 14`)
   console.log('=====================================')
-  console.log('\n🔐 Demo Login Credentials:')
+  console.log('\n🔐 Demo Login Credentials (All PINs: 1234):')
   console.log('-------------------------------------')
-  console.log('Super Admin:   admin@vayo.health / Admin@123')
-  console.log('Professional:  coreclinicalteam@vayo.health / Doctor@123')
-  console.log('Volunteer:     volunteer@vayo.health / Volunteer@123')
-  console.log('Family:        family@vayo.health / Family@123')
-  console.log('Elderly:       elderly@vayo.health / Elderly@123')
+  console.log('Super Admin:    9000000001 / 1234')
+  console.log('Professional:   9000000002 / 1234')
+  console.log('Volunteer:      9000000003 / 1234')
+  console.log('-------------------------------------')
+  console.log('📱 Multi-Profile Login Demos:')
+  console.log('')
+  console.log('Phone 9000000004 → 2 profiles (Profile Selection):')
+  console.log('  • Sunita Devi    [Family]')
+  console.log('  • Shri Ram Prasad [Elder] VAEL0001')
+  console.log('')
+  console.log('Phone 9000000009 → 3 profiles (Profile Selection):')
+  console.log('  • Vikram Prasad  [Family]')
+  console.log('  • Kamla Devi     [Elder] VAEL0002')
+  console.log('  • Gopal Prasad   [Elder] VAEL0007')
+  console.log('')
+  console.log('Phone 9000000010 → 1 profile (Direct Login):')
+  console.log('  • Neha Sharma    [Family]')
   console.log('=====================================\n')
 }
 

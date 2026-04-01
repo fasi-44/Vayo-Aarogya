@@ -54,9 +54,10 @@ export default function MyFollowupsPage() {
       return scheduledDate >= now && f.status === 'scheduled'
     }
     if (filter === 'past') {
-      return scheduledDate < now || f.status === 'completed' || f.status === 'missed'
+      return f.status === 'completed' || f.status === 'missed' || f.status === 'rescheduled' || scheduledDate < now
     }
-    return true
+    // "all" - exclude rescheduled/cancelled to avoid clutter
+    return f.status !== 'rescheduled' && f.status !== 'cancelled'
   }).sort((a, b) => {
     if (filter === 'upcoming') {
       return new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()

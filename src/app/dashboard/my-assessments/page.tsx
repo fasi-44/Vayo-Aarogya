@@ -31,7 +31,7 @@ export default function MyAssessmentsPage() {
       if (!user?.id) return
 
       try {
-        const res = await fetch(`/api/assessments?elderlyId=${user.id}&limit=50`)
+        const res = await fetch(`/api/assessments?subjectId=${user.id}&limit=50`)
         const data = await res.json()
         if (data.success) {
           setAssessments(data.data?.assessments || [])
@@ -91,16 +91,16 @@ export default function MyAssessmentsPage() {
       subtitle="View and track your health assessments over time"
     >
       {/* Summary Card */}
-      <div className="grid md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <Card className="border-0 shadow-soft">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <ClipboardCheck className="w-5 h-5 text-primary" />
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <ClipboardCheck className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Assessments</p>
-                <p className="text-2xl font-bold">{assessments.length}</p>
+                <p className="text-3xl font-bold">{assessments.length}</p>
               </div>
             </div>
           </CardContent>
@@ -109,8 +109,8 @@ export default function MyAssessmentsPage() {
         <Card className="border-0 shadow-soft">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-green-600" />
+              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="w-6 h-6 text-green-600" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Current Status</p>
@@ -125,12 +125,12 @@ export default function MyAssessmentsPage() {
         <Card className="border-0 shadow-soft">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-blue-600" />
+              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-6 h-6 text-blue-600" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Last Assessment</p>
-                <p className="text-lg font-bold">
+                <p className="text-xl font-bold">
                   {assessments[0] ? formatDate(assessments[0].assessedAt) : 'Never'}
                 </p>
               </div>
@@ -142,16 +142,16 @@ export default function MyAssessmentsPage() {
       {/* Quick Action */}
       <Card className="border-0 shadow-soft mb-6">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h3 className="font-semibold">Ready for a self-assessment?</h3>
+              <h3 className="font-semibold text-base">Ready for a self-assessment?</h3>
               <p className="text-sm text-muted-foreground">
                 Complete your periodic health assessment to track your wellbeing
               </p>
             </div>
-            <Link href="/dashboard/my-assessments/new">
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
+            <Link href="/dashboard/my-assessments/new" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto text-base">
+                <Plus className="w-5 h-5 mr-2" />
                 Start Self Assessment
               </Button>
             </Link>
@@ -181,35 +181,37 @@ export default function MyAssessmentsPage() {
                   key={assessment.id}
                   className="p-4 rounded-lg border hover:border-primary/50 hover:bg-muted/30 transition-colors"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        {getTrendIcon(assessment, assessments[index + 1])}
-                        <span className="font-semibold">
-                          Assessment #{assessments.length - index}
-                        </span>
-                      </div>
-                      {getRiskBadge(assessment.overallRisk)}
-                    </div>
+                  {/* Title + Trend */}
+                  <div className="flex items-center gap-2 mb-1">
+                    {getTrendIcon(assessment, assessments[index + 1])}
+                    <span className="font-semibold text-base">
+                      Assessment #{assessments.length - index}
+                    </span>
+                  </div>
+
+                  {/* Status + View button */}
+                  <div className="flex items-center justify-between gap-3 mt-2">
+                    {getRiskBadge(assessment.overallRisk)}
                     <Link href={`/dashboard/my-assessments/${assessment.id}`}>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="text-sm">
                         <Eye className="w-4 h-4 mr-1" />
-                        View Details
+                        View
                       </Button>
                     </Link>
                   </div>
 
-                  <div className="grid md:grid-cols-3 gap-4 text-sm">
+                  {/* Details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3 pt-3 border-t text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="w-4 h-4" />
                       <span>{formatDate(assessment.assessedAt)}</span>
                     </div>
                     <div className="text-muted-foreground">
-                      Overall Score: <span className="font-medium text-foreground">{assessment.cumulativeScore ?? '-'}</span>
+                      Score: <span className="font-medium text-foreground">{assessment.cumulativeScore ?? '-'}</span>
                     </div>
                     {assessment.assessor && (
                       <div className="text-muted-foreground">
-                        Assessed by: <span className="font-medium text-foreground">{assessment.assessor.name}</span>
+                        By: <span className="font-medium text-foreground">{assessment.assessor.name}</span>
                       </div>
                     )}
                   </div>
@@ -217,23 +219,30 @@ export default function MyAssessmentsPage() {
                   {/* Domain Scores Summary */}
                   {assessment.domainScores && (
                     <div className="mt-3 pt-3 border-t">
-                      <p className="text-xs text-muted-foreground mb-2">Domain Summary</p>
+                      <p className="text-sm text-muted-foreground mb-2">Domain Summary</p>
                       <div className="flex flex-wrap gap-2">
-                        {Object.entries(assessment.domainScores).slice(0, 5).map(([domain, score]) => (
-                          <span
-                            key={domain}
-                            className={cn(
-                              'text-xs px-2 py-1 rounded-md',
-                              (score as number) >= 4 ? 'bg-red-100 text-red-700' :
-                                (score as number) >= 2 ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-green-100 text-green-700'
-                            )}
-                          >
-                            {domain.replace(/_/g, ' ')}: {score as number}
-                          </span>
-                        ))}
+                        {Object.entries(assessment.domainScores).slice(0, 5).map(([domain, value]) => {
+                          const numericScore = typeof value === 'number'
+                            ? value
+                            : typeof value === 'object' && value !== null && 'answers' in (value as any)
+                              ? Object.values((value as any).answers).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0)
+                              : 0
+                          return (
+                            <span
+                              key={domain}
+                              className={cn(
+                                'text-sm px-2.5 py-1 rounded-md',
+                                numericScore >= 4 ? 'bg-red-100 text-red-700' :
+                                  numericScore >= 2 ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-green-100 text-green-700'
+                              )}
+                            >
+                              {domain.replace(/_/g, ' ')}: {numericScore}
+                            </span>
+                          )
+                        })}
                         {Object.keys(assessment.domainScores).length > 5 && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-sm text-muted-foreground">
                             +{Object.keys(assessment.domainScores).length - 5} more
                           </span>
                         )}

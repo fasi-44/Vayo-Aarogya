@@ -51,6 +51,8 @@ import {
   UserViewDialog,
   UserApprovalDialog,
 } from '@/components/users'
+import { ElderlyForm } from '@/components/elderly/elderly-form'
+import { createElderly, updateElderly, type ElderlyFormData } from '@/services/elderly'
 
 export default function UserManagementPage() {
   const { user: currentUser, hasPermission } = useAuthStore()
@@ -73,6 +75,9 @@ export default function UserManagementPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isViewOpen, setIsViewOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<SafeUser | null>(null)
+
+  // Elderly form state (for creating/editing elderly users)
+  const [isElderlyFormOpen, setIsElderlyFormOpen] = useState(false)
 
   // Pending approvals
   const [pendingUsers, setPendingUsers] = useState<SafeUser[]>([])
@@ -261,7 +266,11 @@ export default function UserManagementPage() {
 
   const handleEdit = (user: SafeUser) => {
     setSelectedUser(user)
-    setIsFormOpen(true)
+    if (user.role === 'elderly') {
+      setIsElderlyFormOpen(true)
+    } else {
+      setIsFormOpen(true)
+    }
   }
 
   const handleView = (user: SafeUser) => {
@@ -272,6 +281,12 @@ export default function UserManagementPage() {
   const handleDelete = (user: SafeUser) => {
     setSelectedUser(user)
     setIsDeleteOpen(true)
+  }
+
+  const handleSwitchToElderlyForm = () => {
+    setIsFormOpen(false)
+    setSelectedUser(null)
+    setIsElderlyFormOpen(true)
   }
 
   const handleFormSubmit = async (data: UserFormData) => {
@@ -293,6 +308,25 @@ export default function UserManagementPage() {
     }
 
     // Reload data
+    loadUsers()
+    loadStats()
+  }
+
+  const handleElderlyFormSubmit = async (data: ElderlyFormData) => {
+    if (selectedUser) {
+      const result = await updateElderly(selectedUser.id, data)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update elder')
+      }
+    } else {
+      if (!data.password) {
+        throw new Error('Password is required for new elders')
+      }
+      const result = await createElderly(data)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create elder')
+      }
+    }
     loadUsers()
     loadStats()
   }
@@ -671,6 +705,18 @@ export default function UserManagementPage() {
         onSubmit={handleFormSubmit}
         user={selectedUser}
         currentUserRole={currentUser?.role as UserRole}
+        onSwitchToElderlyForm={handleSwitchToElderlyForm}
+      />
+
+      {/* Elderly Form Dialog (for elderly users) */}
+      <ElderlyForm
+        open={isElderlyFormOpen}
+        onClose={() => {
+          setIsElderlyFormOpen(false)
+          setSelectedUser(null)
+        }}
+        onSubmit={handleElderlyFormSubmit}
+        elderly={selectedUser}
       />
 
       {/* User View Dialog */}

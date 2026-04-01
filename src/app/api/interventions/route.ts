@@ -28,9 +28,19 @@ export async function GET(request: NextRequest) {
     // Role-based filtering
     let filterUserId = userId
 
-    // Family/elderly can only see their own interventions
-    if (user.role === 'family' || user.role === 'elderly') {
+    // Elderly can only see their own interventions
+    if (user.role === 'elderly') {
       filterUserId = user.userId
+    }
+    // Family can see interventions of their linked elders
+    if (user.role === 'family') {
+      if (userId) {
+        const familyElders = await db.getElderlyByFamily(user.userId)
+        const isLinkedElder = familyElders.some(e => e.id === userId)
+        filterUserId = isLinkedElder ? userId : user.userId
+      } else {
+        filterUserId = user.userId
+      }
     }
 
     const { interventions, total } = await db.getAllInterventions({

@@ -75,10 +75,18 @@ class Database {
 
   async findUserByPhone(phone: string): Promise<User | undefined> {
     const normalizedPhone = phone.replace(/[\s\-]/g, '')
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: { phone: normalizedPhone },
     })
     return user ? prismaUserToAppUser(user) : undefined
+  }
+
+  async findUsersByPhone(phone: string): Promise<User[]> {
+    const normalizedPhone = phone.replace(/[\s\-]/g, '')
+    const users = await prisma.user.findMany({
+      where: { phone: normalizedPhone },
+    })
+    return users.map(prismaUserToAppUser)
   }
 
   async getHighestVayoIdByPrefix(prefix: string): Promise<string | null> {

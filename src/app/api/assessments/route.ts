@@ -37,9 +37,25 @@ export async function GET(request: NextRequest) {
         filterAssessorId = user.userId
       }
     }
-    // Family/elderly can only see their own assessments
-    if (user.role === 'family' || user.role === 'elderly') {
+    // Elderly can only see their own assessments
+    if (user.role === 'elderly') {
       filterSubjectId = user.userId
+    }
+    // Family can see assessments of their linked elders
+    if (user.role === 'family') {
+      if (subjectId) {
+        // Verify the requested elder is linked to this family member
+        const familyElders = await db.getElderlyByFamily(user.userId)
+        const isLinkedElder = familyElders.some(e => e.id === subjectId)
+        if (isLinkedElder) {
+          filterSubjectId = subjectId
+        } else {
+          filterSubjectId = user.userId // fallback to own (returns nothing)
+        }
+      } else {
+        // No specific elder requested — show own assessments
+        filterSubjectId = user.userId
+      }
     }
 
     const { assessments, total } = await db.getAllAssessments({

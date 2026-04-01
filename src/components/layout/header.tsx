@@ -104,8 +104,8 @@ export function Header({ title, subtitle }: HeaderProps) {
                         <Search className="w-5 h-5 text-muted-foreground" />
                     </button>
 
-                    {/* Notifications */}
-                    <DropdownMenu>
+                    {/* Notifications - commented out for now */}
+                    {/* <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
                                 <Bell className="w-5 h-5 text-muted-foreground" />
@@ -147,7 +147,7 @@ export function Header({ title, subtitle }: HeaderProps) {
                                 View all notifications
                             </DropdownMenuItem>
                         </DropdownMenuContent>
-                    </DropdownMenu>
+                    </DropdownMenu> */}
 
                     {/* Help - desktop only */}
                     <button className="hidden lg:flex p-2 rounded-lg hover:bg-muted transition-colors" aria-label="Help">

@@ -65,7 +65,7 @@ export default function MyReportPage() {
       if (!user?.id) return
 
       try {
-        const res = await fetch(`/api/assessments?elderlyId=${user.id}&limit=10`)
+        const res = await fetch(`/api/assessments?subjectId=${user.id}&limit=10`)
         const data = await res.json()
         if (data.success) {
           setAssessments(data.data?.assessments || [])
@@ -223,10 +223,21 @@ export default function MyReportPage() {
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(latestAssessment.domainScores).map(([domain, score]) => {
+              {Object.entries(latestAssessment.domainScores).map(([domain, value]) => {
                 const Icon = domainIcons[domain] || Activity
-                const previousScore = previousAssessment?.domainScores?.[domain] as number | undefined
-                const trend = getTrend(score as number, previousScore)
+                // value can be a number (legacy) or { answers: {...}, notes: "..." }
+                const numericScore = typeof value === 'number'
+                  ? value
+                  : typeof value === 'object' && value !== null && 'answers' in (value as any)
+                    ? Object.values((value as any).answers).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0)
+                    : 0
+                const prevValue = previousAssessment?.domainScores?.[domain]
+                const previousScore = typeof prevValue === 'number'
+                  ? prevValue
+                  : typeof prevValue === 'object' && prevValue !== null && 'answers' in (prevValue as any)
+                    ? Object.values((prevValue as any).answers).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0)
+                    : undefined
+                const trend = getTrend(numericScore, previousScore as number | undefined)
                 const TrendIcon = trend.icon
 
                 return (
@@ -234,7 +245,7 @@ export default function MyReportPage() {
                     key={domain}
                     className={cn(
                       'p-4 rounded-lg border',
-                      getDomainScoreColor(score as number)
+                      getDomainScoreColor(numericScore)
                     )}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -247,7 +258,7 @@ export default function MyReportPage() {
                       <TrendIcon className={cn('w-4 h-4', trend.color)} />
                     </div>
                     <div className="flex items-end justify-between">
-                      <span className="text-2xl font-bold">{score as number}</span>
+                      <span className="text-2xl font-bold">{numericScore}</span>
                       {previousScore !== undefined && (
                         <span className="text-sm text-muted-foreground">
                           Previous: {previousScore}

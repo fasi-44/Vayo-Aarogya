@@ -31,7 +31,7 @@ export default function MyInterventionsPage() {
       if (!user?.id) return
 
       try {
-        const res = await fetch(`/api/interventions?elderlyId=${user.id}&limit=50`)
+        const res = await fetch(`/api/interventions?userId=${user.id}&limit=50`)
         const data = await res.json()
         if (data.success) {
           setInterventions(data.data?.interventions || [])
@@ -120,17 +120,17 @@ export default function MyInterventionsPage() {
       subtitle="Track your health interventions and care activities"
     >
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-4 mb-6">
         <Card className="border-0 shadow-soft cursor-pointer hover:shadow-soft-md transition-shadow"
               onClick={() => setFilter('all')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-primary" />
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Activity className="w-6 h-6 text-primary" />
               </div>
               <div>
+                <p className="text-3xl font-bold">{stats.total}</p>
                 <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
               </div>
             </div>
           </CardContent>
@@ -140,12 +140,12 @@ export default function MyInterventionsPage() {
               onClick={() => setFilter('active')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-blue-600" />
+              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <Clock className="w-6 h-6 text-blue-600" />
               </div>
               <div>
+                <p className="text-3xl font-bold">{stats.active}</p>
                 <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold">{stats.active}</p>
               </div>
             </div>
           </CardContent>
@@ -155,12 +155,12 @@ export default function MyInterventionsPage() {
               onClick={() => setFilter('completed')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-600" />
+              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div>
+                <p className="text-3xl font-bold">{stats.completed}</p>
                 <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold">{stats.completed}</p>
               </div>
             </div>
           </CardContent>
@@ -169,12 +169,12 @@ export default function MyInterventionsPage() {
         <Card className="border-0 shadow-soft">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-red-600" />
+              <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-6 h-6 text-red-600" />
               </div>
               <div>
+                <p className="text-3xl font-bold">{stats.urgent}</p>
                 <p className="text-sm text-muted-foreground">Needs Attention</p>
-                <p className="text-2xl font-bold">{stats.urgent}</p>
               </div>
             </div>
           </CardContent>
@@ -182,24 +182,27 @@ export default function MyInterventionsPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 mb-6">
-        {['all', 'active', 'pending', 'in_progress', 'completed'].map((f) => (
-          <Button
-            key={f}
-            variant={filter === f ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter(f)}
-          >
-            {f === 'all' ? 'All' : f === 'active' ? 'Active' : f.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-          </Button>
-        ))}
+      <div className="overflow-x-auto -mx-1 px-1 mb-6">
+        <div className="flex gap-2">
+          {['all', 'active', 'pending', 'in_progress', 'completed'].map((f) => (
+            <Button
+              key={f}
+              variant={filter === f ? 'default' : 'outline'}
+              size="sm"
+              className="text-sm whitespace-nowrap"
+              onClick={() => setFilter(f)}
+            >
+              {f === 'all' ? 'All' : f === 'active' ? 'Active' : f.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* Interventions List */}
       <Card className="border-0 shadow-soft">
         <CardHeader>
-          <CardTitle>Care Plans</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg">Care Plans</CardTitle>
+          <CardDescription className="text-sm">
             {filter === 'all' ? 'All your care plans' : `Showing ${filter.replace('_', ' ')} care plans`}
           </CardDescription>
         </CardHeader>
@@ -207,7 +210,7 @@ export default function MyInterventionsPage() {
           {filteredInterventions.length === 0 ? (
             <div className="text-center py-12">
               <Activity className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-              <p className="text-muted-foreground">No care plans found</p>
+              <p className="text-base text-muted-foreground">No care plans found</p>
               <p className="text-sm text-muted-foreground mt-1">
                 {filter === 'all'
                   ? 'Care plans will appear here when assigned'
@@ -226,36 +229,37 @@ export default function MyInterventionsPage() {
                     intervention.status === 'completed' && 'opacity-70'
                   )}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        'w-10 h-10 rounded-lg flex items-center justify-center',
-                        intervention.status === 'completed' ? 'bg-green-100' : 'bg-primary/10'
-                      )}>
-                        {getDomainIcon(intervention.domain || '')}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold">{intervention.title}</h4>
-                        {intervention.domain && (
-                          <p className="text-sm text-muted-foreground capitalize">
-                            {intervention.domain.replace(/_/g, ' ')}
-                          </p>
-                        )}
-                      </div>
+                  {/* Title row */}
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
+                      intervention.status === 'completed' ? 'bg-green-100' : 'bg-primary/10'
+                    )}>
+                      {getDomainIcon(intervention.domain || '')}
                     </div>
-                    <div className="flex items-center gap-2">
-                      {getPriorityBadge(intervention.priority)}
-                      {getStatusBadge(intervention.status)}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-base">{intervention.title}</h4>
+                      {intervention.domain && (
+                        <p className="text-sm text-muted-foreground capitalize">
+                          {intervention.domain.replace(/_/g, ' ')}
+                        </p>
+                      )}
                     </div>
                   </div>
 
+                  {/* Badges */}
+                  <div className="flex items-center gap-2 mt-2">
+                    {getPriorityBadge(intervention.priority)}
+                    {getStatusBadge(intervention.status)}
+                  </div>
+
                   {intervention.description && (
-                    <p className="text-sm text-muted-foreground mb-3">
+                    <p className="text-sm text-muted-foreground mt-3">
                       {intervention.description}
                     </p>
                   )}
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-muted-foreground mt-3 pt-3 border-t">
                     <span>Created: {formatDate(intervention.createdAt)}</span>
                     {intervention.assignee && (
                       <span>Assigned to: {intervention.assignee.name}</span>
@@ -264,7 +268,7 @@ export default function MyInterventionsPage() {
 
                   {intervention.notes && (
                     <div className="mt-3 pt-3 border-t">
-                      <p className="text-xs text-muted-foreground mb-1">Notes:</p>
+                      <p className="text-sm text-muted-foreground mb-1">Notes:</p>
                       <p className="text-sm">{intervention.notes}</p>
                     </div>
                   )}

@@ -19,7 +19,6 @@ import {
   Sun,
   ClipboardCheck,
   BarChart3,
-  Settings,
   ArrowRight,
 } from 'lucide-react'
 import { HealthStatusCard } from '@/components/health-status/health-status-card'
@@ -124,29 +123,6 @@ export function ElderlyDashboard({
           </Card>
         </Link>
       </div>
-
-      {/* Profile Quick Action */}
-      <Card className="border-0 shadow-soft">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                <Settings className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="font-medium">Manage Your Profile</p>
-                <p className="text-sm text-muted-foreground">Update your details or change password</p>
-              </div>
-            </div>
-            <Link href="/dashboard/profile">
-              <Button variant="outline" size="sm">
-                Edit Profile
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Health Status */}
       {latestAssessment && (

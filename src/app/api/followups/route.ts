@@ -29,9 +29,19 @@ export async function GET(request: NextRequest) {
     let filterElderlyId = elderlyId
     let filterAssigneeId = assigneeId
 
-    // Family/elderly can only see their own follow-ups
-    if (user.role === 'family' || user.role === 'elderly') {
+    // Elderly can only see their own follow-ups
+    if (user.role === 'elderly') {
       filterElderlyId = user.userId
+    }
+    // Family can see follow-ups of their linked elders
+    if (user.role === 'family') {
+      if (elderlyId) {
+        const familyElders = await db.getElderlyByFamily(user.userId)
+        const isLinkedElder = familyElders.some(e => e.id === elderlyId)
+        filterElderlyId = isLinkedElder ? elderlyId : user.userId
+      } else {
+        filterElderlyId = user.userId
+      }
     }
 
     // Volunteers can see follow-ups assigned to them or their assigned elderly
