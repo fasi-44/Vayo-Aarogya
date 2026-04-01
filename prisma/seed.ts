@@ -10,17 +10,14 @@ async function hashPassword(password: string): Promise<string> {
 async function main() {
   console.log('🌱 Starting database seed...')
 
-  // Clean existing data (in reverse order of dependencies)
-  console.log('🧹 Cleaning existing data...')
-  await prisma.auditLog.deleteMany()
-  await prisma.assessmentDomain.deleteMany()
-  await prisma.intervention.deleteMany()
-  await prisma.assessment.deleteMany()
-  await prisma.followUp.deleteMany()
-  await prisma.passwordResetToken.deleteMany()
-  await prisma.refreshToken.deleteMany()
-  await prisma.user.deleteMany()
-  await prisma.location.deleteMany()
+  // Check if database already has data - skip seeding if so
+  const existingUsers = await prisma.user.count()
+  if (existingUsers > 0) {
+    console.log(`✅ Database already has ${existingUsers} users. Skipping seed.`)
+    return
+  }
+
+  console.log('📦 Empty database detected. Seeding...')
 
   // ========================================
   // 0. SEED LOCATIONS (State → District → Taluk → Village)
