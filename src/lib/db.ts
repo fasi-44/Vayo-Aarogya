@@ -129,7 +129,7 @@ class Database {
   async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
     const user = await prisma.user.create({
       data: {
-        email: userData.email?.toLowerCase() || null,
+        email: userData.email?.toLowerCase().trim() || null,
         password: userData.password,
         name: userData.name,
         phone: userData.phone,
