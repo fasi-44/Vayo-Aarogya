@@ -343,8 +343,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     )
   } catch (error) {
     console.error('Create user error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'An error occurred'
     return NextResponse.json(
-      { success: false, error: 'An error occurred' },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
