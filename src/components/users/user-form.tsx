@@ -25,9 +25,11 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { DateInput } from '@/components/ui/date-input'
-import { Loader2, Eye, EyeOff, Phone } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Phone, X } from 'lucide-react'
 import { type SafeUser, type UserRole } from '@/types'
 import { type UserFormData, getVolunteers } from '@/services/users'
+import { getElderly } from '@/services/elderly'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { locationsService, type LocationOption } from '@/services/locations'
 
 // Validation schema
@@ -59,6 +61,8 @@ const userSchema = z.object({
   caregiverName: z.string().optional(),
   caregiverPhone: z.string().optional(),
   caregiverRelation: z.string().optional(),
+  // Family: linked elders
+  linkedElders: z.array(z.string()).optional(),
 })
 
 type FormValues = z.infer<typeof userSchema>
@@ -84,6 +88,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole, onSwi
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [volunteers, setVolunteers] = useState<SafeUser[]>([])
+  const [elderlyUsers, setElderlyUsers] = useState<SafeUser[]>([])
   const [showPassword, setShowPassword] = useState(false)
   const isEditing = !!user
 
@@ -128,6 +133,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole, onSwi
       caregiverName: '',
       caregiverPhone: '',
       caregiverRelation: '',
+      linkedElders: [],
     },
   })
 
@@ -224,15 +230,21 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole, onSwi
     loadVillages()
   }, [selectedTalukId])
 
-  // Load volunteers for elderly assignment
+  // Load volunteers and elderly for assignments
   useEffect(() => {
-    async function loadVolunteers() {
-      const result = await getVolunteers()
-      if (result.success && result.data) {
-        setVolunteers(result.data.users)
+    async function loadAssignees() {
+      const [volunteersResult, elderlyResult] = await Promise.all([
+        getVolunteers(),
+        getElderly({ limit: 1000 }),
+      ])
+      if (volunteersResult.success && volunteersResult.data) {
+        setVolunteers(volunteersResult.data.users)
+      }
+      if (elderlyResult.success && elderlyResult.data) {
+        setElderlyUsers(elderlyResult.data.users)
       }
     }
-    loadVolunteers()
+    loadAssignees()
   }, [])
 
   // Reset form when user changes or dialog opens
@@ -262,6 +274,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole, onSwi
           caregiverName: user.caregiverName || '',
           caregiverPhone: user.caregiverPhone || '',
           caregiverRelation: user.caregiverRelation || '',
+          linkedElders: (user as any).familyElders?.map((e: any) => e.id) || [],
         })
       } else {
         reset({
@@ -289,6 +302,7 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole, onSwi
           caregiverName: '',
           caregiverPhone: '',
           caregiverRelation: '',
+          linkedElders: [],
         })
       }
     }
@@ -412,6 +426,11 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole, onSwi
       // Include volunteer-specific fields
       if (data.role === 'volunteer' && data.maxAssignments) {
         formData.maxAssignments = Number(data.maxAssignments)
+      }
+
+      // Include linked elders for family role
+      if (data.role === 'family' && data.linkedElders && data.linkedElders.length > 0) {
+        formData.linkedElders = data.linkedElders
       }
 
       await onSubmit(formData)
@@ -827,22 +846,12 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole, onSwi
 
                   <div className="space-y-2">
                     <Label htmlFor="assignedVolunteer">Assigned Volunteer</Label>
-                    <Select
-                      value={watch('assignedVolunteer') || 'none'}
-                      onValueChange={(value) => setValue('assignedVolunteer', value === 'none' ? '' : value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select volunteer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {volunteers.map((v) => (
-                          <SelectItem key={v.id} value={v.id}>
-                            {v.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      options={volunteers.map((v) => ({ value: v.id, label: v.name, sublabel: v.phone }))}
+                      value={watch('assignedVolunteer') || ''}
+                      onValueChange={(value) => setValue('assignedVolunteer', value)}
+                      placeholder="Search volunteer..."
+                    />
                   </div>
                 </div>
               </div>
@@ -864,6 +873,64 @@ export function UserForm({ open, onClose, onSubmit, user, currentUserRole, onSwi
                   max={50}
                 />
               </div>
+            </div>
+          )}
+
+          {/* Family-specific: Link Elders */}
+          {selectedRole === 'family' && elderlyUsers.length > 0 && (
+            <div className="border-t pt-4 mt-4">
+              <h4 className="font-medium mb-3">Link Elders <span className="text-muted-foreground text-xs font-normal">(Optional)</span></h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                Select the elders this family member is caring for
+              </p>
+              <SearchableSelect
+                options={elderlyUsers
+                  .filter(e => !(watch('linkedElders') || []).includes(e.id))
+                  .map(e => ({
+                    value: e.id,
+                    label: e.name,
+                    sublabel: [e.vayoId, e.age ? `${e.age} yrs` : '', e.phone].filter(Boolean).join(' · '),
+                  }))}
+                value=""
+                onValueChange={(elderId) => {
+                  if (elderId) {
+                    const current = watch('linkedElders') || []
+                    if (!current.includes(elderId)) {
+                      setValue('linkedElders', [...current, elderId])
+                    }
+                  }
+                }}
+                placeholder="Search and add elder..."
+                allowNone={false}
+              />
+              {(watch('linkedElders') || []).length > 0 && (
+                <div className="space-y-2 mt-3">
+                  {(watch('linkedElders') || []).map((elderId: string) => {
+                    const elder = elderlyUsers.find(e => e.id === elderId)
+                    if (!elder) return null
+                    return (
+                      <div key={elderId} className="flex items-center justify-between p-2.5 rounded-md bg-primary/5 border border-primary/20">
+                        <div className="min-w-0">
+                          <span className="font-medium text-sm">{elder.name}</span>
+                          <span className="text-xs text-muted-foreground ml-2">
+                            {elder.vayoId && `${elder.vayoId} · `}{elder.age && `${elder.age} yrs`}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = watch('linkedElders') || []
+                            setValue('linkedElders', current.filter((id: string) => id !== elderId))
+                          }}
+                          className="text-muted-foreground hover:text-destructive ml-2 flex-shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
 

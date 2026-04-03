@@ -290,14 +290,15 @@ export default function UserManagementPage() {
   }
 
   const handleFormSubmit = async (data: UserFormData) => {
+    let userId: string | undefined
+
     if (selectedUser) {
-      // Update existing user
       const result = await updateUser(selectedUser.id, data)
       if (!result.success) {
         throw new Error(result.error || 'Failed to update user')
       }
+      userId = selectedUser.id
     } else {
-      // Create new user
       if (!data.password) {
         throw new Error('Password is required for new users')
       }
@@ -305,9 +306,18 @@ export default function UserManagementPage() {
       if (!result.success) {
         throw new Error(result.error || 'Failed to create user')
       }
+      userId = result.data?.id
     }
 
-    // Reload data
+    // Link elders to this family member
+    if (userId && data.linkedElders && data.linkedElders.length > 0) {
+      await Promise.all(
+        data.linkedElders.map(elderId =>
+          updateElderly(elderId, { assignedFamily: userId })
+        )
+      )
+    }
+
     loadUsers()
     loadStats()
   }

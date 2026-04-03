@@ -165,6 +165,30 @@ export default function FollowUpsPage() {
     }
   }
 
+  const handleAcceptRequest = async (followUp: FollowUp) => {
+    setActionLoading(true)
+    try {
+      await updateFollowUp(followUp.id, { status: 'scheduled' })
+      await fetchData()
+    } catch (error) {
+      console.error('Error accepting follow-up request:', error)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleRejectRequest = async (followUp: FollowUp) => {
+    setActionLoading(true)
+    try {
+      await updateFollowUp(followUp.id, { status: 'cancelled' })
+      await fetchData()
+    } catch (error) {
+      console.error('Error rejecting follow-up request:', error)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   const [isRescheduling, setIsRescheduling] = useState(false)
 
   const handleReschedule = (followUp: FollowUp) => {
@@ -276,6 +300,7 @@ export default function FollowUpsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="requested">Requested</SelectItem>
                 <SelectItem value="scheduled">Scheduled</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="missed">Missed</SelectItem>
@@ -340,6 +365,8 @@ export default function FollowUpsPage() {
               onDelete={handleDeleteClick}
               onComplete={handleComplete}
               onReschedule={handleReschedule}
+              onAcceptRequest={handleAcceptRequest}
+              onRejectRequest={handleRejectRequest}
             />
           </CardContent>
         </Card>

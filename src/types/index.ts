@@ -200,7 +200,7 @@ export interface FollowUp {
   description?: string
   scheduledDate: string
   completedDate?: string
-  status: 'scheduled' | 'completed' | 'missed' | 'rescheduled' | 'cancelled'
+  status: 'requested' | 'scheduled' | 'completed' | 'missed' | 'rescheduled' | 'cancelled'
   assessmentId?: string
   notes?: string
   createdAt: string

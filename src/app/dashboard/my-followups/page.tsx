@@ -18,40 +18,56 @@ import {
   User,
   Phone,
   MapPin,
+  Plus,
 } from 'lucide-react'
-import type { FollowUp } from '@/types'
+import type { FollowUp, SafeUser } from '@/types'
+import { createFollowUp } from '@/services/followups'
+import { FollowUpForm, type FollowUpFormData } from '@/components/followups/followup-form'
 
 export default function MyFollowupsPage() {
   const { user } = useAuthStore()
   const [followUps, setFollowUps] = useState<FollowUp[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('upcoming')
+  const [formOpen, setFormOpen] = useState(false)
+
+  const fetchFollowUps = async () => {
+    if (!user?.id) return
+    try {
+      const res = await fetch(`/api/followups?elderlyId=${user.id}&limit=50`)
+      const data = await res.json()
+      if (data.success) {
+        setFollowUps(data.data?.followUps || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch follow-ups:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function fetchFollowUps() {
-      if (!user?.id) return
-
-      try {
-        const res = await fetch(`/api/followups?elderlyId=${user.id}&limit=50`)
-        const data = await res.json()
-        if (data.success) {
-          setFollowUps(data.data?.followUps || [])
-        }
-      } catch (error) {
-        console.error('Failed to fetch follow-ups:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchFollowUps()
   }, [user])
+
+  const handleRequestSubmit = async (data: FollowUpFormData) => {
+    const scheduledDate = `${data.scheduledDate}T${data.scheduledTime || '10:00'}:00`
+    await createFollowUp({
+      elderlyId: user!.id,
+      type: data.type,
+      title: data.title,
+      description: data.description || undefined,
+      scheduledDate,
+      notes: data.notes || undefined,
+    })
+    await fetchFollowUps()
+  }
 
   const now = new Date()
   const filteredFollowUps = followUps.filter((f) => {
     const scheduledDate = new Date(f.scheduledDate)
     if (filter === 'upcoming') {
-      return scheduledDate >= now && f.status === 'scheduled'
+      return (scheduledDate >= now && f.status === 'scheduled') || f.status === 'requested'
     }
     if (filter === 'past') {
       return f.status === 'completed' || f.status === 'missed' || f.status === 'rescheduled' || scheduledDate < now
@@ -67,6 +83,7 @@ export default function MyFollowupsPage() {
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, { className: string; icon: React.ReactNode }> = {
+      requested: { className: 'bg-purple-100 text-purple-700', icon: <Clock className="w-3 h-3 mr-1" /> },
       scheduled: { className: 'bg-blue-100 text-blue-700', icon: <Clock className="w-3 h-3 mr-1" /> },
       completed: { className: 'bg-green-100 text-green-700', icon: <CheckCircle className="w-3 h-3 mr-1" /> },
       missed: { className: 'bg-red-100 text-red-700', icon: <XCircle className="w-3 h-3 mr-1" /> },
@@ -97,6 +114,7 @@ export default function MyFollowupsPage() {
 
   const stats = {
     total: followUps.length,
+    requested: followUps.filter((f) => f.status === 'requested').length,
     upcoming: followUps.filter((f) => new Date(f.scheduledDate) >= now && f.status === 'scheduled').length,
     completed: followUps.filter((f) => f.status === 'completed').length,
     missed: followUps.filter((f) => f.status === 'missed').length,
@@ -119,6 +137,24 @@ export default function MyFollowupsPage() {
       title="My Follow-ups"
       subtitle="View and manage your scheduled visits"
     >
+      {/* Request Follow-up Button */}
+      <Card className="border-0 shadow-soft mb-6">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-semibold text-base">Need a follow-up visit?</h3>
+              <p className="text-sm text-muted-foreground">
+                Request a visit from your healthcare team
+              </p>
+            </div>
+            <Button onClick={() => setFormOpen(true)} className="w-full sm:w-auto text-base">
+              <Plus className="w-5 h-5 mr-2" />
+              Request Follow-up
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Next Follow-up Highlight */}
       {nextFollowUp && (
         <Card className="border-0 shadow-soft mb-6 bg-gradient-to-r from-primary to-primary/80 text-white">
@@ -336,6 +372,14 @@ export default function MyFollowupsPage() {
           )}
         </CardContent>
       </Card>
+      {/* Request Follow-up Form */}
+      <FollowUpForm
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        onSubmit={handleRequestSubmit}
+        elderly={user ? [user as SafeUser] : []}
+        preselectedElderlyId={user?.id}
+      />
     </DashboardLayout>
   )
 }

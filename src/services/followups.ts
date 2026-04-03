@@ -16,7 +16,7 @@ export interface FollowUpFormData {
   title: string
   description?: string
   scheduledDate: string
-  status?: 'scheduled' | 'completed' | 'missed' | 'rescheduled' | 'cancelled'
+  status?: 'requested' | 'scheduled' | 'completed' | 'missed' | 'rescheduled' | 'cancelled'
   assessmentId?: string
   notes?: string
 }
@@ -241,6 +241,7 @@ export const FOLLOW_UP_TYPES = {
 
 // Status colors
 export const FOLLOW_UP_STATUS_COLORS = {
+  requested: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' },
   scheduled: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
   completed: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
   missed: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },

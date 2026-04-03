@@ -20,6 +20,8 @@ import { cn, getInitials, formatDate } from '@/lib/utils'
 import { getFamilyElders } from '@/services/users'
 import { createElderly, type ElderlyFormData } from '@/services/elderly'
 import { ElderlyForm } from '@/components/elderly'
+import { FollowUpForm, type FollowUpFormData } from '@/components/followups/followup-form'
+import { createFollowUp } from '@/services/followups'
 import type { SafeUser, Assessment, Intervention, FollowUp } from '@/types'
 import {
   Users,
@@ -95,6 +97,8 @@ function MyEldersPageContent() {
   const [activeTab, setActiveTab] = useState('overview')
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isFollowupOpen, setIsFollowupOpen] = useState(false)
+  const [followupElderId, setFollowupElderId] = useState<string | null>(null)
 
   // Fetch elders and their data
   const fetchElders = useCallback(async () => {
@@ -202,6 +206,26 @@ function MyEldersPageContent() {
 
   const handleAddElder = () => {
     setIsFormOpen(true)
+  }
+
+  const handleRequestFollowup = (elderId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setFollowupElderId(elderId)
+    setIsFollowupOpen(true)
+  }
+
+  const handleFollowupSubmit = async (data: FollowUpFormData) => {
+    const scheduledDate = `${data.scheduledDate}T${data.scheduledTime || '10:00'}:00`
+    await createFollowUp({
+      elderlyId: data.elderlyId,
+      type: data.type,
+      title: data.title,
+      description: data.description || undefined,
+      scheduledDate,
+      notes: data.notes || undefined,
+    })
+    setLoading(true)
+    await fetchElders()
   }
 
   const getRiskLevel = (assessment: Assessment | null | undefined): RiskLevel => {
@@ -378,11 +402,22 @@ function MyEldersPageContent() {
                     </div>
                   )}
 
-                  {/* View Details Button */}
-                  <Button variant="outline" className="w-full mt-2 group-hover:bg-primary group-hover:text-white transition-colors">
-                    View Details
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 mt-2">
+                    <Button variant="outline" className="flex-1 group-hover:bg-primary group-hover:text-white transition-colors">
+                      View Details
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="flex-shrink-0"
+                      title="Request Follow-up"
+                      onClick={(e) => handleRequestFollowup(elder.id, e)}
+                    >
+                      <Calendar className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             )
@@ -661,8 +696,15 @@ function MyEldersPageContent() {
                 {/* Follow-ups Tab */}
                 <TabsContent value="followups" className="mt-4 space-y-4">
                   <Card className="border-0 shadow-soft">
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
                       <CardTitle className="text-base">Scheduled Follow-ups</CardTitle>
+                      <Button
+                        size="sm"
+                        onClick={() => handleRequestFollowup(selectedElder.id)}
+                      >
+                        <Calendar className="w-4 h-4 mr-1" />
+                        Request Follow-up
+                      </Button>
                     </CardHeader>
                     <CardContent>
                       {selectedElder.followUps && selectedElder.followUps.length > 0 ? (
@@ -939,6 +981,18 @@ function MyEldersPageContent() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Request Follow-up Dialog */}
+      <FollowUpForm
+        open={isFollowupOpen}
+        onOpenChange={(open) => {
+          setIsFollowupOpen(open)
+          if (!open) setFollowupElderId(null)
+        }}
+        onSubmit={handleFollowupSubmit}
+        elderly={elders}
+        preselectedElderlyId={followupElderId || undefined}
+      />
 
       {/* Elder Form Dialog */}
       <ElderlyForm

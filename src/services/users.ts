@@ -37,6 +37,8 @@ export interface UserFormData {
   maxAssignments?: number
   // Elderly category
   category?: 'community' | 'clinic'
+  // Family: linked elders
+  linkedElders?: string[]
 }
 
 // Filter options for user list

@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Validate status if provided
-    const validStatuses = ['scheduled', 'completed', 'missed', 'rescheduled', 'cancelled']
+    const validStatuses = ['requested', 'scheduled', 'completed', 'missed', 'rescheduled', 'cancelled']
     if (status && !validStatuses.includes(status)) {
       return errorResponse(Errors.badRequest('Invalid follow-up status'))
     }

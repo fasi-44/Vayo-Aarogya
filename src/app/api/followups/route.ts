@@ -82,15 +82,17 @@ export async function POST(request: NextRequest) {
   try {
     const user = requireAuth(request)
 
-    // Only admin, professional, and volunteer can create follow-ups
-    if (!['super_admin', 'professional', 'volunteer'].includes(user.role)) {
-      return errorResponse(Errors.forbidden('You do not have permission to create follow-ups'))
-    }
-
     const body = await request.json()
     const { elderlyId, type, title, description, scheduledDate, assessmentId, notes } = body
-    // Handle empty string as null for optional foreign keys
     const assigneeId = body.assigneeId && body.assigneeId.trim() !== '' ? body.assigneeId : null
+
+    // Determine if this is a request (family/elder) or a direct schedule (admin/professional/volunteer)
+    const isRequest = ['family', 'elderly'].includes(user.role)
+    const canDirectSchedule = ['super_admin', 'professional', 'volunteer'].includes(user.role)
+
+    if (!isRequest && !canDirectSchedule) {
+      return errorResponse(Errors.forbidden('You do not have permission to create follow-ups'))
+    }
 
     // Validate required fields
     if (!elderlyId || !title || !scheduledDate) {
@@ -112,6 +114,19 @@ export async function POST(request: NextRequest) {
       return errorResponse(Errors.badRequest('Follow-ups can only be created for elderly users'))
     }
 
+    // For elderly: can only request for self
+    if (user.role === 'elderly' && elderlyId !== user.userId) {
+      return errorResponse(Errors.forbidden('You can only request follow-ups for yourself'))
+    }
+
+    // For family: can only request for linked elders
+    if (user.role === 'family') {
+      const familyElders = await db.getElderlyByFamily(user.userId)
+      if (!familyElders.some(e => e.id === elderlyId)) {
+        return errorResponse(Errors.forbidden('You can only request follow-ups for your linked elders'))
+      }
+    }
+
     // Verify assignee exists if provided
     if (assigneeId) {
       const assignee = await db.findUserById(assigneeId)
@@ -123,7 +138,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create follow-up
+    // Create follow-up — family/elder creates as "requested", others as "scheduled"
     const followUp = await db.createFollowUp({
       elderlyId,
       assigneeId,
@@ -131,22 +146,22 @@ export async function POST(request: NextRequest) {
       title,
       description,
       scheduledDate: new Date(scheduledDate),
+      status: isRequest ? 'requested' : 'scheduled',
       assessmentId,
       notes,
     })
 
-    // Log the action
     await db.createAuditLog({
       userId: user.userId,
-      action: 'create',
+      action: isRequest ? 'request' : 'create',
       entity: 'FollowUp',
       entityId: followUp.id,
-      details: { elderlyId, type, scheduledDate },
+      details: { elderlyId, type, scheduledDate, isRequest },
       ipAddress: getClientIP(request),
       userAgent: getUserAgent(request),
     })
 
-    return successResponse(followUp, 'Follow-up scheduled successfully', 201)
+    return successResponse(followUp, isRequest ? 'Follow-up requested successfully' : 'Follow-up scheduled successfully', 201)
   } catch (error) {
     console.error('Create follow-up error:', error)
     if (error instanceof Error) {

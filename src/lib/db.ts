@@ -297,35 +297,47 @@ class Database {
     const isElderly = options?.role === 'elderly'
     const isFamily = options?.role === 'family'
 
-    // Define include based on role
+    // Define include based on role — include relations for all roles when no filter
+    const relationSelect = {
+      assignedElderly: {
+        select: { id: true, name: true, vayoId: true, age: true, villageName: true }
+      },
+      professionalElders: {
+        select: { id: true, name: true, vayoId: true, age: true, villageName: true }
+      },
+      assignedFamily: {
+        select: { id: true, name: true, phone: true, email: true }
+      },
+      assignedVolunteer: {
+        select: { id: true, name: true, phone: true }
+      },
+      assignedProfessional: {
+        select: { id: true, name: true, phone: true }
+      },
+      familyElders: {
+        select: { id: true, name: true, vayoId: true, age: true, villageName: true, gender: true }
+      },
+    }
+
     const include = isVolunteer || isProfessional
       ? {
-        assignedElderly: {
-          select: { id: true, name: true, vayoId: true, age: true, villageName: true }
-        },
-        professionalElders: {
-          select: { id: true, name: true, vayoId: true, age: true, villageName: true }
-        }
+        assignedElderly: relationSelect.assignedElderly,
+        professionalElders: relationSelect.professionalElders,
       }
       : isElderly
         ? {
-          assignedFamily: {
-            select: { id: true, name: true, phone: true, email: true }
-          },
-          assignedVolunteer: {
-            select: { id: true, name: true, phone: true }
-          },
-          assignedProfessional: {
-            select: { id: true, name: true, phone: true }
-          }
+          assignedFamily: relationSelect.assignedFamily,
+          assignedVolunteer: relationSelect.assignedVolunteer,
+          assignedProfessional: relationSelect.assignedProfessional,
         }
         : isFamily
           ? {
-            familyElders: {
-              select: { id: true, name: true, vayoId: true, age: true, villageName: true, gender: true }
-            }
+            familyElders: relationSelect.familyElders,
           }
-          : undefined
+          : {
+            // No role filter (all users) — include all relations
+            ...relationSelect,
+          }
 
     const [users, total] = await Promise.all([
       prisma.user.findMany({
@@ -1050,18 +1062,19 @@ class Database {
     title: string
     description?: string
     scheduledDate: Date
+    status?: string
     assessmentId?: string
     notes?: string
   }) {
     return prisma.followUp.create({
       data: {
         elderlyId: data.elderlyId,
-        // Convert empty string to null for optional foreign key
         assigneeId: data.assigneeId || null,
         type: data.type,
         title: data.title,
         description: data.description,
         scheduledDate: data.scheduledDate,
+        status: data.status || 'scheduled',
         assessmentId: data.assessmentId,
         notes: data.notes,
       },

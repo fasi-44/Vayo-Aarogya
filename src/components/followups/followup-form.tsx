@@ -39,11 +39,12 @@ export interface FollowUpFormData {
   elderlyId: string
   assigneeId: string
   type: 'routine' | 'assessment' | 'intervention' | 'medication' | 'other'
+  consultationType: string
   title: string
   description: string
   scheduledDate: string
   scheduledTime: string
-  status: 'scheduled' | 'completed' | 'missed' | 'rescheduled' | 'cancelled'
+  status: 'requested' | 'scheduled' | 'completed' | 'missed' | 'rescheduled' | 'cancelled'
   notes: string
 }
 
@@ -52,7 +53,17 @@ const types = Object.entries(FOLLOW_UP_TYPES).map(([value, label]) => ({
   label,
 }))
 
+const consultationTypes = [
+  { value: 'opd_visit', label: 'OPD Visit' },
+  { value: 'teleconsultation', label: 'Teleconsultation' },
+  { value: 'home_visit', label: 'Home Visit' },
+  { value: 'clinic_visit', label: 'Clinic Visit' },
+  { value: 'lab_test', label: 'Lab / Test' },
+  { value: 'other', label: 'Other' },
+]
+
 const statuses = [
+  { value: 'requested', label: 'Requested' },
   { value: 'scheduled', label: 'Scheduled' },
   { value: 'completed', label: 'Completed' },
   { value: 'missed', label: 'Missed' },
@@ -74,6 +85,7 @@ export function FollowUpForm({
     elderlyId: '',
     assigneeId: '',
     type: 'routine',
+    consultationType: '',
     title: '',
     description: '',
     scheduledDate: '',
@@ -89,6 +101,7 @@ export function FollowUpForm({
         elderlyId: followUp.elderlyId,
         assigneeId: followUp.assigneeId || '',
         type: followUp.type as FollowUpFormData['type'],
+        consultationType: (followUp as any).consultationType || '',
         title: followUp.title,
         description: followUp.description || '',
         scheduledDate: scheduledDate.toISOString().split('T')[0],
@@ -105,6 +118,7 @@ export function FollowUpForm({
         elderlyId: preselectedElderlyId || '',
         assigneeId: '',
         type: 'routine',
+        consultationType: '',
         title: '',
         description: '',
         scheduledDate: tomorrow.toISOString().split('T')[0],
@@ -176,7 +190,7 @@ export function FollowUpForm({
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
               <Select
@@ -202,6 +216,30 @@ export function FollowUpForm({
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="consultationType">Consultation Type</Label>
+              <Select
+                value={formData.consultationType || 'none'}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, consultationType: value === 'none' ? '' : value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select consultation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Select type</SelectItem>
+                  {consultationTypes.map((ct) => (
+                    <SelectItem key={ct.value} value={ct.value}>
+                      {ct.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="assigneeId">Assigned To</Label>
               <Select
@@ -251,7 +289,7 @@ export function FollowUpForm({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="scheduledDate">Date</Label>
               <DateInput

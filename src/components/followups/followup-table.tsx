@@ -42,6 +42,8 @@ interface FollowUpTableProps {
   onDelete: (followUp: FollowUp) => void
   onComplete?: (followUp: FollowUp) => void
   onReschedule?: (followUp: FollowUp) => void
+  onAcceptRequest?: (followUp: FollowUp) => void
+  onRejectRequest?: (followUp: FollowUp) => void
 }
 
 export function FollowUpTable({
@@ -50,6 +52,8 @@ export function FollowUpTable({
   onDelete,
   onComplete,
   onReschedule,
+  onAcceptRequest,
+  onRejectRequest,
 }: FollowUpTableProps) {
   const isOverdue = (followUp: FollowUp) => {
     if (followUp.status !== 'scheduled') return false
@@ -90,6 +94,18 @@ export function FollowUpTable({
           <Pencil className="mr-2 h-4 w-4" />
           Edit
         </DropdownMenuItem>
+        {onAcceptRequest && followUp.status === 'requested' && (
+          <DropdownMenuItem onClick={() => onAcceptRequest(followUp)} className="text-green-600">
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Accept Request
+          </DropdownMenuItem>
+        )}
+        {onRejectRequest && followUp.status === 'requested' && (
+          <DropdownMenuItem onClick={() => onRejectRequest(followUp)} className="text-red-600">
+            <XCircle className="mr-2 h-4 w-4" />
+            Reject Request
+          </DropdownMenuItem>
+        )}
         {onComplete && followUp.status === 'scheduled' && (
           <DropdownMenuItem onClick={() => onComplete(followUp)}>
             <CheckCircle className="mr-2 h-4 w-4" />
