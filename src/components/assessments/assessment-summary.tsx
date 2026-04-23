@@ -5,8 +5,6 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import {
   AlertTriangle,
-  CheckCircle2,
-  AlertCircle,
   TrendingDown,
   TrendingUp,
   Minus,
@@ -14,23 +12,18 @@ import {
   Brain,
   Heart,
   Eye,
-  Ear,
   Footprints,
-  Moon,
   Utensils,
-  Scale,
-  Droplets,
   Users,
-  Home,
-  Pill,
-  Stethoscope,
-  Cigarette,
-  Hospital,
-  Smile,
-  Zap,
 } from 'lucide-react'
-import { type AssessmentResult, type DomainScore, type RiskLevel, getRiskLevelDisplay } from '@/lib/assessment-scoring'
+import {
+  type AssessmentResult,
+  type DomainScore,
+  type RiskLevel,
+  getRiskLevelDisplay,
+} from '@/lib/assessment-scoring'
 import { formatDate } from '@/lib/utils'
+import { AssessmentReport } from './assessment-report'
 
 interface AssessmentSummaryProps {
   result: AssessmentResult
@@ -121,29 +114,8 @@ export function AssessmentSummary({
         </CardContent>
       </Card>
 
-      {/* Recommendations */}
-      {result.recommendations.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-primary" />
-              Recommendations
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {result.recommendations.map((rec, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-sm">
-                  <span className={`mt-1 ${getRecommendationColor(rec)}`}>
-                    {getRecommendationIcon(rec)}
-                  </span>
-                  <span>{rec}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+      {/* Report: Patient Summary / Recommended Scales / Risk Flags / Actions */}
+      <AssessmentReport result={result} />
 
       {/* Domain Scores Grid */}
       <Card>
@@ -237,48 +209,14 @@ function getIconBgColor(riskLevel: RiskLevel): string {
 
 function getDomainIcon(domain: string) {
   const icons: Record<string, typeof Activity> = {
-    cognition: Brain,
-    depression: Heart,
-    mobility: Footprints,
-    vision: Eye,
-    hearing: Ear,
-    falls: AlertTriangle,
-    sleep: Moon,
-    nutrition: Utensils,
-    weight: Scale,
-    incontinence: Droplets,
+    cognitive: Brain,
+    psychological: Heart,
+    locomotor: Footprints,
+    sensory: Eye,
+    vitality: Utensils,
     social: Users,
-    loneliness: Home,
-    iadl: Home,
-    adl: Activity,
-    diabetes: Pill,
-    hypertension: Stethoscope,
-    substance: Cigarette,
-    healthcare: Hospital,
-    oral: Smile,
-    pain: Zap,
   }
   return icons[domain] || Activity
-}
-
-function getRecommendationIcon(rec: string) {
-  if (rec.includes('URGENT') || rec.includes('Immediate')) {
-    return <AlertTriangle className="w-4 h-4" />
-  }
-  if (rec.includes('Schedule') || rec.includes('follow-up')) {
-    return <AlertCircle className="w-4 h-4" />
-  }
-  return <CheckCircle2 className="w-4 h-4" />
-}
-
-function getRecommendationColor(rec: string): string {
-  if (rec.includes('URGENT') || rec.includes('Immediate')) {
-    return 'text-red-500'
-  }
-  if (rec.includes('Schedule') || rec.includes('follow-up')) {
-    return 'text-yellow-600'
-  }
-  return 'text-green-600'
 }
 
 // Comparison component for showing changes between assessments

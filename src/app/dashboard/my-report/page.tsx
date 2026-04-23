@@ -19,40 +19,21 @@ import {
   Brain,
   Heart,
   Eye,
-  Ear,
   Footprints,
-  Moon,
   Apple,
-  Scale,
   Users,
-  Home,
-  Pill,
-  Droplets,
-  HeartPulse,
 } from 'lucide-react'
 import type { Assessment } from '@/types'
+import { buildResultFromStored } from '@/lib/assessment-scoring'
+import { AssessmentReport } from '@/components/assessments/assessment-report'
 
 const domainIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  cognition: Brain,
-  depression: Heart,
-  mobility: Footprints,
-  vision: Eye,
-  hearing: Ear,
-  falls: Activity,
-  sleep: Moon,
-  appetite: Apple,
-  weight: Scale,
-  incontinence: Droplets,
-  social_engagement: Users,
-  loneliness: Heart,
-  iadl: Home,
-  adl: Activity,
-  diabetes: HeartPulse,
-  hypertension: HeartPulse,
-  substance_use: Pill,
-  healthcare_access: Activity,
-  oral_health: Activity,
-  pain: Activity,
+  cognitive: Brain,
+  psychological: Heart,
+  locomotor: Footprints,
+  sensory: Eye,
+  vitality: Apple,
+  social: Users,
 }
 
 export default function MyReportPage() {
@@ -331,43 +312,19 @@ export default function MyReportPage() {
         </CardContent>
       </Card>
 
-      {/* Health Tips */}
-      {latestAssessment && (
-        <Card className="border-0 shadow-soft mt-6 bg-gradient-to-r from-primary/5 to-secondary/5">
-          <CardHeader>
-            <CardTitle>Recommendations</CardTitle>
-            <CardDescription>Based on your latest assessment</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {latestAssessment.overallRisk === 'healthy' && (
-                <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                  <p className="font-medium text-green-700">Great job maintaining your health!</p>
-                  <p className="text-sm text-green-600 mt-1">
-                    Continue with your current routine and attend regular check-ups.
-                  </p>
-                </div>
-              )}
-              {latestAssessment.overallRisk === 'at_risk' && (
-                <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200">
-                  <p className="font-medium text-yellow-700">Some areas need attention</p>
-                  <p className="text-sm text-yellow-600 mt-1">
-                    Work with your volunteer or healthcare provider to address flagged areas.
-                  </p>
-                </div>
-              )}
-              {latestAssessment.overallRisk === 'intervention' && (
-                <div className="p-4 rounded-lg bg-red-50 border border-red-200">
-                  <p className="font-medium text-red-700">Professional care recommended</p>
-                  <p className="text-sm text-red-600 mt-1">
-                    Please consult with your healthcare provider about your care plan.
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* ICOPE Report: Patient Summary / Recommended Scales / Risk Flags / Actions */}
+      {latestAssessment && (() => {
+        const reportResult = buildResultFromStored(
+          (latestAssessment.domains || []) as Array<{ domain: string; answers?: unknown; notes?: string | null }>,
+          latestAssessment.domainScores,
+        )
+        if (!reportResult) return null
+        return (
+          <div className="mt-6">
+            <AssessmentReport result={reportResult} />
+          </div>
+        )
+      })()}
     </DashboardLayout>
   )
 }

@@ -46,26 +46,12 @@ export interface ReportData {
 
 // Domain names mapping
 const DOMAIN_NAMES: Record<string, string> = {
-  cognition: 'Cognition',
-  depression: 'Depression',
-  mobility: 'Mobility',
-  vision: 'Vision',
-  hearing: 'Hearing',
-  falls: 'Falls Risk',
-  sleep: 'Sleep',
-  nutrition: 'Appetite/Nutrition',
-  weight: 'Weight Management',
-  incontinence: 'Incontinence',
-  social: 'Social Engagement',
-  loneliness: 'Loneliness',
-  iadl: 'Instrumental Activities',
-  adl: 'Basic Activities',
-  diabetes: 'Diabetes Management',
-  hypertension: 'Hypertension Management',
-  substance: 'Substance Use',
-  healthcare: 'Healthcare Access',
-  oral: 'Oral Health',
-  pain: 'Pain Management',
+  cognitive: 'Cognitive',
+  psychological: 'Psychological',
+  locomotor: 'Locomotor',
+  sensory: 'Sensory',
+  vitality: 'Vitality',
+  social: 'Social',
 }
 
 // Generate report data

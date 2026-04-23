@@ -20,18 +20,14 @@ import {
   Brain,
   Heart,
   Eye,
-  Ear,
   Footprints,
-  Moon,
   Utensils,
-  Droplets,
   Users,
-  Home,
-  Hospital,
 } from 'lucide-react'
 import { type Assessment, type AssessmentDomain, type RiskLevel } from '@/types'
 import { getAssessmentById } from '@/services/assessments'
-import { getRiskLevelDisplay } from '@/lib/assessment-scoring'
+import { getRiskLevelDisplay, buildResultFromStored } from '@/lib/assessment-scoring'
+import { AssessmentReport } from '@/components/assessments/assessment-report'
 import { formatDate } from '@/lib/utils'
 
 export default function MyAssessmentDetailPage() {
@@ -243,38 +239,15 @@ export default function MyAssessmentDetailPage() {
           </Card>
         )}
 
-        {/* Recommendations based on risk */}
-        <Card className="border-0 shadow-soft">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Recommendations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {assessment.overallRisk === 'healthy' && (
-              <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                <p className="font-medium text-green-700">Great job maintaining your health!</p>
-                <p className="text-sm text-green-600 mt-1">
-                  Continue with your current routine and attend regular check-ups.
-                </p>
-              </div>
-            )}
-            {assessment.overallRisk === 'at_risk' && (
-              <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200">
-                <p className="font-medium text-yellow-700">Some areas need attention</p>
-                <p className="text-sm text-yellow-600 mt-1">
-                  Work with your volunteer or healthcare provider to address the flagged areas.
-                </p>
-              </div>
-            )}
-            {assessment.overallRisk === 'intervention' && (
-              <div className="p-4 rounded-lg bg-red-50 border border-red-200">
-                <p className="font-medium text-red-700">Professional care recommended</p>
-                <p className="text-sm text-red-600 mt-1">
-                  Please consult with your healthcare provider about your care plan as soon as possible.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* ICOPE Report: Patient Summary / Recommended Scales / Risk Flags / Actions */}
+        {(() => {
+          const reportResult = buildResultFromStored(
+            (assessment.domains || []) as Array<{ domain: string; answers?: unknown; notes?: string | null }>,
+            assessment.domainScores,
+          )
+          if (!reportResult) return null
+          return <AssessmentReport result={reportResult} />
+        })()}
       </div>
     </DashboardLayout>
   )
@@ -348,59 +321,37 @@ function getIconBgColor(riskLevel: RiskLevel): string {
 }
 
 function getDomainIcon(domain: string) {
-  // Updated for ICOPE 12 domains
   const icons: Record<string, typeof Activity> = {
-    cognition: Brain,
-    mood: Heart,
-    mobility: Footprints,
-    vision: Eye,
-    hearing: Ear,
+    cognitive: Brain,
+    psychological: Heart,
+    locomotor: Footprints,
+    sensory: Eye,
     vitality: Utensils,
-    sleep: Moon,
-    continence: Droplets,
-    adl: Activity,
-    iadl: Home,
     social: Users,
-    healthcare: Hospital,
   }
   return icons[domain] || Activity
 }
 
 function getDomainName(domain: string): string {
-  // Updated for ICOPE 12 domains
   const names: Record<string, string> = {
-    cognition: 'Memory & Thinking',
-    mood: 'Mood & Feelings',
-    mobility: 'Walking & Falls',
-    vision: 'Vision',
-    hearing: 'Hearing',
-    vitality: 'Appetite & Weight',
-    sleep: 'Sleep',
-    continence: 'Bladder & Bowel',
-    adl: 'Self-Care (ADL)',
-    iadl: 'Daily Tasks (IADL)',
-    social: 'Social & Loneliness',
-    healthcare: 'Healthcare Access',
+    cognitive: 'Cognitive',
+    psychological: 'Psychological',
+    locomotor: 'Locomotor',
+    sensory: 'Sensory',
+    vitality: 'Vitality',
+    social: 'Social',
   }
   return names[domain] || domain
 }
 
 function getMaxScore(domain: string): number {
-  // Updated for ICOPE 15 questions across 12 domains
-  // Each question has max score of 2
   const questionCounts: Record<string, number> = {
-    cognition: 1,  // 1 question
-    mood: 1,       // 1 question
-    mobility: 2,   // 2 questions (walking + falls)
-    vision: 1,     // 1 question
-    hearing: 1,    // 1 question
-    vitality: 2,   // 2 questions (appetite + weight)
-    sleep: 1,      // 1 question
-    continence: 1, // 1 question
-    adl: 1,        // 1 question
-    iadl: 1,       // 1 question
-    social: 2,     // 2 questions (activities + loneliness)
-    healthcare: 1, // 1 question
+    cognitive: 4,
+    psychological: 5,
+    locomotor: 3,
+    sensory: 3,
+    vitality: 3,
+    social: 4,
   }
   return (questionCounts[domain] || 1) * 2
 }

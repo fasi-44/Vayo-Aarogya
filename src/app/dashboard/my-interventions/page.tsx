@@ -13,7 +13,6 @@ import {
   Clock,
   AlertCircle,
   Loader2,
-  Pill,
   Heart,
   Brain,
   Eye,
@@ -88,10 +87,9 @@ export default function MyInterventionsPage() {
 
   const getDomainIcon = (domain: string) => {
     const icons: Record<string, React.ComponentType<{ className?: string }>> = {
-      cognition: Brain,
-      depression: Heart,
-      vision: Eye,
-      medication: Pill,
+      cognitive: Brain,
+      psychological: Heart,
+      sensory: Eye,
     }
     const Icon = icons[domain] || Activity
     return <Icon className="w-5 h-5" />

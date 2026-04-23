@@ -7,21 +7,8 @@ import {
   Heart,
   Footprints,
   Eye,
-  Ear,
-  AlertTriangle,
-  Moon,
   Utensils,
-  Scale,
-  Droplets,
   Users,
-  UserX,
-  Home,
-  Bath,
-  Pill,
-  HeartPulse,
-  Wine,
-  Hospital,
-  Smile,
   Activity,
 } from 'lucide-react'
 import type { RiskLevel } from '@/types'
@@ -44,26 +31,12 @@ interface DomainIndicatorsProps {
 }
 
 const domainIcons: Record<string, React.ElementType> = {
-  cognition: Brain,
-  depression: Heart,
-  mobility: Footprints,
-  vision: Eye,
-  hearing: Ear,
-  falls: AlertTriangle,
-  sleep: Moon,
-  nutrition: Utensils,
-  weight: Scale,
-  incontinence: Droplets,
+  cognitive: Brain,
+  psychological: Heart,
+  locomotor: Footprints,
+  sensory: Eye,
+  vitality: Utensils,
   social: Users,
-  loneliness: UserX,
-  iadl: Home,
-  adl: Bath,
-  diabetes: Pill,
-  hypertension: HeartPulse,
-  substance: Wine,
-  healthcare: Hospital,
-  oral: Smile,
-  pain: Activity,
 }
 
 const riskColors = {

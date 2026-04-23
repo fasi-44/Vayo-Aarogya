@@ -29,30 +29,6 @@ export function useHydration() {
 import { type RiskLevel } from '@/types'
 export type { RiskLevel }
 
-// Assessment domains based on WHO ICOPE
-export const assessmentDomains = [
-  { id: 'cognition', name: 'Cognition', icon: 'Brain', description: 'Memory, thinking, and mental clarity' },
-  { id: 'mobility', name: 'Mobility', icon: 'Footprints', description: 'Walking, balance, and physical movement' },
-  { id: 'nutrition', name: 'Nutrition', icon: 'Apple', description: 'Diet, appetite, and weight management' },
-  { id: 'vision', name: 'Vision', icon: 'Eye', description: 'Eyesight and visual health' },
-  { id: 'hearing', name: 'Hearing', icon: 'Ear', description: 'Hearing ability and ear health' },
-  { id: 'depression', name: 'Mental Health', icon: 'Heart', description: 'Mood, emotions, and psychological wellbeing' },
-  { id: 'social', name: 'Social Health', icon: 'Users', description: 'Social connections and support network' },
-  { id: 'medication', name: 'Medication', icon: 'Pill', description: 'Medicine management and adherence' },
-  { id: 'falls', name: 'Fall Risk', icon: 'AlertTriangle', description: 'Risk of falls and accidents' },
-  { id: 'sleep', name: 'Sleep', icon: 'Moon', description: 'Sleep quality and patterns' },
-  { id: 'pain', name: 'Pain Management', icon: 'Activity', description: 'Chronic pain and discomfort' },
-  { id: 'adl', name: 'Daily Activities', icon: 'Home', description: 'Ability to perform daily tasks' },
-  { id: 'continence', name: 'Continence', icon: 'Droplet', description: 'Bladder and bowel control' },
-  { id: 'oral', name: 'Oral Health', icon: 'Smile', description: 'Teeth, gums, and mouth health' },
-  { id: 'skin', name: 'Skin Health', icon: 'Shield', description: 'Skin condition and wound care' },
-  { id: 'respiratory', name: 'Respiratory', icon: 'Wind', description: 'Breathing and lung health' },
-  { id: 'cardiovascular', name: 'Heart Health', icon: 'HeartPulse', description: 'Heart and circulation' },
-  { id: 'diabetes', name: 'Diabetes Care', icon: 'Syringe', description: 'Blood sugar management' },
-  { id: 'caregiver', name: 'Caregiver Support', icon: 'HandHeart', description: 'Support for caregivers' },
-  { id: 'palliative', name: 'Palliative Care', icon: 'Flower2', description: 'End-of-life care needs' },
-] as const
-
 // Profile selection for multi-profile login
 export interface LoginProfile {
   id: string

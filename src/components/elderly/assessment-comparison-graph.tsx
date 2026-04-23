@@ -43,49 +43,21 @@ interface AssessmentComparisonGraphProps {
 }
 
 const DOMAIN_NAMES: Record<string, string> = {
-  cognition: 'Cognition',
-  depression: 'Depression',
-  mobility: 'Mobility',
-  vision: 'Vision',
-  hearing: 'Hearing',
-  falls: 'Falls Risk',
-  sleep: 'Sleep',
-  nutrition: 'Nutrition',
-  weight: 'Weight',
-  incontinence: 'Incontinence',
+  cognitive: 'Cognitive',
+  psychological: 'Psychological',
+  locomotor: 'Locomotor',
+  sensory: 'Sensory',
+  vitality: 'Vitality',
   social: 'Social',
-  loneliness: 'Loneliness',
-  iadl: 'IADL',
-  adl: 'ADL',
-  diabetes: 'Diabetes',
-  hypertension: 'Hypertension',
-  substance: 'Substance',
-  healthcare: 'Healthcare',
-  oral: 'Oral Health',
-  pain: 'Pain',
 }
 
 const DOMAIN_COLORS: Record<string, string> = {
-  cognition: '#8884d8',
-  depression: '#e91e63',
-  mobility: '#00bcd4',
-  vision: '#4caf50',
-  hearing: '#ff9800',
-  falls: '#f44336',
-  sleep: '#9c27b0',
-  nutrition: '#795548',
-  weight: '#607d8b',
-  incontinence: '#3f51b5',
+  cognitive: '#8884d8',
+  psychological: '#e91e63',
+  locomotor: '#00bcd4',
+  sensory: '#4caf50',
+  vitality: '#ff9800',
   social: '#009688',
-  loneliness: '#673ab7',
-  iadl: '#2196f3',
-  adl: '#ff5722',
-  diabetes: '#ffc107',
-  hypertension: '#e91e63',
-  substance: '#9e9e9e',
-  healthcare: '#03a9f4',
-  oral: '#8bc34a',
-  pain: '#ff6f00',
 }
 
 export function AssessmentComparisonGraph({
@@ -93,10 +65,10 @@ export function AssessmentComparisonGraph({
   isLoading,
 }: AssessmentComparisonGraphProps) {
   const [selectedDomains, setSelectedDomains] = useState<string[]>([
-    'cognition',
-    'depression',
-    'mobility',
-    'falls',
+    'cognitive',
+    'psychological',
+    'locomotor',
+    'vitality',
   ])
   const [chartType, setChartType] = useState<'line' | 'radar'>('line')
 

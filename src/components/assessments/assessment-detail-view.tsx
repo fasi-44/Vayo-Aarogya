@@ -37,14 +37,9 @@ import {
   Brain,
   Heart,
   Eye as EyeIcon,
-  Ear,
   Footprints,
-  Moon,
   Utensils,
-  Droplets,
   Users,
-  Home,
-  Hospital,
   Printer,
   Plus,
   Loader2,
@@ -53,7 +48,8 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { type Assessment, type AssessmentDomain, type RiskLevel, type Intervention } from '@/types'
-import { getRiskLevelDisplay } from '@/lib/assessment-scoring'
+import { getRiskLevelDisplay, buildResultFromStored } from '@/lib/assessment-scoring'
+import { AssessmentReport } from './assessment-report'
 import { createIntervention, getAssessmentInterventions, DOMAIN_NAMES, STATUS_COLORS, PRIORITY_COLORS } from '@/services/interventions'
 import { formatDate, formatTime } from '@/lib/utils'
 
@@ -96,6 +92,12 @@ export function AssessmentDetailView({
   // Get domains that need intervention
   const interventionDomains = (assessment.domains || []).filter(
     d => d.riskLevel === 'intervention'
+  )
+
+  // Rebuild the PDF-section-6 report from stored answers
+  const reportResult = buildResultFromStored(
+    (assessment.domains || []) as Array<{ domain: string; answers?: unknown; notes?: string | null }>,
+    assessment.domainScores,
   )
 
   // Calculate intervention status
@@ -585,6 +587,9 @@ export function AssessmentDetailView({
         </Card>
       </div>
 
+      {/* ICOPE Report: Patient Summary / Recommended Scales / Risk Flags / Actions */}
+      {reportResult && <AssessmentReport result={reportResult} />}
+
       {/* Domain Summary */}
       <Card className="border shadow-soft">
         <CardHeader className={compact ? 'pb-2 pt-3 px-3' : 'pb-2'}>
@@ -1044,60 +1049,36 @@ function getIconBgColor(riskLevel: RiskLevel): string {
 
 function getDomainIcon(domain: string) {
   const icons: Record<string, typeof Activity> = {
-    cognition: Brain,
-    mood: Heart,
-    mental_health: Heart,
-    mobility: Footprints,
-    vision: EyeIcon,
-    hearing: Ear,
+    cognitive: Brain,
+    psychological: Heart,
+    locomotor: Footprints,
+    sensory: EyeIcon,
     vitality: Utensils,
-    nutrition: Utensils,
-    sleep: Moon,
-    continence: Droplets,
-    adl: Activity,
-    iadl: Home,
     social: Users,
-    healthcare: Hospital,
   }
   return icons[domain] || Activity
 }
 
 function getDomainName(domain: string): string {
   const names: Record<string, string> = {
-    cognition: 'Memory & Thinking',
-    mood: 'Mood & Feelings',
-    mental_health: 'Mental Health',
-    mobility: 'Walking & Falls',
-    vision: 'Vision',
-    hearing: 'Hearing',
-    vitality: 'Appetite & Weight',
-    nutrition: 'Nutrition',
-    sleep: 'Sleep',
-    continence: 'Bladder & Bowel',
-    adl: 'Self-Care (ADL)',
-    iadl: 'Daily Tasks (IADL)',
-    social: 'Social & Loneliness',
-    healthcare: 'Healthcare Access',
+    cognitive: 'Cognitive',
+    psychological: 'Psychological',
+    locomotor: 'Locomotor',
+    sensory: 'Sensory',
+    vitality: 'Vitality',
+    social: 'Social',
   }
   return names[domain] || domain
 }
 
 function getMaxScore(domain: string): number {
   const questionCounts: Record<string, number> = {
-    cognition: 1,
-    mood: 1,
-    mental_health: 1,
-    mobility: 2,
-    vision: 1,
-    hearing: 1,
-    vitality: 2,
-    nutrition: 2,
-    sleep: 1,
-    continence: 1,
-    adl: 1,
-    iadl: 1,
-    social: 2,
-    healthcare: 1,
+    cognitive: 4,
+    psychological: 5,
+    locomotor: 3,
+    sensory: 3,
+    vitality: 3,
+    social: 4,
   }
   return (questionCounts[domain] || 1) * 2
 }

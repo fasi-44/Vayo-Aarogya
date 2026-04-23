@@ -15,7 +15,8 @@
       "Bash(tasklist:*)",
       "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
       "Bash(node -e \":*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(xargs grep *)"
     ]
   }
 }

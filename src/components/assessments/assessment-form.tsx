@@ -59,44 +59,14 @@ import { formatDate } from '@/lib/utils'
 import { checkProfileCompleteness } from '@/lib/profile-validation'
 import { ElderlyForm } from '@/components/elderly/elderly-form'
 
-// Group domains into logical categories for wizard steps (ICOPE-based)
+// One wizard step per ICOPE domain (source: Further changes.pdf)
 const DOMAIN_GROUPS = [
-  {
-    id: 'cognitive',
-    name: 'Mind & Mood',
-    emoji: '🧠',
-    domains: ['cognition', 'mood'],
-  },
-  {
-    id: 'physical',
-    name: 'Movement & Falls',
-    emoji: '🚶',
-    domains: ['mobility'],
-  },
-  {
-    id: 'sensory',
-    name: 'Vision & Hearing',
-    emoji: '👁️',
-    domains: ['vision', 'hearing'],
-  },
-  {
-    id: 'vitality',
-    name: 'Food, Weight & Sleep',
-    emoji: '🍽️',
-    domains: ['vitality', 'sleep'],
-  },
-  {
-    id: 'daily',
-    name: 'Daily Activities',
-    emoji: '🏠',
-    domains: ['continence', 'adl', 'iadl'],
-  },
-  {
-    id: 'social',
-    name: 'Social & Healthcare',
-    emoji: '👥',
-    domains: ['social', 'healthcare'],
-  },
+  { id: 'cognitive',     name: 'Cognitive',     emoji: '🧠',  domains: ['cognitive'] },
+  { id: 'psychological', name: 'Psychological', emoji: '💙',  domains: ['psychological'] },
+  { id: 'locomotor',     name: 'Locomotor',     emoji: '🚶',  domains: ['locomotor'] },
+  { id: 'sensory',       name: 'Sensory',       emoji: '👂',  domains: ['sensory'] },
+  { id: 'vitality',      name: 'Vitality',      emoji: '🍽️', domains: ['vitality'] },
+  { id: 'social',        name: 'Social',        emoji: '🤝',  domains: ['social'] },
 ]
 
 interface AssessmentFormProps {

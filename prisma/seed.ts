@@ -583,341 +583,193 @@ async function main() {
   console.log(`✅ Created ${17} users (including multi-profile demo accounts)`)
 
   // ========================================
-  // 2. SEED ASSESSMENTS
+  // 2. SEED ASSESSMENTS (new ICOPE 6-domain structure)
   // ========================================
   console.log('📋 Creating assessments...')
 
-  // Assessment 1 - Elderly 1 (Ram Prasad) - Recent assessment
+  type Answers = Record<string, number>
+  type DomainData = Record<string, { answers: Answers; notes?: string }>
+  const DOMAIN_IDS = ['cognitive', 'psychological', 'locomotor', 'sensory', 'vitality', 'social'] as const
+
+  // Helper: compute risk level from summed answers (matches assessment-scoring.ts)
+  const riskFromScore = (score: number): RiskLevel =>
+    score <= 1 ? RiskLevel.healthy : score <= 3 ? RiskLevel.at_risk : RiskLevel.intervention
+
+  const sumAnswers = (a: Answers) => Object.values(a).reduce((s, v) => s + v, 0)
+
+  // Assessment 1 — Ram Prasad: mild cognitive + mobility issues
+  const a1Domains: DomainData = {
+    cognitive:     { answers: { cog_1: 1, cog_2: 1, cog_3: 1, cog_4: 0 }, notes: 'Mild short-term memory issues.' },
+    psychological: { answers: { psy_1: 0, psy_2: 0, psy_3: 1, psy_4: 0, psy_5: 0 } },
+    locomotor:     { answers: { loc_1: 1, loc_2: 0, loc_3: 1 }, notes: 'Uses walking stick occasionally.' },
+    sensory:       { answers: { sen_1: 1, sen_2: 1, sen_3: 0 }, notes: 'Uses reading glasses.' },
+    vitality:      { answers: { vit_1: 0, vit_2: 0, vit_3: 1 } },
+    social:        { answers: { soc_1: 0, soc_2: 0, soc_3: 0, soc_4: 0 } },
+  }
   const assessment1 = await prisma.assessment.create({
     data: {
       subjectId: elderly1.id,
       assessorId: volunteer1.id,
       assessedAt: new Date('2024-12-01'),
       overallRisk: RiskLevel.at_risk,
-      notes: 'Initial ICOPE assessment. Patient shows mild cognitive decline and mobility issues.',
-      domainScores: {
-        cognition: 65,
-        mobility: 55,
-        nutrition: 80,
-        vision: 70,
-        hearing: 60,
-        mentalHealth: 75,
-      },
+      notes: 'Initial ICOPE screening. Mild cognitive slip and reduced mobility.',
+      domainScores: a1Domains,
     },
   })
 
-  // Assessment 2 - Elderly 2 (Kamla Devi)
+  // Assessment 2 — Kamla Devi: healthy
+  const a2Domains: DomainData = {
+    cognitive:     { answers: { cog_1: 0, cog_2: 0, cog_3: 0, cog_4: 0 } },
+    psychological: { answers: { psy_1: 0, psy_2: 0, psy_3: 0, psy_4: 0, psy_5: 0 } },
+    locomotor:     { answers: { loc_1: 0, loc_2: 0, loc_3: 0 } },
+    sensory:       { answers: { sen_1: 1, sen_2: 0, sen_3: 0 } },
+    vitality:      { answers: { vit_1: 0, vit_2: 0, vit_3: 0 } },
+    social:        { answers: { soc_1: 0, soc_2: 0, soc_3: 0, soc_4: 0 } },
+  }
   const assessment2 = await prisma.assessment.create({
     data: {
       subjectId: elderly2.id,
       assessorId: doctor1.id,
       assessedAt: new Date('2024-11-15'),
       overallRisk: RiskLevel.healthy,
-      notes: 'Overall good health condition. Minor vision issues addressed.',
-      domainScores: {
-        cognition: 85,
-        mobility: 80,
-        nutrition: 90,
-        vision: 60,
-        hearing: 85,
-        mentalHealth: 88,
-      },
+      notes: 'Good overall health. Minor hearing note.',
+      domainScores: a2Domains,
     },
   })
 
-  // Assessment 3 - Elderly 3 (Hari Om Sharma)
+  // Assessment 3 — Hari Om Sharma: significant cognitive, fall risk, nutrition concerns
+  const a3Domains: DomainData = {
+    cognitive:     { answers: { cog_1: 2, cog_2: 2, cog_3: 1, cog_4: 0 }, notes: 'Dementia screening recommended.' },
+    psychological: { answers: { psy_1: 1, psy_2: 1, psy_3: 1, psy_4: 0, psy_5: 0 } },
+    locomotor:     { answers: { loc_1: 2, loc_2: 2, loc_3: 1 }, notes: 'High fall risk — recent fall reported.' },
+    sensory:       { answers: { sen_1: 1, sen_2: 2, sen_3: 0 }, notes: 'Cataract suspected.' },
+    vitality:      { answers: { vit_1: 2, vit_2: 1, vit_3: 1 }, notes: 'Unintentional weight loss noted.' },
+    social:        { answers: { soc_1: 1, soc_2: 0, soc_3: 1, soc_4: 0 } },
+  }
   const assessment3 = await prisma.assessment.create({
     data: {
       subjectId: elderly3.id,
       assessorId: volunteer2.id,
       assessedAt: new Date('2024-11-20'),
       overallRisk: RiskLevel.intervention,
-      notes: 'Requires immediate intervention for mobility and fall risk. Cognitive function declining.',
-      domainScores: {
-        cognition: 45,
-        mobility: 35,
-        nutrition: 65,
-        vision: 50,
-        hearing: 55,
-        mentalHealth: 50,
-      },
+      notes: 'Needs immediate intervention. Cognitive decline and fall risk.',
+      domainScores: a3Domains,
     },
   })
 
-  // Assessment 4 - Elderly 4 (Savitri Singh)
+  // Assessment 4 — Savitri Singh: depression symptoms + appetite loss
+  const a4Domains: DomainData = {
+    cognitive:     { answers: { cog_1: 0, cog_2: 1, cog_3: 0, cog_4: 0 } },
+    psychological: { answers: { psy_1: 2, psy_2: 2, psy_3: 1, psy_4: 1, psy_5: 0 }, notes: 'Depression symptoms prominent.' },
+    locomotor:     { answers: { loc_1: 1, loc_2: 0, loc_3: 0 } },
+    sensory:       { answers: { sen_1: 0, sen_2: 1, sen_3: 0 } },
+    vitality:      { answers: { vit_1: 2, vit_2: 2, vit_3: 2 }, notes: 'Loss of appetite, fatigue.' },
+    social:        { answers: { soc_1: 2, soc_2: 2, soc_3: 1, soc_4: 0 } },
+  }
   const assessment4 = await prisma.assessment.create({
     data: {
       subjectId: elderly4.id,
       assessorId: doctor2.id,
       assessedAt: new Date('2024-12-05'),
-      overallRisk: RiskLevel.at_risk,
-      notes: 'Depression symptoms observed. Nutritional support needed.',
-      domainScores: {
-        cognition: 75,
-        mobility: 70,
-        nutrition: 55,
-        vision: 80,
-        hearing: 75,
-        mentalHealth: 45,
-      },
+      overallRisk: RiskLevel.intervention,
+      notes: 'Depression screening positive. Nutritional support needed.',
+      domainScores: a4Domains,
     },
   })
 
-  // Assessment 5 - Elderly 5 (Mohan Lal)
+  // Assessment 5 — Mohan Lal: multiple severe concerns
+  const a5Domains: DomainData = {
+    cognitive:     { answers: { cog_1: 2, cog_2: 2, cog_3: 2, cog_4: 0 }, notes: 'Severe cognitive impairment.' },
+    psychological: { answers: { psy_1: 1, psy_2: 1, psy_3: 1, psy_4: 1, psy_5: 0 } },
+    locomotor:     { answers: { loc_1: 2, loc_2: 2, loc_3: 2 }, notes: 'Cannot walk independently.' },
+    sensory:       { answers: { sen_1: 2, sen_2: 2, sen_3: 0 }, notes: 'Significant vision and hearing loss.' },
+    vitality:      { answers: { vit_1: 2, vit_2: 2, vit_3: 2 }, notes: 'Malnutrition risk.' },
+    social:        { answers: { soc_1: 2, soc_2: 2, soc_3: 2, soc_4: 0 } },
+  }
   const assessment5 = await prisma.assessment.create({
     data: {
       subjectId: elderly5.id,
       assessorId: volunteer3.id,
       assessedAt: new Date('2024-10-25'),
       overallRisk: RiskLevel.intervention,
-      notes: 'Multiple domain concerns. Comprehensive care plan required.',
-      domainScores: {
-        cognition: 40,
-        mobility: 30,
-        nutrition: 50,
-        vision: 40,
-        hearing: 35,
-        mentalHealth: 55,
-      },
+      notes: 'Multiple severe concerns. Comprehensive care plan required.',
+      domainScores: a5Domains,
     },
   })
 
-  // Assessment 6 - Elderly 6 (Parvati Mishra)
+  // Assessment 6 — Parvati Mishra: healthy, active lifestyle
+  const a6Domains: DomainData = {
+    cognitive:     { answers: { cog_1: 0, cog_2: 0, cog_3: 0, cog_4: 0 } },
+    psychological: { answers: { psy_1: 0, psy_2: 0, psy_3: 0, psy_4: 0, psy_5: 0 } },
+    locomotor:     { answers: { loc_1: 0, loc_2: 0, loc_3: 0 } },
+    sensory:       { answers: { sen_1: 1, sen_2: 0, sen_3: 0 } },
+    vitality:      { answers: { vit_1: 0, vit_2: 0, vit_3: 0 } },
+    social:        { answers: { soc_1: 0, soc_2: 0, soc_3: 0, soc_4: 0 } },
+  }
   const assessment6 = await prisma.assessment.create({
     data: {
       subjectId: elderly6.id,
       assessorId: doctor3.id,
       assessedAt: new Date('2024-12-10'),
       overallRisk: RiskLevel.healthy,
-      notes: 'Good overall health. Active lifestyle. Minor hearing support recommended.',
-      domainScores: {
-        cognition: 90,
-        mobility: 85,
-        nutrition: 88,
-        vision: 82,
-        hearing: 65,
-        mentalHealth: 92,
-      },
+      notes: 'Good overall health. Active lifestyle.',
+      domainScores: a6Domains,
     },
   })
 
-  // Follow-up assessment for Elderly 1
+  // Assessment 7 — Follow-up for Ram Prasad: slight improvement
+  const a7Domains: DomainData = {
+    cognitive:     { answers: { cog_1: 1, cog_2: 0, cog_3: 1, cog_4: 0 } },
+    psychological: { answers: { psy_1: 0, psy_2: 0, psy_3: 0, psy_4: 0, psy_5: 0 } },
+    locomotor:     { answers: { loc_1: 1, loc_2: 0, loc_3: 0 }, notes: 'Improvement after physiotherapy.' },
+    sensory:       { answers: { sen_1: 1, sen_2: 1, sen_3: 0 } },
+    vitality:      { answers: { vit_1: 0, vit_2: 0, vit_3: 0 } },
+    social:        { answers: { soc_1: 0, soc_2: 0, soc_3: 0, soc_4: 0 } },
+  }
   const assessment7 = await prisma.assessment.create({
     data: {
       subjectId: elderly1.id,
       assessorId: doctor1.id,
       assessedAt: new Date('2024-12-15'),
       overallRisk: RiskLevel.at_risk,
-      notes: 'Follow-up assessment. Slight improvement in mobility after interventions.',
-      domainScores: {
-        cognition: 68,
-        mobility: 62,
-        nutrition: 82,
-        vision: 72,
-        hearing: 62,
-        mentalHealth: 78,
-      },
+      notes: 'Follow-up assessment. Slight improvement in mobility.',
+      domainScores: a7Domains,
     },
   })
 
   console.log(`✅ Created ${7} assessments`)
 
   // ========================================
-  // 3. SEED ASSESSMENT DOMAINS
+  // 3. SEED ASSESSMENT DOMAINS (one row per domain per assessment)
   // ========================================
   console.log('🏥 Creating assessment domains...')
 
-  // Assessment 1 Domains
-  await prisma.assessmentDomain.createMany({
-    data: [
-      {
-        assessmentId: assessment1.id,
-        domain: 'cognition',
-        riskLevel: RiskLevel.at_risk,
-        score: 65,
-        answers: { memoryTest: 6, orientation: 8, recall: 5 },
-        notes: 'Mild short-term memory issues. Recommend cognitive exercises.',
-      },
-      {
-        assessmentId: assessment1.id,
-        domain: 'mobility',
-        riskLevel: RiskLevel.at_risk,
-        score: 55,
-        answers: { walkingSpeed: 'slow', balanceTest: 'fair', chairStand: 3 },
-        notes: 'Slow gait, uses walking stick. Fall risk moderate.',
-      },
-      {
-        assessmentId: assessment1.id,
-        domain: 'nutrition',
-        riskLevel: RiskLevel.healthy,
-        score: 80,
-        answers: { bmi: 23.5, appetiteLoss: false, weightLoss: false },
-        notes: 'Good nutritional status.',
-      },
-      {
-        assessmentId: assessment1.id,
-        domain: 'vision',
-        riskLevel: RiskLevel.at_risk,
-        score: 70,
-        answers: { visionTest: 'fair', usesGlasses: true, lastEyeCheck: '6 months ago' },
-        notes: 'Uses reading glasses. Distance vision declining.',
-      },
-      {
-        assessmentId: assessment1.id,
-        domain: 'hearing',
-        riskLevel: RiskLevel.at_risk,
-        score: 60,
-        answers: { hearingTest: 'moderate loss', usesHearingAid: false },
-        notes: 'Moderate hearing loss. Hearing aid recommended.',
-      },
-      {
-        assessmentId: assessment1.id,
-        domain: 'mental_health',
-        riskLevel: RiskLevel.healthy,
-        score: 75,
-        answers: { depressionScreen: 3, anxietyScreen: 2, socialSupport: 'good' },
-        notes: 'Good mental health. Active social life.',
-      },
-    ],
-  })
+  const allAssessmentDomains: Array<[string, DomainData]> = [
+    [assessment1.id, a1Domains],
+    [assessment2.id, a2Domains],
+    [assessment3.id, a3Domains],
+    [assessment4.id, a4Domains],
+    [assessment5.id, a5Domains],
+    [assessment6.id, a6Domains],
+    [assessment7.id, a7Domains],
+  ]
 
-  // Assessment 3 Domains (High Risk)
-  await prisma.assessmentDomain.createMany({
-    data: [
-      {
-        assessmentId: assessment3.id,
-        domain: 'cognition',
-        riskLevel: RiskLevel.intervention,
-        score: 45,
-        answers: { memoryTest: 3, orientation: 5, recall: 2 },
-        notes: 'Significant cognitive decline. Specialist referral needed.',
-      },
-      {
-        assessmentId: assessment3.id,
-        domain: 'mobility',
-        riskLevel: RiskLevel.intervention,
-        score: 35,
-        answers: { walkingSpeed: 'very slow', balanceTest: 'poor', chairStand: 1 },
-        notes: 'High fall risk. Requires mobility aids and home modifications.',
-      },
-      {
-        assessmentId: assessment3.id,
-        domain: 'nutrition',
-        riskLevel: RiskLevel.at_risk,
-        score: 65,
-        answers: { bmi: 19.2, appetiteLoss: true, weightLoss: true },
-        notes: 'Underweight. Nutritional supplementation required.',
-      },
-      {
-        assessmentId: assessment3.id,
-        domain: 'vision',
-        riskLevel: RiskLevel.at_risk,
-        score: 50,
-        answers: { visionTest: 'poor', usesGlasses: true, lastEyeCheck: '2 years ago' },
-        notes: 'Cataract suspected. Ophthalmologist referral.',
-      },
-      {
-        assessmentId: assessment3.id,
-        domain: 'hearing',
-        riskLevel: RiskLevel.at_risk,
-        score: 55,
-        answers: { hearingTest: 'moderate loss', usesHearingAid: true },
-        notes: 'Hearing aid needs adjustment.',
-      },
-      {
-        assessmentId: assessment3.id,
-        domain: 'mental_health',
-        riskLevel: RiskLevel.at_risk,
-        score: 50,
-        answers: { depressionScreen: 8, anxietyScreen: 6, socialSupport: 'limited' },
-        notes: 'Signs of depression. Social isolation concerns.',
-      },
-    ],
-  })
-
-  // Assessment 4 Domains
-  await prisma.assessmentDomain.createMany({
-    data: [
-      {
-        assessmentId: assessment4.id,
-        domain: 'cognition',
-        riskLevel: RiskLevel.healthy,
-        score: 75,
-        answers: { memoryTest: 7, orientation: 9, recall: 6 },
-        notes: 'Cognitive function within normal range.',
-      },
-      {
-        assessmentId: assessment4.id,
-        domain: 'mobility',
-        riskLevel: RiskLevel.healthy,
-        score: 70,
-        answers: { walkingSpeed: 'normal', balanceTest: 'good', chairStand: 4 },
-        notes: 'Good mobility for age.',
-      },
-      {
-        assessmentId: assessment4.id,
-        domain: 'nutrition',
-        riskLevel: RiskLevel.at_risk,
-        score: 55,
-        answers: { bmi: 18.5, appetiteLoss: true, weightLoss: true },
-        notes: 'Loss of appetite. Weight monitoring needed.',
-      },
-      {
-        assessmentId: assessment4.id,
-        domain: 'mental_health',
-        riskLevel: RiskLevel.intervention,
-        score: 45,
-        answers: { depressionScreen: 12, anxietyScreen: 8, socialSupport: 'poor' },
-        notes: 'Depression symptoms. Counseling and possible medication review.',
-      },
-    ],
-  })
-
-  // Assessment 5 Domains (Multiple interventions needed)
-  await prisma.assessmentDomain.createMany({
-    data: [
-      {
-        assessmentId: assessment5.id,
-        domain: 'cognition',
-        riskLevel: RiskLevel.intervention,
-        score: 40,
-        answers: { memoryTest: 2, orientation: 4, recall: 1 },
-        notes: 'Severe cognitive impairment. Dementia screening recommended.',
-      },
-      {
-        assessmentId: assessment5.id,
-        domain: 'mobility',
-        riskLevel: RiskLevel.intervention,
-        score: 30,
-        answers: { walkingSpeed: 'requires assistance', balanceTest: 'poor', chairStand: 0 },
-        notes: 'Cannot walk independently. Wheelchair assessment needed.',
-      },
-      {
-        assessmentId: assessment5.id,
-        domain: 'nutrition',
-        riskLevel: RiskLevel.at_risk,
-        score: 50,
-        answers: { bmi: 17.8, appetiteLoss: true, weightLoss: true },
-        notes: 'Malnutrition risk. Dietitian consultation required.',
-      },
-      {
-        assessmentId: assessment5.id,
-        domain: 'vision',
-        riskLevel: RiskLevel.intervention,
-        score: 40,
-        answers: { visionTest: 'severe impairment', usesGlasses: true },
-        notes: 'Significant vision loss. Low vision aids needed.',
-      },
-      {
-        assessmentId: assessment5.id,
-        domain: 'hearing',
-        riskLevel: RiskLevel.intervention,
-        score: 35,
-        answers: { hearingTest: 'severe loss', usesHearingAid: true },
-        notes: 'Hearing aids not effective. ENT specialist needed.',
-      },
-    ],
-  })
+  for (const [assessmentId, domains] of allAssessmentDomains) {
+    await prisma.assessmentDomain.createMany({
+      data: DOMAIN_IDS.map(domainId => {
+        const d = domains[domainId]
+        const score = sumAnswers(d.answers)
+        return {
+          assessmentId,
+          domain: domainId,
+          riskLevel: riskFromScore(score),
+          score,
+          answers: d.answers,
+          notes: d.notes,
+        }
+      }),
+    })
+  }
 
   console.log(`✅ Created assessment domains`)
 
@@ -934,7 +786,7 @@ async function main() {
         assessmentId: assessment1.id,
         title: 'Daily Cognitive Exercises',
         description: 'Complete brain training exercises including puzzles, memory games, and reading for 30 minutes daily.',
-        domain: 'cognition',
+        domain: 'cognitive',
         priority: 'medium',
         status: 'in_progress',
         dueDate: new Date('2025-01-15'),
@@ -945,7 +797,7 @@ async function main() {
         assessmentId: assessment1.id,
         title: 'Physiotherapy Sessions',
         description: 'Attend physiotherapy twice a week for mobility improvement and fall prevention.',
-        domain: 'mobility',
+        domain: 'locomotor',
         priority: 'high',
         status: 'in_progress',
         dueDate: new Date('2025-02-01'),
@@ -956,7 +808,7 @@ async function main() {
         assessmentId: assessment1.id,
         title: 'Hearing Assessment',
         description: 'Schedule appointment with audiologist for hearing aid evaluation.',
-        domain: 'hearing',
+        domain: 'sensory',
         priority: 'medium',
         status: 'pending',
         dueDate: new Date('2025-01-20'),
@@ -967,7 +819,7 @@ async function main() {
         assessmentId: assessment3.id,
         title: 'Urgent Neurologist Consultation',
         description: 'Refer to neurologist for comprehensive cognitive assessment and dementia screening.',
-        domain: 'cognition',
+        domain: 'cognitive',
         priority: 'urgent',
         status: 'pending',
         dueDate: new Date('2024-12-20'),
@@ -978,7 +830,7 @@ async function main() {
         assessmentId: assessment3.id,
         title: 'Home Safety Modifications',
         description: 'Install grab bars, non-slip mats, remove trip hazards, improve lighting.',
-        domain: 'mobility',
+        domain: 'locomotor',
         priority: 'urgent',
         status: 'in_progress',
         dueDate: new Date('2024-12-25'),
@@ -989,7 +841,7 @@ async function main() {
         assessmentId: assessment3.id,
         title: 'Walker/Wheelchair Assessment',
         description: 'Evaluate need for mobility aids - walker or wheelchair.',
-        domain: 'mobility',
+        domain: 'locomotor',
         priority: 'high',
         status: 'pending',
         dueDate: new Date('2024-12-22'),
@@ -999,7 +851,7 @@ async function main() {
         assessmentId: assessment3.id,
         title: 'Nutritional Support Program',
         description: 'Enroll in community nutrition program. Dietitian to create meal plan.',
-        domain: 'nutrition',
+        domain: 'vitality',
         priority: 'high',
         status: 'pending',
         dueDate: new Date('2025-01-05'),
@@ -1009,7 +861,7 @@ async function main() {
         assessmentId: assessment3.id,
         title: 'Ophthalmologist Referral',
         description: 'Cataract evaluation and treatment planning.',
-        domain: 'vision',
+        domain: 'sensory',
         priority: 'medium',
         status: 'pending',
         dueDate: new Date('2025-01-10'),
@@ -1020,7 +872,7 @@ async function main() {
         assessmentId: assessment4.id,
         title: 'Mental Health Counseling',
         description: 'Weekly counseling sessions for depression management.',
-        domain: 'mental_health',
+        domain: 'psychological',
         priority: 'high',
         status: 'in_progress',
         dueDate: new Date('2025-02-28'),
@@ -1031,7 +883,7 @@ async function main() {
         assessmentId: assessment4.id,
         title: 'Social Engagement Activities',
         description: 'Join community senior center activities twice a week.',
-        domain: 'mental_health',
+        domain: 'psychological',
         priority: 'medium',
         status: 'pending',
         dueDate: new Date('2025-01-15'),
@@ -1041,7 +893,7 @@ async function main() {
         assessmentId: assessment4.id,
         title: 'Nutritional Counseling',
         description: 'Dietitian consultation for appetite improvement strategies.',
-        domain: 'nutrition',
+        domain: 'vitality',
         priority: 'medium',
         status: 'pending',
         dueDate: new Date('2025-01-08'),
@@ -1052,7 +904,7 @@ async function main() {
         assessmentId: assessment5.id,
         title: 'Comprehensive Geriatric Assessment',
         description: 'Full multi-disciplinary assessment at geriatric clinic.',
-        domain: 'cognition',
+        domain: 'cognitive',
         priority: 'urgent',
         status: 'pending',
         dueDate: new Date('2024-12-18'),
@@ -1062,7 +914,7 @@ async function main() {
         assessmentId: assessment5.id,
         title: '24-Hour Care Evaluation',
         description: 'Assess need for full-time caregiver or assisted living.',
-        domain: 'mobility',
+        domain: 'locomotor',
         priority: 'urgent',
         status: 'in_progress',
         dueDate: new Date('2024-12-20'),
@@ -1073,7 +925,7 @@ async function main() {
         assessmentId: assessment5.id,
         title: 'Low Vision Rehabilitation',
         description: 'Enroll in low vision rehabilitation program.',
-        domain: 'vision',
+        domain: 'sensory',
         priority: 'high',
         status: 'pending',
         dueDate: new Date('2025-01-15'),
@@ -1083,7 +935,7 @@ async function main() {
         assessmentId: assessment5.id,
         title: 'Cochlear Implant Evaluation',
         description: 'ENT specialist evaluation for cochlear implant candidacy.',
-        domain: 'hearing',
+        domain: 'sensory',
         priority: 'high',
         status: 'pending',
         dueDate: new Date('2025-01-25'),
@@ -1094,7 +946,7 @@ async function main() {
         assessmentId: assessment2.id,
         title: 'Eye Examination',
         description: 'Annual comprehensive eye examination.',
-        domain: 'vision',
+        domain: 'sensory',
         priority: 'medium',
         status: 'completed',
         dueDate: new Date('2024-12-01'),
@@ -1106,7 +958,7 @@ async function main() {
         assessmentId: assessment6.id,
         title: 'Hearing Screening',
         description: 'Basic hearing screening at community health camp.',
-        domain: 'hearing',
+        domain: 'sensory',
         priority: 'low',
         status: 'completed',
         dueDate: new Date('2024-12-15'),
@@ -1210,7 +1062,7 @@ async function main() {
         userId: doctor2.id,
         action: 'create',
         entity: 'Intervention',
-        details: { domain: 'mental_health', priority: 'high' },
+        details: { domain: 'psychological', priority: 'high' },
         ipAddress: '192.168.1.104',
         createdAt: new Date('2024-12-15T14:30:00'),
       },
