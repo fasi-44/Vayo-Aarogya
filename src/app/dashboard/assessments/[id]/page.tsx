@@ -15,6 +15,10 @@ import {
 import { type Assessment } from '@/types'
 import { getAssessmentById } from '@/services/assessments'
 import { AssessmentDetailView } from '@/components/assessments'
+import {
+  ElderSwitchPrompt,
+  getElderSwitchRequired,
+} from '@/components/family/elder-switch-prompt'
 
 export default function AssessmentDetailPage() {
   const params = useParams()
@@ -24,6 +28,7 @@ export default function AssessmentDetailPage() {
   const [assessment, setAssessment] = useState<Assessment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [switchElderId, setSwitchElderId] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadAssessment() {
@@ -34,6 +39,14 @@ export default function AssessmentDetailPage() {
 
       try {
         const result = await getAssessmentById(id)
+
+        // Family viewing a record belonging to a different linked elder:
+        // refuse and prompt them to switch impersonation context.
+        const switchRequired = getElderSwitchRequired(result)
+        if (switchRequired) {
+          setSwitchElderId(switchRequired)
+          return
+        }
 
         if (result.success && result.data) {
           setAssessment(result.data)
@@ -50,6 +63,18 @@ export default function AssessmentDetailPage() {
 
     loadAssessment()
   }, [id])
+
+  if (switchElderId) {
+    return (
+      <DashboardLayout title="Assessment Details" subtitle="Switching elder…">
+        <ElderSwitchPrompt
+          open
+          elderId={switchElderId}
+          redirectTo={`/dashboard/assessments/${id}`}
+        />
+      </DashboardLayout>
+    )
+  }
 
   if (isLoading) {
     return (

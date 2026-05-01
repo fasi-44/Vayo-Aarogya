@@ -189,217 +189,11 @@ export function AssessmentDetailView({
     }
   }
 
-  // Generate print HTML content
-  const generatePrintHTML = () => {
-    const riskColorMap: Record<string, string> = {
-      healthy: '#65a30d',
-      at_risk: '#d4a574',
-      intervention: '#d64545',
-    }
-
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Assessment Summary - ${assessment.subject?.name || 'Unknown'}</title>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-              padding: 24px;
-              color: #1a1a1a;
-              font-size: 14px;
-              line-height: 1.5;
-              background: #fff;
-            }
-            .header { text-align: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb; }
-            .header h1 { font-size: 24px; color: #111827; margin-bottom: 6px; font-weight: 700; }
-            .header p { color: #6b7280; font-size: 14px; }
-            .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 28px; }
-            .info-card { padding: 14px 16px; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; }
-            .info-card label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; font-weight: 500; }
-            .info-card .value { font-size: 15px; font-weight: 600; margin-top: 6px; color: #111827; }
-            .info-card .sub { font-size: 12px; color: #6b7280; margin-top: 3px; }
-            .risk-card { border-left: 5px solid ${riskColorMap[assessment.overallRisk]}; }
-            .risk-value { color: ${riskColorMap[assessment.overallRisk]} !important; font-size: 16px !important; }
-            .domains-section { margin-top: 28px; }
-            .domains-section h2 { font-size: 17px; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #111827; }
-            .domain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-            .domain-item { padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 8px; }
-            .domain-item.healthy { background: #f1f5e8; border-color: #a3d977; }
-            .domain-item.at_risk { background: #f5f1ed; border-color: #d4a574; }
-            .domain-item.intervention { background: #fef2f2; border-color: #e0a3a3; }
-            .domain-name { font-weight: 600; font-size: 13px; margin-bottom: 5px; color: #111827; }
-            .domain-status { font-size: 12px; color: #374151; font-weight: 500; }
-            .domain-score { font-size: 11px; color: #6b7280; margin-top: 3px; }
-            .notes-section { margin-top: 28px; padding: 18px; background: #f9fafb; border-radius: 10px; border: 1px solid #e5e7eb; }
-            .notes-section h3 { font-size: 15px; margin-bottom: 10px; font-weight: 600; color: #111827; }
-            .notes-section p { font-size: 13px; color: #4b5563; white-space: pre-wrap; line-height: 1.6; }
-            .footer { margin-top: 36px; padding-top: 18px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 11px; color: #9ca3af; }
-
-            /* Print-specific styles */
-            @media print {
-              body { padding: 12px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-              .info-card { break-inside: avoid; }
-              .domain-item { break-inside: avoid; }
-              .domain-item.healthy { background-color: #f1f5e8 !important; -webkit-print-color-adjust: exact !important; }
-              .domain-item.at_risk { background-color: #f5f1ed !important; -webkit-print-color-adjust: exact !important; }
-              .domain-item.intervention { background-color: #fef2f2 !important; -webkit-print-color-adjust: exact !important; }
-            }
-
-            /* Responsive for iPad and mobile */
-            @media (max-width: 768px) {
-              body { padding: 16px; }
-              .info-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-              .domain-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            }
-            @media (max-width: 480px) {
-              .info-grid { grid-template-columns: 1fr; }
-              .domain-grid { grid-template-columns: 1fr 1fr; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Assessment Summary</h1>
-            <p>Vayo Aarogya - Healthy Ageing Assessment Report</p>
-          </div>
-
-          <div class="info-grid">
-            <div class="info-card">
-              <label>Elderly Name</label>
-              <div class="value">${assessment.subject?.name || '-'}</div>
-              ${assessment.subject?.vayoId ? `<div class="sub">${assessment.subject.vayoId}</div>` : ''}
-            </div>
-            <div class="info-card">
-              <label>Assessment Date</label>
-              <div class="value">${formatDate(assessment.assessedAt)}</div>
-              <div class="sub">${formatTime(assessment.assessedAt)}</div>
-            </div>
-            <div class="info-card">
-              <label>Assessor</label>
-              <div class="value">${assessment.assessor?.name || '-'}</div>
-              <div class="sub" style="text-transform: capitalize;">${assessment.assessor?.role || ''}</div>
-            </div>
-            <div class="info-card risk-card">
-              <label>Overall Risk Level</label>
-              <div class="value risk-value">${overallDisplay.label}</div>
-            </div>
-          </div>
-
-          <div class="domains-section">
-            <h2>Domain Assessment Results (${domains.length} domains assessed)</h2>
-            <div class="domain-grid">
-              ${domains.map(d => {
-                const display = getRiskLevelDisplay(d.riskLevel)
-                return `
-                  <div class="domain-item ${d.riskLevel}">
-                    <div class="domain-name">${getDomainName(d.domain)}</div>
-                    <div class="domain-status">${display.label}</div>
-                    ${d.score !== undefined ? `<div class="domain-score">Score: ${d.score}</div>` : ''}
-                  </div>
-                `
-              }).join('')}
-            </div>
-          </div>
-
-          ${assessment.notes ? `
-            <div class="notes-section">
-              <h3>Assessment Notes</h3>
-              <p>${assessment.notes}</p>
-            </div>
-          ` : ''}
-
-          <div class="footer">
-            <p>Generated on ${new Date().toLocaleString()} | Vayo Aarogya Platform</p>
-          </div>
-        </body>
-      </html>
-    `
-  }
-
-  // Print functionality - works on iOS, iPadOS, macOS, Windows, Android
+  // Generate and open the clinical PDF report.
   const handlePrint = async () => {
-    const htmlContent = generatePrintHTML()
-
-    // Detect platform
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-    const isMac = /Macintosh/.test(navigator.userAgent)
-    const isIPad = /iPad/.test(navigator.userAgent) || (isMac && navigator.maxTouchPoints > 1)
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
-
-    // Method 1: Try using a new window (works best on desktop browsers including macOS Safari)
-    if (!isIOS && !isIPad) {
-      const printWindow = window.open('', '_blank', 'width=800,height=600')
-      if (printWindow) {
-        printWindow.document.write(htmlContent)
-        printWindow.document.close()
-        printWindow.focus()
-
-        // Wait for styles to load
-        setTimeout(() => {
-          printWindow.print()
-          // Don't close immediately on macOS to allow print dialog
-          if (!isMac) {
-            setTimeout(() => printWindow.close(), 500)
-          }
-        }, 300)
-        return
-      }
-    }
-
-    // Method 2: Hidden iframe (works on iOS Safari, iPadOS, and as fallback)
-    const printFrame = document.createElement('iframe')
-    printFrame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
-    document.body.appendChild(printFrame)
-
-    const frameDoc = printFrame.contentDocument || printFrame.contentWindow?.document
-    if (!frameDoc) {
-      document.body.removeChild(printFrame)
-      // Method 3: Fallback - open as blob URL
-      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
-      const url = URL.createObjectURL(blob)
-      window.open(url, '_blank')
-      setTimeout(() => URL.revokeObjectURL(url), 10000)
-      return
-    }
-
-    frameDoc.open()
-    frameDoc.write(htmlContent)
-    frameDoc.close()
-
-    // Wait for iframe to fully load
-    const triggerPrint = () => {
-      try {
-        printFrame.contentWindow?.focus()
-        printFrame.contentWindow?.print()
-      } catch (e) {
-        console.error('Print failed:', e)
-        // Last resort fallback
-        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
-        const url = URL.createObjectURL(blob)
-        window.open(url, '_blank')
-        setTimeout(() => URL.revokeObjectURL(url), 10000)
-      }
-
-      // Cleanup after print dialog closes
-      setTimeout(() => {
-        if (document.body.contains(printFrame)) {
-          document.body.removeChild(printFrame)
-        }
-      }, 2000)
-    }
-
-    // iOS/iPadOS needs more time to render
-    if (isIOS || isIPad) {
-      setTimeout(triggerPrint, 500)
-    } else {
-      printFrame.onload = () => setTimeout(triggerPrint, 100)
-    }
+    const { printAssessmentPDF } = await import('@/lib/print/assessment-pdf')
+    await printAssessmentPDF({ assessment, reportResult, domains })
   }
-
   // Filter out domains that weren't actually assessed (no answers or empty answers)
   const allDomains = assessment.domains || []
   const domains = allDomains.filter(d => {
@@ -588,7 +382,14 @@ export function AssessmentDetailView({
       </div>
 
       {/* ICOPE Report: Patient Summary / Recommended Scales / Risk Flags / Actions */}
-      {reportResult && <AssessmentReport result={reportResult} />}
+      {reportResult && (
+        <AssessmentReport
+          result={reportResult}
+          subjectName={assessment.subject?.name}
+          initialScaleResults={assessment.scaleResults as Record<string, import('./assessment-report').SavedScaleEntry> | undefined}
+          editable={false}
+        />
+      )}
 
       {/* Domain Summary */}
       <Card className="border shadow-soft">
@@ -987,6 +788,14 @@ interface DomainDetailRowProps {
   compact?: boolean
 }
 
+// Tailwind progress-bar classes per risk level. Track gets a tinted
+// background, indicator (immediate child) gets the solid risk colour.
+const RISK_PROGRESS_CLASSES: Record<RiskLevel, string> = {
+  healthy: 'bg-healthy/20 [&>*]:bg-healthy',
+  at_risk: 'bg-at-risk/20 [&>*]:bg-at-risk',
+  intervention: 'bg-intervention/20 [&>*]:bg-intervention',
+}
+
 function DomainDetailRow({ domain, compact = false }: DomainDetailRowProps) {
   const display = getRiskLevelDisplay(domain.riskLevel)
   const Icon = getDomainIcon(domain.domain)
@@ -1008,7 +817,10 @@ function DomainDetailRow({ domain, compact = false }: DomainDetailRowProps) {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <Progress value={percentage} className={compact ? 'h-1.5' : 'h-2'} />
+              <Progress
+                value={percentage}
+                className={`${compact ? 'h-1.5' : 'h-2'} ${RISK_PROGRESS_CLASSES[domain.riskLevel]}`}
+              />
             </div>
             <span className={`${compact ? 'text-xs' : 'text-sm'} text-muted-foreground w-12 text-right`}>
               {domain.score ?? '-'}/{maxScore}

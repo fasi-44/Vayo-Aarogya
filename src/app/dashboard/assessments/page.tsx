@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useAuthStore } from '@/store'
+import { useAuthStore, useHydration } from '@/store'
 import {
   Search,
   ClipboardPlus,
@@ -45,7 +45,16 @@ import { FileText } from 'lucide-react'
 
 export default function AssessmentsPage() {
   const router = useRouter()
-  const { hasPermission } = useAuthStore()
+  const { hasPermission, user, activeElder } = useAuthStore()
+  const hydrated = useHydration()
+
+  // Family without an active elder must pick one before viewing assessments.
+  useEffect(() => {
+    if (!hydrated) return
+    if (user?.role === 'family' && !activeElder) {
+      router.replace('/dashboard/my-elders')
+    }
+  }, [hydrated, user, activeElder, router])
 
   // Hydration state
   const [mounted, setMounted] = useState(false)

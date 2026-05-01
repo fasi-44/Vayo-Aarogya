@@ -77,6 +77,25 @@ export function getAuthUser(request: NextRequest): {
   }
 }
 
+// Active-elder context (only set when user is family role and has selected an
+// elder). Read from a header forwarded by middleware from a httpOnly cookie.
+export function getActiveElderId(request: NextRequest): string | null {
+  return request.headers.get('x-active-elder-id')
+}
+
+// Returns a 409 payload used by deep-link refusal flows. The client modal
+// prompts: "This belongs to <elder>. Switch to viewing them?"
+export function elderSwitchRequiredResponse(elderId: string): NextResponse<ApiResponse> {
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'This record belongs to a different linked elder',
+      data: { requiresElderSwitch: true, elderId },
+    } as ApiResponse<{ requiresElderSwitch: true; elderId: string }>,
+    { status: 409 }
+  )
+}
+
 // Check if user has specific permission
 export function hasPermission(role: UserRole | null, permission: Permission): boolean {
   if (!role) return false

@@ -23,13 +23,24 @@ import {
   getRiskLevelDisplay,
 } from '@/lib/assessment-scoring'
 import { formatDate } from '@/lib/utils'
-import { AssessmentReport } from './assessment-report'
+import { AssessmentReport, type SavedScaleEntry } from './assessment-report'
 
 interface AssessmentSummaryProps {
   result: AssessmentResult
   elderlyName?: string
   assessorName?: string
   assessedAt?: string
+  initialScaleResults?: Record<string, SavedScaleEntry>
+  onScaleResultsChange?: (sr: Record<string, SavedScaleEntry>) => void
+  editable?: boolean
+}
+
+// Tailwind progress-bar classes per risk level. Track gets a tinted
+// background, indicator (immediate child) gets the solid risk colour.
+const RISK_PROGRESS_CLASSES: Record<RiskLevel, string> = {
+  healthy: 'bg-healthy/20 [&>*]:bg-healthy',
+  at_risk: 'bg-at-risk/20 [&>*]:bg-at-risk',
+  intervention: 'bg-intervention/20 [&>*]:bg-intervention',
 }
 
 export function AssessmentSummary({
@@ -37,6 +48,9 @@ export function AssessmentSummary({
   elderlyName,
   assessorName,
   assessedAt,
+  initialScaleResults,
+  onScaleResultsChange,
+  editable,
 }: AssessmentSummaryProps) {
   const overallDisplay = getRiskLevelDisplay(result.overallRisk)
   const scorePercentage = (result.totalScore / result.maxTotalScore) * 100
@@ -69,7 +83,10 @@ export function AssessmentSummary({
                 <span className="text-3xl font-bold">{result.totalScore}</span>
                 <span className="text-muted-foreground">/ {result.maxTotalScore}</span>
               </div>
-              <Progress value={100 - scorePercentage} className="h-2" />
+              <Progress
+                value={100 - scorePercentage}
+                className={`h-2 ${RISK_PROGRESS_CLASSES[result.overallRisk]}`}
+              />
               <p className="text-xs text-muted-foreground">
                 Lower score indicates better health
               </p>
@@ -115,7 +132,13 @@ export function AssessmentSummary({
       </Card>
 
       {/* Report: Patient Summary / Recommended Scales / Risk Flags / Actions */}
-      <AssessmentReport result={result} />
+      <AssessmentReport
+        result={result}
+        subjectName={elderlyName}
+        initialScaleResults={initialScaleResults}
+        onScaleResultsChange={onScaleResultsChange}
+        editable={editable}
+      />
 
       {/* Domain Scores Grid */}
       <Card>
@@ -165,7 +188,10 @@ function DomainScoreCard({ domainScore }: DomainScoreCardProps) {
           <span>Score</span>
           <span>{domainScore.score}/{domainScore.maxScore}</span>
         </div>
-        <Progress value={100 - percentage} className="h-1.5" />
+        <Progress
+          value={100 - percentage}
+          className={`h-1.5 ${RISK_PROGRESS_CLASSES[domainScore.riskLevel]}`}
+        />
       </div>
       {domainScore.triggerAction && (
         <p className="text-xs text-red-600 mt-2 line-clamp-2">{domainScore.triggerAction}</p>

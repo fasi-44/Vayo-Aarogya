@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Search, ChevronDown, Settings, User, LogOut, HelpCircle } from "lucide-react";
+import { ChevronDown, Settings, User, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
     DropdownMenu,
@@ -13,6 +13,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MobileMenuButton } from "./sidebar";
+import { ActiveElderPill } from "./active-elder-pill";
 import { useUIStore, useAuthStore, useHydration } from "@/store";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -36,7 +37,6 @@ export function Header({ title, subtitle }: HeaderProps) {
     const { sidebarCollapsed } = useUIStore();
     const { user, logout } = useAuthStore();
     const hydrated = useHydration();
-    const [searchOpen, setSearchOpen] = React.useState(false);
 
     // Use default value during SSR to prevent hydration mismatch
     const isCollapsed = hydrated ? sidebarCollapsed : false;
@@ -82,27 +82,8 @@ export function Header({ title, subtitle }: HeaderProps) {
 
                 {/* Right side */}
                 <div className="flex items-center gap-2 sm:gap-3">
-                    {/* Search - Desktop */}
-                    <div className="hidden md:flex items-center">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                className="h-9 w-44 lg:w-56 pl-9 pr-9 bg-muted rounded-lg border-0 outline-none text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-ring transition-all"
-                            />
-                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        </div>
-                    </div>
-
-                    {/* Search - Mobile toggle */}
-                    <button
-                        onClick={() => setSearchOpen(!searchOpen)}
-                        className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-                        aria-label="Search"
-                    >
-                        <Search className="w-5 h-5 text-muted-foreground" />
-                    </button>
+                    {/* Active elder pill (family role only) */}
+                    <ActiveElderPill />
 
                     {/* Notifications - commented out for now */}
                     {/* <DropdownMenu>
@@ -149,11 +130,6 @@ export function Header({ title, subtitle }: HeaderProps) {
                         </DropdownMenuContent>
                     </DropdownMenu> */}
 
-                    {/* Help - desktop only */}
-                    <button className="hidden lg:flex p-2 rounded-lg hover:bg-muted transition-colors" aria-label="Help">
-                        <HelpCircle className="w-5 h-5 text-muted-foreground" />
-                    </button>
-
                     {/* Divider */}
                     <div className="hidden sm:block w-px h-6 bg-border mx-1" />
 
@@ -195,10 +171,6 @@ export function Header({ title, subtitle }: HeaderProps) {
                                 </Link>
                             </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem className="flex items-center gap-2 cursor-pointer lg:hidden">
-                                <HelpCircle className="w-4 h-4" />
-                                Help & Support
-                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                                 className="text-destructive focus:text-destructive flex items-center gap-2 cursor-pointer"
@@ -211,22 +183,6 @@ export function Header({ title, subtitle }: HeaderProps) {
                     </DropdownMenu>
                 </div>
             </div>
-
-            {/* Mobile Search Expanded */}
-            {searchOpen && (
-                <div className="md:hidden absolute top-full left-0 right-0 p-3 bg-background border-b border-border">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <input
-                            type="text"
-                            placeholder="Search events, registrations..."
-                            autoFocus
-                            className="w-full h-10 pl-10 pr-4 bg-muted rounded-lg border-0 outline-none text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
-                            onBlur={() => setSearchOpen(false)}
-                        />
-                    </div>
-                </div>
-            )}
         </header>
     );
 }

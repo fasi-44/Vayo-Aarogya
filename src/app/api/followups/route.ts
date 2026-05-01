@@ -8,6 +8,7 @@ import {
   getPaginationParams,
   getClientIP,
   getUserAgent,
+  getActiveElderId,
 } from '@/lib/api-utils'
 
 // GET /api/followups - List all follow-ups
@@ -33,12 +34,17 @@ export async function GET(request: NextRequest) {
     if (user.role === 'elderly') {
       filterElderlyId = user.userId
     }
-    // Family can see follow-ups of their linked elders
+    // Family can see follow-ups of their linked elders. Default scope to the
+    // currently active elder when one is set.
     if (user.role === 'family') {
+      const activeElderId = getActiveElderId(request)
+      const familyElders = await db.getElderlyByFamily(user.userId)
+      const linkedElderIds = new Set(familyElders.map(e => e.id))
+
       if (elderlyId) {
-        const familyElders = await db.getElderlyByFamily(user.userId)
-        const isLinkedElder = familyElders.some(e => e.id === elderlyId)
-        filterElderlyId = isLinkedElder ? elderlyId : user.userId
+        filterElderlyId = linkedElderIds.has(elderlyId) ? elderlyId : user.userId
+      } else if (activeElderId && linkedElderIds.has(activeElderId)) {
+        filterElderlyId = activeElderId
       } else {
         filterElderlyId = user.userId
       }
@@ -83,8 +89,18 @@ export async function POST(request: NextRequest) {
     const user = requireAuth(request)
 
     const body = await request.json()
-    const { elderlyId, type, title, description, scheduledDate, assessmentId, notes } = body
+    const { type, title, description, scheduledDate, assessmentId, notes } = body
+    let { elderlyId } = body as { elderlyId?: string }
     const assigneeId = body.assigneeId && body.assigneeId.trim() !== '' ? body.assigneeId : null
+
+    // Family role: pin the follow-up's elder to the currently active impersonation context
+    if (user.role === 'family') {
+      const activeElderId = getActiveElderId(request)
+      if (!activeElderId) {
+        return errorResponse(Errors.badRequest('Select an elder before requesting a follow-up'))
+      }
+      elderlyId = activeElderId
+    }
 
     // Determine if this is a request (family/elder) or a direct schedule (admin/professional/volunteer)
     const isRequest = ['family', 'elderly'].includes(user.role)

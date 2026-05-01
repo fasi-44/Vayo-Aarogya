@@ -321,7 +321,12 @@ export default function MyReportPage() {
         if (!reportResult) return null
         return (
           <div className="mt-6">
-            <AssessmentReport result={reportResult} />
+            <AssessmentReport
+              result={reportResult}
+              subjectName={user?.name}
+              initialScaleResults={latestAssessment?.scaleResults as Record<string, import('@/components/assessments/assessment-report').SavedScaleEntry> | undefined}
+              editable={false}
+            />
           </div>
         )
       })()}

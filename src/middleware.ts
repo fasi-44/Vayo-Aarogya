@@ -8,6 +8,7 @@ const JWT_SECRET = new TextEncoder().encode(
 )
 
 const ACCESS_TOKEN_COOKIE = 'vayo_access_token'
+const ACTIVE_ELDER_COOKIE = 'vayo_active_elder'
 
 // Route protection configuration
 interface RouteConfig {
@@ -154,13 +155,22 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    // Add user info to headers for API routes
-    const response = NextResponse.next()
-    response.headers.set('x-user-id', payload.userId as string)
-    response.headers.set('x-user-phone', (payload.phone || payload.email || '') as string)
-    response.headers.set('x-user-role', userRole)
+    // Forward auth context to API route handlers via request headers.
+    // Server-side validation against assignedFamilyId still happens in the
+    // route handlers using the active-elder header.
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('x-user-id', payload.userId as string)
+    requestHeaders.set('x-user-phone', (payload.phone || payload.email || '') as string)
+    requestHeaders.set('x-user-role', userRole)
 
-    return response
+    const activeElderId = request.cookies.get(ACTIVE_ELDER_COOKIE)?.value
+    if (activeElderId) {
+      requestHeaders.set('x-active-elder-id', activeElderId)
+    } else {
+      requestHeaders.delete('x-active-elder-id')
+    }
+
+    return NextResponse.next({ request: { headers: requestHeaders } })
   } catch {
     // Token expired or invalid
     if (pathname.startsWith('/api')) {

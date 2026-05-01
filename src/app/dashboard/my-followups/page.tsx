@@ -1,12 +1,13 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { useAuthStore } from '@/store'
+import { useAuthStore, useHydration } from '@/store'
 import { cn, formatDate, getInitials } from '@/lib/utils'
 import {
   Calendar,
@@ -25,16 +26,28 @@ import { createFollowUp } from '@/services/followups'
 import { FollowUpForm, type FollowUpFormData } from '@/components/followups/followup-form'
 
 export default function MyFollowupsPage() {
-  const { user } = useAuthStore()
+  const router = useRouter()
+  const hydrated = useHydration()
+  const { user, activeElder } = useAuthStore()
   const [followUps, setFollowUps] = useState<FollowUp[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('upcoming')
   const [formOpen, setFormOpen] = useState(false)
 
+  useEffect(() => {
+    if (!hydrated) return
+    if (user?.role === 'family' && !activeElder) {
+      router.replace('/dashboard/my-elders')
+    }
+  }, [hydrated, user, activeElder, router])
+
+  // Family role: scope to the impersonated elder, otherwise to the user themself.
+  const subjectId = user?.role === 'family' ? activeElder?.id : user?.id
+
   const fetchFollowUps = async () => {
-    if (!user?.id) return
+    if (!subjectId) return
     try {
-      const res = await fetch(`/api/followups?elderlyId=${user.id}&limit=50`)
+      const res = await fetch(`/api/followups?elderlyId=${subjectId}&limit=50`)
       const data = await res.json()
       if (data.success) {
         setFollowUps(data.data?.followUps || [])
@@ -48,12 +61,13 @@ export default function MyFollowupsPage() {
 
   useEffect(() => {
     fetchFollowUps()
-  }, [user])
+  }, [subjectId])
 
   const handleRequestSubmit = async (data: FollowUpFormData) => {
+    if (!subjectId) return
     const scheduledDate = `${data.scheduledDate}T${data.scheduledTime || '10:00'}:00`
     await createFollowUp({
-      elderlyId: user!.id,
+      elderlyId: subjectId,
       type: data.type,
       title: data.title,
       description: data.description || undefined,
@@ -372,13 +386,19 @@ export default function MyFollowupsPage() {
           )}
         </CardContent>
       </Card>
-      {/* Request Follow-up Form */}
+      {/* Request Follow-up Form. The "subject" of the request is the active
+          elder if the family is impersonating one, otherwise the user themself
+          (an elder logged in directly). */}
       <FollowUpForm
         open={formOpen}
         onOpenChange={setFormOpen}
         onSubmit={handleRequestSubmit}
-        elderly={user ? [user as SafeUser] : []}
-        preselectedElderlyId={user?.id}
+        elderly={
+          user?.role === 'family'
+            ? (activeElder ? [activeElder] : [])
+            : (user ? [user as SafeUser] : [])
+        }
+        preselectedElderlyId={subjectId}
       />
     </DashboardLayout>
   )

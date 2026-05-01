@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useAuthStore, getRiskLevelStyles } from '@/store'
+import { useAuthStore, useHydration, getRiskLevelStyles } from '@/store'
 import { cn, formatDate } from '@/lib/utils'
 import {
   ClipboardCheck,
@@ -18,20 +19,58 @@ import {
   Eye,
   Loader2,
   FileText,
+  Pencil,
 } from 'lucide-react'
 import type { Assessment } from '@/types'
 
+// Compute a domain's numeric score from the stored shape. Domain values can
+// be a number (legacy) or { answers: {...}, notes: "..." } where answers maps
+// question id → option value. Sum option values to get the domain total.
+function computeDomainScore(value: unknown): number {
+  if (typeof value === 'number') return value
+  if (value && typeof value === 'object' && 'answers' in (value as any)) {
+    const answers = (value as { answers?: Record<string, number> }).answers ?? {}
+    return Object.values(answers).reduce((sum, v) => sum + (Number(v) || 0), 0)
+  }
+  return 0
+}
+
+// Total score across all domains. Falls back to summing per-domain totals
+// when the stored cumulativeScore is missing.
+function getTotalScore(assessment: Assessment): number {
+  if (typeof assessment.cumulativeScore === 'number') return assessment.cumulativeScore
+  if (!assessment.domainScores) return 0
+  return Object.values(assessment.domainScores).reduce<number>(
+    (sum, v) => sum + computeDomainScore(v),
+    0
+  )
+}
+
 export default function MyAssessmentsPage() {
-  const { user } = useAuthStore()
+  const router = useRouter()
+  const hydrated = useHydration()
+  const { user, activeElder } = useAuthStore()
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Family role: this view shows the currently impersonated elder's records.
+  // Without one selected, send them to the elders list.
+  useEffect(() => {
+    if (!hydrated) return
+    if (user?.role === 'family' && !activeElder) {
+      router.replace('/dashboard/my-elders')
+    }
+  }, [hydrated, user, activeElder, router])
+
+  // Subject is the active elder for family role, otherwise the user themself.
+  const subjectId = user?.role === 'family' ? activeElder?.id : user?.id
+
   useEffect(() => {
     async function fetchAssessments() {
-      if (!user?.id) return
+      if (!subjectId) return
 
       try {
-        const res = await fetch(`/api/assessments?subjectId=${user.id}&limit=50`)
+        const res = await fetch(`/api/assessments?subjectId=${subjectId}&limit=50`)
         const data = await res.json()
         if (data.success) {
           setAssessments(data.data?.assessments || [])
@@ -44,7 +83,7 @@ export default function MyAssessmentsPage() {
     }
 
     fetchAssessments()
-  }, [user])
+  }, [subjectId])
 
   const getRiskBadge = (level: string) => {
     const styles = getRiskLevelStyles(level as 'healthy' | 'at_risk' | 'intervention')
@@ -187,17 +226,33 @@ export default function MyAssessmentsPage() {
                     <span className="font-semibold text-base">
                       Assessment #{assessments.length - index}
                     </span>
+                    {assessment.status !== 'completed' && (
+                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-xs capitalize">
+                        {assessment.status}
+                      </Badge>
+                    )}
                   </div>
 
-                  {/* Status + View button */}
-                  <div className="flex items-center justify-between gap-3 mt-2">
+                  {/* Status + Action buttons */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
                     {getRiskBadge(assessment.overallRisk)}
-                    <Link href={`/dashboard/my-assessments/${assessment.id}`}>
-                      <Button variant="outline" size="sm" className="text-sm">
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      {assessment.status !== 'completed' ? (
+                        <Link href={`/dashboard/my-assessments/new?draftId=${assessment.id}`}>
+                          <Button variant="default" size="sm" className="text-sm">
+                            <Pencil className="w-4 h-4 mr-1" />
+                            Continue
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Link href={`/dashboard/my-assessments/${assessment.id}`}>
+                          <Button variant="outline" size="sm" className="text-sm">
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
                   </div>
 
                   {/* Details */}
@@ -206,8 +261,8 @@ export default function MyAssessmentsPage() {
                       <Calendar className="w-4 h-4" />
                       <span>{formatDate(assessment.assessedAt)}</span>
                     </div>
-                    <div className="text-muted-foreground">
-                      Score: <span className="font-medium text-foreground">{assessment.cumulativeScore ?? '-'}</span>
+                    <div className="text-muted-foreground" title="Sum of all domain scores. Higher = more concerns (0–1 healthy, 2–3 at risk, 4+ needs intervention per domain).">
+                      Total Score: <span className="font-medium text-foreground">{getTotalScore(assessment)}</span>
                     </div>
                     {assessment.assessor && (
                       <div className="text-muted-foreground">
@@ -216,22 +271,18 @@ export default function MyAssessmentsPage() {
                     )}
                   </div>
 
-                  {/* Domain Scores Summary */}
+                  {/* Domain Scores Summary - all domains shown */}
                   {assessment.domainScores && (
                     <div className="mt-3 pt-3 border-t">
                       <p className="text-sm text-muted-foreground mb-2">Domain Summary</p>
                       <div className="flex flex-wrap gap-2">
-                        {Object.entries(assessment.domainScores).slice(0, 5).map(([domain, value]) => {
-                          const numericScore = typeof value === 'number'
-                            ? value
-                            : typeof value === 'object' && value !== null && 'answers' in (value as any)
-                              ? Object.values((value as any).answers).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0)
-                              : 0
+                        {Object.entries(assessment.domainScores).map(([domain, value]) => {
+                          const numericScore = computeDomainScore(value)
                           return (
                             <span
                               key={domain}
                               className={cn(
-                                'text-sm px-2.5 py-1 rounded-md',
+                                'text-sm px-2.5 py-1 rounded-md capitalize',
                                 numericScore >= 4 ? 'bg-red-100 text-red-700' :
                                   numericScore >= 2 ? 'bg-yellow-100 text-yellow-700' :
                                     'bg-green-100 text-green-700'
@@ -241,11 +292,6 @@ export default function MyAssessmentsPage() {
                             </span>
                           )
                         })}
-                        {Object.keys(assessment.domainScores).length > 5 && (
-                          <span className="text-sm text-muted-foreground">
-                            +{Object.keys(assessment.domainScores).length - 5} more
-                          </span>
-                        )}
                       </div>
                     </div>
                   )}

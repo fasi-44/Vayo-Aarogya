@@ -8,6 +8,8 @@ import {
   requirePermission,
   getClientIP,
   getUserAgent,
+  getActiveElderId,
+  elderSwitchRequiredResponse,
 } from '@/lib/api-utils'
 
 interface RouteParams {
@@ -28,6 +30,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Check access permissions
     const isTargetUser = intervention.userId === user.userId
     const canViewAll = ['super_admin', 'professional', 'volunteer'].includes(user.role)
+
+    // Family role: allow access only to interventions for a linked elder.
+    // Prompt to switch impersonation context if not currently active.
+    if (!isTargetUser && !canViewAll && user.role === 'family') {
+      const familyElders = await db.getElderlyByFamily(user.userId)
+      const isLinkedElder = familyElders.some(e => e.id === intervention.userId)
+      if (!isLinkedElder) {
+        return errorResponse(Errors.forbidden('You do not have access to this intervention'))
+      }
+      const activeElderId = getActiveElderId(request)
+      if (activeElderId !== intervention.userId) {
+        return elderSwitchRequiredResponse(intervention.userId)
+      }
+      return successResponse(intervention)
+    }
 
     if (!isTargetUser && !canViewAll) {
       return errorResponse(Errors.forbidden('You do not have access to this intervention'))

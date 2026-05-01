@@ -1,7 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
+import { useAuthStore, useHydration } from '@/store'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -49,6 +51,17 @@ import {
 } from 'lucide-react'
 
 export default function FollowUpsPage() {
+  const router = useRouter()
+  const hydrated = useHydration()
+  const { user, activeElder } = useAuthStore()
+
+  useEffect(() => {
+    if (!hydrated) return
+    if (user?.role === 'family' && !activeElder) {
+      router.replace('/dashboard/my-elders')
+    }
+  }, [hydrated, user, activeElder, router])
+
   const [followUps, setFollowUps] = useState<FollowUp[]>([])
   const [elderly, setElderly] = useState<SafeUser[]>([])
   const [volunteers, setVolunteers] = useState<SafeUser[]>([])

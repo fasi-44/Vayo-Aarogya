@@ -8,6 +8,8 @@ import {
   requirePermission,
   getClientIP,
   getUserAgent,
+  getActiveElderId,
+  elderSwitchRequiredResponse,
 } from '@/lib/api-utils'
 import type { RiskLevel, AssessmentStatus } from '@prisma/client'
 
@@ -30,6 +32,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const isSubject = assessment.subjectId === user.userId
     const isAssessor = assessment.assessorId === user.userId
     const canViewAll = ['super_admin', 'professional'].includes(user.role)
+
+    // Family role: allow access only to assessments belonging to a linked
+    // elder. If the subject is linked but isn't the currently active elder,
+    // return a 409 so the UI can prompt to switch impersonation context.
+    if (!isSubject && !isAssessor && !canViewAll && user.role === 'family') {
+      const familyElders = await db.getElderlyByFamily(user.userId)
+      const isLinkedElder = familyElders.some(e => e.id === assessment.subjectId)
+      if (!isLinkedElder) {
+        return errorResponse(Errors.forbidden('You do not have access to this assessment'))
+      }
+      const activeElderId = getActiveElderId(request)
+      if (activeElderId !== assessment.subjectId) {
+        return elderSwitchRequiredResponse(assessment.subjectId)
+      }
+      return successResponse(assessment)
+    }
 
     if (!isSubject && !isAssessor && !canViewAll) {
       return errorResponse(Errors.forbidden('You do not have access to this assessment'))
@@ -65,7 +83,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json()
-    const { overallRisk, notes, domainScores, domains, status, currentStep } = body
+    const { overallRisk, notes, domainScores, domains, status, currentStep, scaleResults } = body
 
     // Update assessment
     const updatedAssessment = await db.updateAssessment(id, {
@@ -74,6 +92,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       currentStep,
       notes,
       domainScores,
+      scaleResults,
     })
 
     // Update domains if provided

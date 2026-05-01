@@ -28,14 +28,16 @@ export function DomainQuestionCard({
   onNotesChange,
   showValidationErrors = false,
 }: DomainQuestionCardProps) {
-  const unansweredQuestions = domain.questions.filter(q => answers[q.id] === undefined)
-  const hasUnanswered = unansweredQuestions.length > 0
-  const allAnswered = unansweredQuestions.length === 0
+  const totalQuestions = domain.questions.length
+  const answeredCount = domain.questions.filter(q => answers[q.id] !== undefined).length
+  const unansweredCount = totalQuestions - answeredCount
+  const allAnswered = unansweredCount === 0
+  const hasValidationError = showValidationErrors && unansweredCount > 0
 
   return (
     <Card className="border-2 shadow-lg">
       <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-primary/10">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="text-4xl">{domain.emoji}</span>
             <div>
@@ -43,17 +45,21 @@ export function DomainQuestionCard({
               <CardDescription className="mt-1 text-base">{domain.description}</CardDescription>
             </div>
           </div>
-          {showValidationErrors && hasUnanswered ? (
-            <Badge variant="destructive" className="flex items-center gap-1 text-sm px-3 py-1">
+          <Badge
+            className={cn(
+              'flex items-center gap-1 text-sm px-3 py-1',
+              hasValidationError && 'bg-destructive text-destructive-foreground',
+              !hasValidationError && allAnswered && 'bg-moss-500 text-white',
+              !hasValidationError && !allAnswered && 'bg-white text-foreground border'
+            )}
+          >
+            {hasValidationError ? (
               <AlertTriangle className="w-4 h-4" />
-              {unansweredQuestions.length} left
-            </Badge>
-          ) : allAnswered ? (
-            <Badge className="flex items-center gap-1 text-sm px-3 py-1 bg-moss-500">
+            ) : allAnswered ? (
               <CheckCircle2 className="w-4 h-4" />
-              Done
-            </Badge>
-          ) : null}
+            ) : null}
+            {answeredCount}/{totalQuestions}
+          </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
@@ -94,16 +100,27 @@ interface QuestionItemProps {
   showError?: boolean
 }
 
-// Get color based on option value
-function getOptionColor(optValue: number): 'green' | 'yellow' | 'red' {
-  if (optValue === 0) return 'green'
-  if (optValue === 1) return 'yellow'
+// Get color based on option value relative to the max for this question.
+function getOptionColor(optValue: number, maxValue: number): 'green' | 'yellow' | 'red' {
+  if (maxValue <= 0) return 'green'
+  const ratio = optValue / maxValue
+  if (ratio === 0) return 'green'
+  if (ratio < 1) return 'yellow'
   return 'red'
 }
 
 function QuestionItem({ question, index, value, onChange, showError }: QuestionItemProps) {
   // Use question-specific options if available, otherwise use defaults
   const options = question.options || DEFAULT_OPTIONS
+  // Colour ramp is driven by the option's *scoring* contribution — not its
+  // storage `value` — so an option like Increased social interaction
+  // (value=3, score=0) still renders as green.
+  const maxOptionScore = Math.max(...options.map(o => o.score ?? o.value))
+  // Pick column count based on # of options. Tailwind needs static class names.
+  const gridCols =
+    options.length === 2 ? 'grid-cols-1 sm:grid-cols-2' :
+    options.length === 4 ? 'grid-cols-2 sm:grid-cols-4' :
+    'grid-cols-1 sm:grid-cols-3'
 
   return (
     <div className={cn(
@@ -127,13 +144,13 @@ function QuestionItem({ question, index, value, onChange, showError }: QuestionI
       </div>
 
       {/* Scale Options - Large Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {options.map((option) => {
+      <div className={cn('grid gap-3', gridCols)}>
+        {options.map((option, optIdx) => {
           const isSelected = value === option.value
-          const color = getOptionColor(option.value)
+          const color = getOptionColor(option.score ?? option.value, maxOptionScore)
           return (
             <button
-              key={option.value}
+              key={`${option.value}-${optIdx}`}
               type="button"
               onClick={() => onChange(option.value)}
               className={cn(

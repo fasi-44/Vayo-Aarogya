@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -74,7 +75,8 @@ const domainIcons = [
 ]
 
 export default function DashboardPage() {
-  const { user, hasRole } = useAuthStore()
+  const router = useRouter()
+  const { user, activeElder, hasRole } = useAuthStore()
   const hydrated = useHydration()
   const [loading, setLoading] = useState(true)
   const [dashboardData, setDashboardData] = useState<DashboardData>({
@@ -106,24 +108,34 @@ export default function DashboardPage() {
   const currentUser = hydrated ? user : null
   const safeHasRole = hydrated ? hasRole : () => false
 
-  // Fetch dashboard data based on user role
+  // Fetch dashboard data based on user role + impersonation context.
   const fetchDashboardData = useCallback(async () => {
     if (!hydrated || !currentUser) return
 
-    // For elderly/family, use different data fetching
-    if (currentUser.role === 'elderly' || currentUser.role === 'family') {
+    // Family member NOT impersonating: family dashboard fetches its own
+    // per-elder data inside the component, nothing to fetch here.
+    if (currentUser.role === 'family' && !activeElder) {
+      setLoading(false)
+      return
+    }
+
+    // Elderly self-view OR family impersonating an elder → load that elder's
+    // health snapshot for the dashboard.
+    if (currentUser.role === 'elderly' || (currentUser.role === 'family' && activeElder)) {
+      const subjectUser = currentUser.role === 'family' ? activeElder! : currentUser
+      const subjectId = subjectUser.id
       try {
         const [assessmentsRes, interventionsRes, followUpsRes] = await Promise.all([
-          fetch(`/api/assessments?subjectId=${currentUser.id}&limit=10`).then(r => r.json()),
-          fetch(`/api/interventions?userId=${currentUser.id}&status=pending,in_progress`).then(r => r.json()),
-          fetch(`/api/followups?elderlyId=${currentUser.id}&status=scheduled`).then(r => r.json()),
+          fetch(`/api/assessments?subjectId=${subjectId}&limit=10`).then(r => r.json()),
+          fetch(`/api/interventions?userId=${subjectId}&status=pending,in_progress`).then(r => r.json()),
+          fetch(`/api/followups?elderlyId=${subjectId}&status=scheduled`).then(r => r.json()),
         ])
 
         let volunteer = null
-        if (currentUser.assignedVolunteer) {
-          const volunteerId = typeof currentUser.assignedVolunteer === 'object'
-            ? (currentUser.assignedVolunteer as any).id
-            : currentUser.assignedVolunteer
+        if (subjectUser.assignedVolunteer) {
+          const volunteerId = typeof subjectUser.assignedVolunteer === 'object'
+            ? (subjectUser.assignedVolunteer as any).id
+            : subjectUser.assignedVolunteer
           if (volunteerId) {
             const volunteerRes = await fetch(`/api/users/${volunteerId}`).then(r => r.json())
             if (volunteerRes.success) volunteer = volunteerRes.data
@@ -206,7 +218,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
-  }, [hydrated, currentUser])
+  }, [hydrated, currentUser, activeElder])
 
   useEffect(() => {
     fetchDashboardData()
@@ -256,11 +268,25 @@ export default function DashboardPage() {
     )
   }
 
-  // Family Dashboard
+  // Family role: when not impersonating, show the family overview (linked
+  // elders, summary stats, etc). When an elder is selected via "Manage",
+  // the dashboard switches to that elder's view — same surface the elder
+  // would see when logged in directly.
   if (currentUser?.role === 'family') {
+    if (!activeElder) {
+      return (
+        <DashboardLayout
+          title="Family Dashboard"
+          subtitle="Monitor and manage your loved ones' health"
+        >
+          <FamilyDashboard familyMember={currentUser as SafeUser} />
+        </DashboardLayout>
+      )
+    }
+
     if (loading) {
       return (
-        <DashboardLayout title="Family Dashboard" subtitle="Loading...">
+        <DashboardLayout title={`${activeElder.name}'s Dashboard`} subtitle="Loading...">
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
@@ -270,16 +296,20 @@ export default function DashboardPage() {
 
     return (
       <DashboardLayout
-        title="Family Dashboard"
-        subtitle="Monitor your loved one's health"
+        title={`${activeElder.name}'s Dashboard`}
+        subtitle={`Acting on behalf of ${activeElder.name}`}
       >
-        <FamilyDashboard
-          familyMember={currentUser as SafeUser}
-          linkedElderly={null}
+        <ElderlyDashboard
+          elderly={activeElder}
           latestAssessment={elderlyData.assessments[0] || null}
           upcomingFollowUps={elderlyData.followUps}
           activeInterventions={elderlyData.interventions}
           assignedVolunteer={elderlyData.assignedVolunteer}
+          caregiver={{
+            name: activeElder.caregiverName,
+            phone: activeElder.caregiverPhone,
+            relation: activeElder.caregiverRelation,
+          }}
         />
       </DashboardLayout>
     )

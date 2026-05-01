@@ -9,6 +9,7 @@ import {
   getPaginationParams,
   getClientIP,
   getUserAgent,
+  getActiveElderId,
 } from '@/lib/api-utils'
 
 // GET /api/interventions - List all interventions
@@ -32,12 +33,17 @@ export async function GET(request: NextRequest) {
     if (user.role === 'elderly') {
       filterUserId = user.userId
     }
-    // Family can see interventions of their linked elders
+    // Family can see interventions of their linked elders. Default scope to
+    // the currently active elder when one is set.
     if (user.role === 'family') {
+      const activeElderId = getActiveElderId(request)
+      const familyElders = await db.getElderlyByFamily(user.userId)
+      const linkedElderIds = new Set(familyElders.map(e => e.id))
+
       if (userId) {
-        const familyElders = await db.getElderlyByFamily(user.userId)
-        const isLinkedElder = familyElders.some(e => e.id === userId)
-        filterUserId = isLinkedElder ? userId : user.userId
+        filterUserId = linkedElderIds.has(userId) ? userId : user.userId
+      } else if (activeElderId && linkedElderIds.has(activeElderId)) {
+        filterUserId = activeElderId
       } else {
         filterUserId = user.userId
       }

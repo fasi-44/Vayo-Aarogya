@@ -7,6 +7,8 @@ import {
   requireAuth,
   getClientIP,
   getUserAgent,
+  getActiveElderId,
+  elderSwitchRequiredResponse,
 } from '@/lib/api-utils'
 
 interface RouteParams {
@@ -29,6 +31,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const isAssignee = followUp.assigneeId === user.userId
     const canViewAll = ['super_admin', 'professional'].includes(user.role)
     const isVolunteerAssigned = user.role === 'volunteer' && isAssignee
+
+    // Family role: allow access only to follow-ups for a linked elder. Prompt
+    // to switch impersonation context if the elder isn't currently active.
+    if (!isElderly && !canViewAll && !isVolunteerAssigned && user.role === 'family') {
+      const familyElders = await db.getElderlyByFamily(user.userId)
+      const isLinkedElder = familyElders.some(e => e.id === followUp.elderlyId)
+      if (!isLinkedElder) {
+        return errorResponse(Errors.forbidden('You do not have access to this follow-up'))
+      }
+      const activeElderId = getActiveElderId(request)
+      if (activeElderId !== followUp.elderlyId) {
+        return elderSwitchRequiredResponse(followUp.elderlyId)
+      }
+      return successResponse(followUp)
+    }
 
     if (!isElderly && !canViewAll && !isVolunteerAssigned) {
       return errorResponse(Errors.forbidden('You do not have access to this follow-up'))

@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useAuthStore } from '@/store'
+import { useAuthStore, useHydration } from '@/store'
 import { cn, formatDate } from '@/lib/utils'
 import {
   Activity,
@@ -20,17 +21,29 @@ import {
 import type { Intervention } from '@/types'
 
 export default function MyInterventionsPage() {
-  const { user } = useAuthStore()
+  const router = useRouter()
+  const hydrated = useHydration()
+  const { user, activeElder } = useAuthStore()
   const [interventions, setInterventions] = useState<Intervention[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
 
   useEffect(() => {
+    if (!hydrated) return
+    if (user?.role === 'family' && !activeElder) {
+      router.replace('/dashboard/my-elders')
+    }
+  }, [hydrated, user, activeElder, router])
+
+  // Family role: scope to the impersonated elder, otherwise to the user themself.
+  const subjectId = user?.role === 'family' ? activeElder?.id : user?.id
+
+  useEffect(() => {
     async function fetchInterventions() {
-      if (!user?.id) return
+      if (!subjectId) return
 
       try {
-        const res = await fetch(`/api/interventions?userId=${user.id}&limit=50`)
+        const res = await fetch(`/api/interventions?userId=${subjectId}&limit=50`)
         const data = await res.json()
         if (data.success) {
           setInterventions(data.data?.interventions || [])
@@ -43,7 +56,7 @@ export default function MyInterventionsPage() {
     }
 
     fetchInterventions()
-  }, [user])
+  }, [subjectId])
 
   const filteredInterventions = interventions.filter((i) => {
     if (filter === 'all') return true

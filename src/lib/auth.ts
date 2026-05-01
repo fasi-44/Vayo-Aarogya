@@ -14,6 +14,8 @@ const REFRESH_TOKEN_EXPIRY_REMEMBER = '30d'
 // Cookie names
 export const ACCESS_TOKEN_COOKIE = 'vayo_access_token'
 export const REFRESH_TOKEN_COOKIE = 'vayo_refresh_token'
+// Family member's currently selected elder for impersonation/scoping
+export const ACTIVE_ELDER_COOKIE = 'vayo_active_elder'
 
 // Password hashing
 export async function hashPassword(password: string): Promise<string> {
@@ -86,6 +88,28 @@ export async function clearAuthCookies(): Promise<void> {
   const cookieStore = await cookies()
   cookieStore.delete(ACCESS_TOKEN_COOKIE)
   cookieStore.delete(REFRESH_TOKEN_COOKIE)
+  cookieStore.delete(ACTIVE_ELDER_COOKIE)
+}
+
+export async function setActiveElderCookie(elderId: string): Promise<void> {
+  const cookieStore = await cookies()
+  cookieStore.set(ACTIVE_ELDER_COOKIE, elderId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 30 * 24 * 60 * 60, // 30 days; survives access token refresh
+  })
+}
+
+export async function clearActiveElderCookie(): Promise<void> {
+  const cookieStore = await cookies()
+  cookieStore.delete(ACTIVE_ELDER_COOKIE)
+}
+
+export async function getActiveElderId(): Promise<string | undefined> {
+  const cookieStore = await cookies()
+  return cookieStore.get(ACTIVE_ELDER_COOKIE)?.value
 }
 
 export async function getAccessToken(): Promise<string | undefined> {

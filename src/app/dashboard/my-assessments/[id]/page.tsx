@@ -29,6 +29,10 @@ import { getAssessmentById } from '@/services/assessments'
 import { getRiskLevelDisplay, buildResultFromStored } from '@/lib/assessment-scoring'
 import { AssessmentReport } from '@/components/assessments/assessment-report'
 import { formatDate } from '@/lib/utils'
+import {
+  ElderSwitchPrompt,
+  getElderSwitchRequired,
+} from '@/components/family/elder-switch-prompt'
 
 export default function MyAssessmentDetailPage() {
   const params = useParams()
@@ -38,6 +42,7 @@ export default function MyAssessmentDetailPage() {
   const [assessment, setAssessment] = useState<Assessment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [switchElderId, setSwitchElderId] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadAssessment() {
@@ -48,6 +53,12 @@ export default function MyAssessmentDetailPage() {
 
       try {
         const result = await getAssessmentById(id)
+
+        const switchRequired = getElderSwitchRequired(result)
+        if (switchRequired) {
+          setSwitchElderId(switchRequired)
+          return
+        }
 
         if (result.success && result.data) {
           setAssessment(result.data)
@@ -64,6 +75,18 @@ export default function MyAssessmentDetailPage() {
 
     loadAssessment()
   }, [id])
+
+  if (switchElderId) {
+    return (
+      <DashboardLayout title="Assessment Details" subtitle="Switching elder…">
+        <ElderSwitchPrompt
+          open
+          elderId={switchElderId}
+          redirectTo={`/dashboard/my-assessments/${id}`}
+        />
+      </DashboardLayout>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -246,7 +269,14 @@ export default function MyAssessmentDetailPage() {
             assessment.domainScores,
           )
           if (!reportResult) return null
-          return <AssessmentReport result={reportResult} />
+          return (
+            <AssessmentReport
+              result={reportResult}
+              subjectName={assessment.subject?.name}
+              initialScaleResults={assessment.scaleResults as Record<string, import('@/components/assessments/assessment-report').SavedScaleEntry> | undefined}
+              editable={false}
+            />
+          )
         })()}
       </div>
     </DashboardLayout>
@@ -255,6 +285,14 @@ export default function MyAssessmentDetailPage() {
 
 interface DomainResultCardProps {
   domain: AssessmentDomain
+}
+
+// Tailwind progress-bar classes per risk level. Track gets a tinted
+// background, indicator (immediate child) gets the solid risk colour.
+const RISK_PROGRESS_CLASSES: Record<RiskLevel, string> = {
+  healthy: 'bg-healthy/20 [&>*]:bg-healthy',
+  at_risk: 'bg-at-risk/20 [&>*]:bg-at-risk',
+  intervention: 'bg-intervention/20 [&>*]:bg-intervention',
 }
 
 function DomainResultCard({ domain }: DomainResultCardProps) {
@@ -278,7 +316,7 @@ function DomainResultCard({ domain }: DomainResultCardProps) {
           </div>
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <Progress value={percentage} className="h-2" />
+              <Progress value={percentage} className={`h-2 ${RISK_PROGRESS_CLASSES[domain.riskLevel]}`} />
             </div>
             <span className="text-sm text-muted-foreground w-16 text-right">
               {domain.score ?? '-'}/{maxScore}

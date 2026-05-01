@@ -8,12 +8,28 @@ import { Loader2 } from 'lucide-react'
 import { AssessmentForm, DraftAssessmentsList } from '@/components/assessments'
 import { getAssessmentById } from '@/services/assessments'
 import { type Assessment } from '@/types'
+import { useAuthStore, useHydration } from '@/store'
 
 function NewAssessmentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const elderlyId = searchParams.get('elderlyId') || undefined
+  const hydrated = useHydration()
+  const { user, activeElder } = useAuthStore()
+  // Family role: assessments are pinned to the currently impersonated elder.
+  // The server enforces this too — query string is just a UX nicety.
+  const elderlyId = user?.role === 'family'
+    ? activeElder?.id
+    : (searchParams.get('elderlyId') || undefined)
   const draftId = searchParams.get('draftId') || undefined
+
+  // Family without an active elder can't create an assessment — bounce them
+  // back to the elders list so they can pick one.
+  useEffect(() => {
+    if (!hydrated) return
+    if (user?.role === 'family' && !activeElder) {
+      router.replace('/dashboard/my-elders')
+    }
+  }, [hydrated, user, activeElder, router])
 
   // State for resuming a draft
   const [resumingDraft, setResumingDraft] = useState<Assessment | null>(null)

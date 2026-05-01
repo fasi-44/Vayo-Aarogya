@@ -29,32 +29,24 @@ export function useHydration() {
 import { type RiskLevel } from '@/types'
 export type { RiskLevel }
 
-// Profile selection for multi-profile login
-export interface LoginProfile {
-  id: string
-  name: string
-  role: UserRole
-  vayoId?: string
-  avatar?: string
-}
-
 // Auth store interface
 interface AuthState {
   user: SafeUser | null
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
-  // Multi-profile login support
-  pendingProfiles: LoginProfile[] | null
-  pendingLoginCredentials: { phone: string; password: string; rememberMe: boolean } | null
+  // Family impersonation: which elder is the family user currently acting on
+  // behalf of. null when not in impersonation mode (or for non-family roles).
+  activeElder: SafeUser | null
   login: (phone: string, password: string, rememberMe?: boolean) => Promise<boolean>
-  loginWithProfile: (profileId: string) => Promise<boolean>
-  clearPendingProfiles: () => void
   register: (phone: string, password: string, name: string, email?: string, role?: UserRole) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
   refreshAuth: () => Promise<boolean>
   fetchCurrentUser: () => Promise<void>
   setUser: (user: SafeUser | null) => void
+  setActiveElder: (elderId: string) => Promise<boolean>
+  clearActiveElder: () => Promise<void>
+  fetchActiveElder: () => Promise<void>
   clearError: () => void
   hasPermission: (permission: Permission) => boolean
   hasRole: (roles: UserRole[]) => boolean
@@ -82,11 +74,10 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
-      pendingProfiles: null,
-      pendingLoginCredentials: null,
+      activeElder: null,
 
       login: async (phone: string, password: string, rememberMe: boolean = false) => {
-        set({ isLoading: true, error: null, pendingProfiles: null, pendingLoginCredentials: null })
+        set({ isLoading: true, error: null, activeElder: null })
 
         try {
           const response = await fetch('/api/auth/login', {
@@ -95,27 +86,14 @@ export const useAuthStore = create<AuthState>()(
             body: JSON.stringify({ phone, password, rememberMe }),
           })
 
-          const data: ApiResponse<any> = await response.json()
+          const data: ApiResponse<LoginResponse> = await response.json()
 
           if (data.success && data.data) {
-            // Check if multiple profiles need selection
-            if (data.data.requiresProfileSelection && data.data.profiles) {
-              set({
-                isLoading: false,
-                pendingProfiles: data.data.profiles,
-                pendingLoginCredentials: { phone, password, rememberMe },
-              })
-              return false // Not logged in yet, needs profile selection
-            }
-
-            // Single profile login
             set({
               user: data.data.user,
               isAuthenticated: true,
               isLoading: false,
               error: null,
-              pendingProfiles: null,
-              pendingLoginCredentials: null,
             })
             return true
           } else {
@@ -135,58 +113,61 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      loginWithProfile: async (profileId: string) => {
-        const credentials = get().pendingLoginCredentials
-        if (!credentials) {
-          set({ error: 'No pending login. Please try again.' })
-          return false
-        }
-
-        set({ isLoading: true, error: null })
-
+      setActiveElder: async (elderId: string) => {
         try {
-          const response = await fetch('/api/auth/login', {
+          const response = await fetch('/api/family/active-elder', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              phone: credentials.phone,
-              password: credentials.password,
-              rememberMe: credentials.rememberMe,
-              profileId,
-            }),
+            credentials: 'include',
+            body: JSON.stringify({ elderId }),
           })
-
-          const data: ApiResponse<LoginResponse> = await response.json()
-
+          const data: ApiResponse<{ activeElder: SafeUser | null }> = await response.json()
           if (data.success && data.data) {
-            set({
-              user: data.data.user,
-              isAuthenticated: true,
-              isLoading: false,
-              error: null,
-              pendingProfiles: null,
-              pendingLoginCredentials: null,
-            })
+            set({ activeElder: data.data.activeElder })
             return true
-          } else {
-            set({
-              isLoading: false,
-              error: data.error || 'Login failed',
-            })
-            return false
           }
+          set({ error: data.error || 'Failed to switch elder' })
+          return false
         } catch (error) {
-          console.error('Login with profile error:', error)
-          set({
-            isLoading: false,
-            error: 'Network error. Please try again.',
-          })
+          console.error('Set active elder error:', error)
+          set({ error: 'Network error. Please try again.' })
           return false
         }
       },
 
-      clearPendingProfiles: () => {
-        set({ pendingProfiles: null, pendingLoginCredentials: null })
+      clearActiveElder: async () => {
+        try {
+          await fetch('/api/family/active-elder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ elderId: null }),
+          })
+        } catch (error) {
+          console.error('Clear active elder error:', error)
+        } finally {
+          set({ activeElder: null })
+        }
+      },
+
+      fetchActiveElder: async () => {
+        const { user } = get()
+        if (!user || user.role !== 'family') {
+          set({ activeElder: null })
+          return
+        }
+        try {
+          const response = await fetch('/api/family/active-elder', {
+            method: 'GET',
+            credentials: 'include',
+          })
+          const data: ApiResponse<{ activeElder: SafeUser | null }> = await response.json()
+          if (data.success && data.data) {
+            set({ activeElder: data.data.activeElder })
+          }
+        } catch (error) {
+          console.error('Fetch active elder error:', error)
+        }
       },
 
       register: async (phone: string, password: string, name: string, email?: string, role?: UserRole) => {
@@ -232,7 +213,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Logout error:', error)
         } finally {
-          set({ user: null, isAuthenticated: false, error: null })
+          set({ user: null, isAuthenticated: false, error: null, activeElder: null })
         }
       },
 
@@ -259,11 +240,17 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               isLoading: false,
             })
+            if (data.data.role === 'family') {
+              await get().fetchActiveElder()
+            } else {
+              set({ activeElder: null })
+            }
           } else {
             set({
               user: null,
               isAuthenticated: false,
               isLoading: false,
+              activeElder: null,
             })
           }
         } catch {
@@ -271,6 +258,7 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             isAuthenticated: false,
             isLoading: false,
+            activeElder: null,
           })
         }
       },
@@ -297,7 +285,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'vayo-auth-storage',
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        activeElder: state.activeElder,
+      }),
     }
   )
 )

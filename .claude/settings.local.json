@@ -16,7 +16,26 @@
       "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
       "Bash(node -e \":*)",
       "Bash(ls:*)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(git -C /d/vayo_aarogya log --oneline -20)",
+      "Bash(git -C /d/vayo_aarogya show 0669091 --stat)",
+      "Bash(npx next *)",
+      "Bash(curl -s -o /dev/null http://localhost:3007/auth/login)",
+      "Bash(rm -f /tmp/vayo-cookies.txt)",
+      "Bash(curl -s -c /tmp/vayo-cookies.txt -X POST http://localhost:3007/api/auth/login -H 'Content-Type: application/json' -d '{\"phone\":\"9000000004\",\"password\":\"1234\"}')",
+      "Bash(awk 'NF')",
+      "Bash(curl -s -b /tmp/vayo-cookies.txt http://localhost:3007/api/family/elders)",
+      "Bash(curl -s -i -b /tmp/vayo-cookies.txt -X POST http://localhost:3007/api/family/active-elder -H 'Content-Type: application/json' -d '{\"elderId\":\"cmo6uev990027udlzy92usiot\"}')",
+      "Bash(curl -s -i -b /tmp/vayo-cookies.txt http://localhost:3007/dashboard)",
+      "Bash(curl -s -b /tmp/vayo-cookies.txt http://localhost:3007/api/family/active-elder)",
+      "Bash(kill %1)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(where pdftoppm *)",
+      "Read(//c/Program Files/**)",
+      "Bash(node *)",
+      "Bash(magick --version)",
+      "Bash(gswin64c --version)",
+      "Bash(gs --version)"
     ]
   }
 }

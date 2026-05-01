@@ -31,6 +31,8 @@ export interface AssessmentFormData {
     answers?: Record<string, unknown>
     notes?: string
   }[]
+  /** Clinical scale results — keyed by scale code, e.g. { HMSE: { result, answers, savedAt } } */
+  scaleResults?: Record<string, unknown>
 }
 
 // Filter options for assessment list

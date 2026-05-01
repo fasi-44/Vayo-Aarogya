@@ -9,6 +9,7 @@ import {
   getPaginationParams,
   getClientIP,
   getUserAgent,
+  getActiveElderId,
 } from '@/lib/api-utils'
 import type { RiskLevel, AssessmentStatus } from '@prisma/client'
 
@@ -41,19 +42,20 @@ export async function GET(request: NextRequest) {
     if (user.role === 'elderly') {
       filterSubjectId = user.userId
     }
-    // Family can see assessments of their linked elders
+    // Family can see assessments of their linked elders. When an active elder
+    // is set (impersonation mode), default scope to that elder unless the
+    // caller explicitly requests a different linked elder.
     if (user.role === 'family') {
+      const activeElderId = getActiveElderId(request)
+      const familyElders = await db.getElderlyByFamily(user.userId)
+      const linkedElderIds = new Set(familyElders.map(e => e.id))
+
       if (subjectId) {
-        // Verify the requested elder is linked to this family member
-        const familyElders = await db.getElderlyByFamily(user.userId)
-        const isLinkedElder = familyElders.some(e => e.id === subjectId)
-        if (isLinkedElder) {
-          filterSubjectId = subjectId
-        } else {
-          filterSubjectId = user.userId // fallback to own (returns nothing)
-        }
+        filterSubjectId = linkedElderIds.has(subjectId) ? subjectId : user.userId
+      } else if (activeElderId && linkedElderIds.has(activeElderId)) {
+        filterSubjectId = activeElderId
       } else {
-        // No specific elder requested — show own assessments
+        // No active elder selected — return nothing rather than leak data
         filterSubjectId = user.userId
       }
     }
@@ -90,7 +92,22 @@ export async function POST(request: NextRequest) {
     const user = requirePermission(request, 'assessments:create')
 
     const body = await request.json()
-    const { subjectId, overallRisk, notes, domainScores, domains, status, currentStep } = body
+    const { overallRisk, notes, domainScores, domains, status, currentStep } = body
+    let { subjectId } = body as { subjectId?: string }
+
+    // Family role: force the assessment subject to the currently active elder
+    // and require one to be selected. Prevents creating against the wrong elder.
+    if (user.role === 'family') {
+      const activeElderId = getActiveElderId(request)
+      if (!activeElderId) {
+        return errorResponse(Errors.badRequest('Select an elder before creating an assessment'))
+      }
+      const elder = await db.findUserById(activeElderId)
+      if (!elder || elder.role !== 'elderly' || elder.assignedFamily !== user.userId) {
+        return errorResponse(Errors.forbidden('Active elder is no longer linked to your account'))
+      }
+      subjectId = activeElderId
+    }
 
     // Validate required fields
     if (!subjectId) {

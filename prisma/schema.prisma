@@ -187,6 +187,9 @@ model Assessment {
   // Domain scores (JSON for flexibility) - stores partial answers for drafts
   domainScores Json? @map("domain_scores")
 
+  // Clinical scale results (JSON keyed by scale code, e.g. { HMSE: { result, answers, savedAt } })
+  scaleResults Json? @map("scale_results")
+
   // Individual domain results
   domains     AssessmentDomain[]
 

@@ -35,6 +35,7 @@ import {
   ChevronRight,
   Loader2,
   ClipboardPlus,
+  Printer,
 } from 'lucide-react'
 import { type SafeUser } from '@/types'
 import {
@@ -46,6 +47,7 @@ import {
   type ElderlyFilters,
 } from '@/services/elderly'
 import { getVolunteers } from '@/services/users'
+import { getElderlyAssessments } from '@/services/assessments'
 import {
   ElderlyTable,
   ElderlyForm,
@@ -375,6 +377,32 @@ function ElderlyRecordsPageContent() {
     setIsFollowupOpen(true)
   }
 
+  const handlePrintSummary = async (elder: ElderlyWithRelations) => {
+    try {
+      const result = await getElderlyAssessments(elder.id)
+      const assessments = result.success && result.data ? result.data.assessments : []
+      const { printElderSummaryPDF } = await import('@/lib/print/elder-summary-pdf')
+      await printElderSummaryPDF({
+        elder: {
+          id: elder.id,
+          name: elder.name,
+          vayoId: elder.vayoId,
+          age: elder.age,
+          gender: elder.gender,
+          email: elder.email,
+          phone: elder.phone,
+          villageName: elder.villageName,
+          talukName: elder.talukName,
+          districtName: elder.districtName,
+          stateName: elder.stateName,
+        },
+        assessments,
+      })
+    } catch (err) {
+      console.error('Print summary error:', err)
+    }
+  }
+
   const handleFollowupSubmit = async (data: FollowUpDialogData) => {
     const scheduledDate = `${data.scheduledDate}T${data.scheduledTime || '10:00'}:00`
     await createFollowUp({
@@ -603,6 +631,7 @@ function ElderlyRecordsPageContent() {
                 onAssessment={handleNewAssessment}
                 onDocuments={handleDocuments}
                 onScheduleFollowup={handleScheduleFollowup}
+                onPrintSummary={handlePrintSummary}
                 expandedAssessmentsId={expandedAssessmentsId}
                 onCloseExpanded={handleCloseExpanded}
               />

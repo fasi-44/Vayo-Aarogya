@@ -88,7 +88,7 @@ export default function MyEldersPage() {
 function MyEldersPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user } = useAuthStore()
+  const { user, setActiveElder } = useAuthStore()
   const hydrated = useHydration()
 
   const [elders, setElders] = useState<ElderWithData[]>([])
@@ -268,6 +268,14 @@ function MyEldersPageContent() {
     ).slice(0, 3) || []
   }
 
+  // Selecting an elder enters impersonation mode for that elder. The whole
+  // app then scopes to them (dashboard, assessments, follow-ups, etc).
+  const handleSelectElder = async (elder: ElderWithData) => {
+    const ok = await setActiveElder(elder.id)
+    if (ok) router.push('/dashboard')
+  }
+
+  // Kept for the URL ?elder=<id> deep-link to open the read-only details view.
   const handleViewElder = (elder: ElderWithData) => {
     setSelectedElder(elder)
     setDetailsOpen(true)
@@ -332,7 +340,7 @@ function MyEldersPageContent() {
                   riskLevel === 'intervention' && "ring-2 ring-intervention/30",
                   riskLevel === 'at_risk' && "ring-2 ring-at-risk/30"
                 )}
-                onClick={() => handleViewElder(elder)}
+                onClick={() => handleSelectElder(elder)}
               >
                 <CardContent className="p-5">
                   {/* Header with Avatar */}
@@ -405,7 +413,7 @@ function MyEldersPageContent() {
                   {/* Action Buttons */}
                   <div className="flex gap-2 mt-2">
                     <Button variant="outline" className="flex-1 group-hover:bg-primary group-hover:text-white transition-colors">
-                      View Details
+                      Manage {elder.name.split(' ')[0]}
                       <ChevronRight className="w-4 h-4 ml-2" />
                     </Button>
                     <Button

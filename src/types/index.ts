@@ -142,6 +142,7 @@ export interface Assessment {
   cumulativeScore?: number
   notes?: string
   domainScores?: Record<string, unknown>
+  scaleResults?: Record<string, unknown>
   createdAt: string
   updatedAt: string
   // Relations

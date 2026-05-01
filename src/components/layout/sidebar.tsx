@@ -55,12 +55,12 @@ const menuItems: MenuItem[] = [
     icon: ClipboardCheck,
     roles: ["elderly"],
   },
-  // {
-  //   title: 'Assessments',
-  //   href: '/dashboard/assessments',
-  //   icon: ClipboardCheck,
-  //   roles: ['super_admin', 'professional', 'volunteer'],
-  // },
+  {
+    title: "Assessments",
+    href: "/dashboard/assessments",
+    icon: ClipboardCheck,
+    roles: ["super_admin", "professional", "volunteer"],
+  },
   {
     title: "My Interventions",
     href: "/dashboard/my-interventions",
@@ -126,21 +126,45 @@ export function Sidebar() {
     sidebarOpen,
     setSidebarOpen,
   } = useUIStore();
-  const { logout, user } = useAuthStore();
+  const { logout, user, activeElder } = useAuthStore();
   const hydrated = useHydration();
 
   // Use default values during SSR to prevent hydration mismatch
   const isCollapsed = hydrated ? sidebarCollapsed : false;
   const isOpen = hydrated ? sidebarOpen : false;
   const currentUser = hydrated ? user : null;
+  const isImpersonating = currentUser?.role === "family" && !!activeElder;
 
-  // Filter menu items based on user role
+  // Filter menu items based on the effective role. While a family member is
+  // impersonating an elder, surface the elder's menu (so they can manage
+  // assessments / follow-ups / interventions) but keep "My Elders" visible
+  // as the way back to the elders list. The elder-perspective "My X" labels
+  // are dropped to plain "Assessments / Care Plans / …" since they're
+  // already scoped to the active elder via the header pill.
   const filteredMenuItems = useMemo(() => {
     if (!currentUser?.role) return [];
-    return menuItems.filter((item) =>
-      item.roles.includes(currentUser.role as UserRole)
-    );
-  }, [currentUser?.role]);
+    const impersonationLabels: Record<string, string> = {
+      "/dashboard/my-assessments": "Assessments",
+      "/dashboard/my-interventions": "Care Plans",
+      "/dashboard/my-followups": "Follow-ups",
+      "/dashboard/my-report": "Health Report",
+    };
+    return menuItems
+      .filter((item) => {
+        if (isImpersonating) {
+          return (
+            item.roles.includes("elderly") ||
+            item.href === "/dashboard/my-elders"
+          );
+        }
+        return item.roles.includes(currentUser.role as UserRole);
+      })
+      .map((item) =>
+        isImpersonating && impersonationLabels[item.href]
+          ? { ...item, title: impersonationLabels[item.href] }
+          : item
+      );
+  }, [currentUser?.role, isImpersonating]);
 
   const handleLogout = () => {
     logout();

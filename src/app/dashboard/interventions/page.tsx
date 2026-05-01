@@ -1,7 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
+import { useAuthStore, useHydration } from '@/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -50,6 +52,17 @@ import {
 } from 'lucide-react'
 
 export default function InterventionsPage() {
+  const router = useRouter()
+  const hydrated = useHydration()
+  const { user, activeElder } = useAuthStore()
+
+  useEffect(() => {
+    if (!hydrated) return
+    if (user?.role === 'family' && !activeElder) {
+      router.replace('/dashboard/my-elders')
+    }
+  }, [hydrated, user, activeElder, router])
+
   const [interventions, setInterventions] = useState<Intervention[]>([])
   const [elderly, setElderly] = useState<SafeUser[]>([])
   const [loading, setLoading] = useState(true)

@@ -47,6 +47,7 @@ function prismaUserToAppUser(prismaUser: PrismaUser): User {
     // Relationships
     assignedVolunteer: prismaUser.assignedVolunteerId ?? undefined,
     assignedProfessional: prismaUser.assignedProfessionalId ?? undefined,
+    assignedFamily: prismaUser.assignedFamilyId ?? undefined,
     maxAssignments: prismaUser.maxAssignments,
   }
 }
@@ -528,6 +529,7 @@ class Database {
     currentStep?: number
     notes?: string
     domainScores?: Prisma.InputJsonValue
+    scaleResults?: Prisma.InputJsonValue
   }) {
     return prisma.assessment.create({
       data: {
@@ -538,6 +540,7 @@ class Database {
         currentStep: data.currentStep,
         notes: data.notes,
         domainScores: data.domainScores,
+        scaleResults: data.scaleResults,
       },
       include: {
         subject: { select: { id: true, name: true, email: true } },
@@ -642,6 +645,7 @@ class Database {
     currentStep?: number
     notes?: string
     domainScores?: Prisma.InputJsonValue
+    scaleResults?: Prisma.InputJsonValue
   }) {
     return prisma.assessment.update({
       where: { id },
@@ -651,6 +655,7 @@ class Database {
         currentStep: data.currentStep,
         notes: data.notes,
         domainScores: data.domainScores,
+        scaleResults: data.scaleResults,
       },
       include: {
         subject: { select: { id: true, name: true, email: true } },

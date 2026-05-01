@@ -30,6 +30,7 @@ import {
 import { DomainQuestionCard } from '@/components/assessments/domain-question-card'
 import { AssessmentSummary } from '@/components/assessments/assessment-summary'
 import { getAssessmentById, updateAssessment, type AssessmentFormData } from '@/services/assessments'
+import type { SavedScaleEntry } from '@/components/assessments/assessment-report'
 
 // One wizard step per ICOPE domain (source: Further changes.pdf)
 const DOMAIN_GROUPS = [
@@ -65,6 +66,9 @@ export default function EditAssessmentPage() {
 
   // Assessment result after calculation
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null)
+
+  // Clinical scale results — updated in real-time as scales are completed
+  const [scaleResults, setScaleResults] = useState<Record<string, SavedScaleEntry>>({})
 
   const totalSteps = DOMAIN_GROUPS.length + 2 // Domain Groups + Review + Summary
 
@@ -105,6 +109,11 @@ export default function EditAssessmentPage() {
           }
 
           setDomainData(initialData)
+
+          // Pre-populate scale results from saved data
+          if (assessmentData.scaleResults) {
+            setScaleResults(assessmentData.scaleResults as Record<string, SavedScaleEntry>)
+          }
         } else {
           setError(result.error || 'Assessment not found')
         }
@@ -234,6 +243,7 @@ export default function EditAssessmentPage() {
           answers: score.answers,
           notes: score.notes,
         })),
+        scaleResults: Object.keys(scaleResults).length > 0 ? scaleResults : undefined,
       }
 
       const result = await updateAssessment(id, formData)
@@ -288,49 +298,13 @@ export default function EditAssessmentPage() {
     )
   }
 
-  // Render domain group step
+  // Render domain group step. The progress count is shown inside each
+  // DomainQuestionCard's own header — no separate banner card.
   const renderDomainGroup = () => {
     if (!currentDomainGroup) return null
 
     return (
       <div className="space-y-6">
-        {/* Domain Group Header */}
-        <Card className="border-0 shadow-soft bg-gradient-to-r from-primary/10 to-secondary/10">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center text-4xl">
-                {currentDomainGroup.emoji}
-              </div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold">{currentDomainGroup.name}</h2>
-                <p className="text-muted-foreground">
-                  Tap the emoji that best describes how you feel
-                </p>
-              </div>
-            </div>
-
-            {/* Domain Progress Pills */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              {currentDomains.map(domain => {
-                const answered = getAnsweredCount(domain)
-                const total = domain.questions.length
-                const isComplete = answered === total
-
-                return (
-                  <Badge
-                    key={domain.id}
-                    variant={isComplete ? 'default' : 'outline'}
-                    className={`text-sm px-3 py-1 ${isComplete ? 'bg-green-500' : ''}`}
-                  >
-                    <span className="mr-1">{domain.emoji}</span>
-                    {domain.name}: {answered}/{total}
-                  </Badge>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
         {currentDomains.map(domain => (
           <DomainQuestionCard
             key={domain.id}
@@ -458,6 +432,9 @@ export default function EditAssessmentPage() {
           result={assessmentResult}
           elderlyName={assessment.subject?.name || 'Unknown'}
           assessedAt={new Date().toISOString()}
+          initialScaleResults={scaleResults}
+          onScaleResultsChange={setScaleResults}
+          editable={true}
         />
 
         {error && (

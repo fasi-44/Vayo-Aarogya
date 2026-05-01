@@ -43,6 +43,7 @@ import {
   AlertCircle,
   Plus,
   X,
+  Printer,
 } from 'lucide-react'
 import { type SafeUser } from '@/types'
 import { getInitials, formatDate } from '@/lib/utils'
@@ -66,6 +67,7 @@ interface ElderlyTableProps {
   onViewAssessments?: (elderly: ElderlyWithRelations) => void
   onDocuments?: (elderly: ElderlyWithRelations) => void
   onScheduleFollowup?: (elderly: ElderlyWithRelations) => void
+  onPrintSummary?: (elderly: ElderlyWithRelations) => void
   expandedAssessmentsId?: string | null
   onCloseExpanded?: () => void
 }
@@ -80,6 +82,7 @@ export function ElderlyTable({
   onViewAssessments,
   onDocuments,
   onScheduleFollowup,
+  onPrintSummary,
   expandedAssessmentsId,
   onCloseExpanded,
 }: ElderlyTableProps) {
@@ -166,6 +169,12 @@ export function ElderlyTable({
           <DropdownMenuItem onClick={() => onScheduleFollowup(elder)}>
             <Calendar className="mr-2 h-4 w-4" />
             Schedule Follow-up
+          </DropdownMenuItem>
+        )}
+        {onPrintSummary && (
+          <DropdownMenuItem onClick={() => onPrintSummary(elder)}>
+            <Printer className="mr-2 h-4 w-4" />
+            Print Summary
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />

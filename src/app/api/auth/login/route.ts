@@ -67,20 +67,9 @@ export async function POST(request: NextRequest) {
       return errorResponse(Errors.unauthorized('Invalid phone number or password'))
     }
 
-    // If profileId is provided, login as specific profile
-    const { profileId } = body
-    let matchedUsers = allUsers
-
-    if (profileId) {
-      matchedUsers = allUsers.filter(u => u.id === profileId)
-      if (matchedUsers.length === 0) {
-        return errorResponse(Errors.unauthorized('Invalid profile selection'))
-      }
-    }
-
-    // Verify password against matched users
+    // Verify password against all users with this phone
     const validUsers = []
-    for (const u of matchedUsers) {
+    for (const u of allUsers) {
       const isValid = await verifyPassword(password, u.password)
       if (isValid) {
         validUsers.push(u)
@@ -98,38 +87,17 @@ export async function POST(request: NextRequest) {
       return errorResponse(Errors.unauthorized('Invalid phone number or password'))
     }
 
-    // If multiple valid profiles and no profileId selected, return profiles for selection
-    if (validUsers.length > 1 && !profileId) {
-      const profiles = validUsers
-        .filter(u => u.isActive && u.approvalStatus === 'approved')
-        .map(u => ({
-          id: u.id,
-          name: u.name,
-          role: u.role,
-          vayoId: u.vayoId,
-          avatar: u.avatar,
-        }))
-
-      if (profiles.length > 1) {
-        return successResponse(
-          { profiles, requiresProfileSelection: true },
-          'Multiple profiles found. Please select a profile.'
-        )
-      }
-
-      // If only one active/approved profile after filtering, use that
-      if (profiles.length === 1) {
-        const selectedUser = validUsers.find(u => u.id === profiles[0].id)!
-        matchedUsers = [selectedUser]
-      } else {
-        return errorResponse(Errors.forbidden('No active profiles found for this phone number.'))
-      }
-    }
-
-    // Use the single matched user (or profileId-selected user)
-    const user = profileId
-      ? validUsers.find(u => u.id === profileId)!
-      : validUsers[0]
+    // When a phone has multiple profiles, prefer the family member so they can
+    // manage all linked elders. Fall back to any other active+approved profile,
+    // then to the first valid user (so existing approval/active checks below
+    // surface the correct error message).
+    const activeApprovedUsers = validUsers.filter(
+      u => u.isActive && u.approvalStatus === 'approved'
+    )
+    const user =
+      activeApprovedUsers.find(u => u.role === 'family') ??
+      activeApprovedUsers.find(u => u.role !== 'family') ??
+      validUsers[0]
 
     // Check approval status
     if (user.approvalStatus === 'pending') {

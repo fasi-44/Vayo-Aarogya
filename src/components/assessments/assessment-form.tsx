@@ -46,16 +46,18 @@ import {
 } from 'lucide-react'
 import { type SafeUser, type Assessment } from '@/types'
 import {
-  ASSESSMENT_DOMAINS,
+  getAssessmentDomainsForRole,
   type Domain,
   calculateAssessmentResult,
   type AssessmentResult,
 } from '@/lib/assessment-scoring'
+import { useAuthStore } from '@/store'
 import { DomainQuestionCard } from './domain-question-card'
 import { AssessmentSummary } from './assessment-summary'
+import type { SavedScaleEntry } from './assessment-report'
 import { createAssessment, saveDraft, updateDraft, completeDraft, deleteAssessment, checkExistingDraft, type AssessmentFormData } from '@/services/assessments'
 import { getElderly, updateElderly, type ElderlyFormData } from '@/services/elderly'
-import { formatDate } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import { checkProfileCompleteness } from '@/lib/profile-validation'
 import { ElderlyForm } from '@/components/elderly/elderly-form'
 
@@ -88,6 +90,15 @@ export function AssessmentForm({
   onDraftSaved,
 }: AssessmentFormProps) {
   const router = useRouter()
+  const { user: assessor } = useAuthStore()
+  const assessorRole = assessor?.role ?? null
+
+  // Family-administered assessments hide volunteer/professional-only questions
+  // (orientation tests, hallucination probe, unusual-behaviour probe).
+  const domains = useMemo(
+    () => getAssessmentDomainsForRole(assessorRole),
+    [assessorRole]
+  )
 
   // Check if we're resuming a draft
   const isResumingDraft = !!draftAssessment
@@ -110,6 +121,11 @@ export function AssessmentForm({
 
   // Draft ID for updates
   const [draftId, setDraftId] = useState<string | null>(draftAssessment?.id || null)
+
+  // Clinical scale results accumulated during the assessment session
+  const [scaleResults, setScaleResults] = useState<Record<string, SavedScaleEntry>>(
+    (draftAssessment?.scaleResults as Record<string, SavedScaleEntry>) ?? {}
+  )
 
   // Subject selection
   const [elderlyList, setElderlyList] = useState<SafeUser[]>([])
@@ -186,7 +202,7 @@ export function AssessmentForm({
     // If resuming a draft, load the saved domain data
     if (draftAssessment?.domainScores) {
       const savedData = draftAssessment.domainScores as Record<string, { answers: Record<string, number>; notes: string }>
-      ASSESSMENT_DOMAINS.forEach(domain => {
+      domains.forEach(domain => {
         if (savedData[domain.id]) {
           initialData[domain.id] = savedData[domain.id]
         } else {
@@ -195,13 +211,13 @@ export function AssessmentForm({
       })
     } else {
       // Initialize empty structure
-      ASSESSMENT_DOMAINS.forEach(domain => {
+      domains.forEach(domain => {
         initialData[domain.id] = { answers: {}, notes: '' }
       })
     }
 
     setDomainData(initialData)
-  }, [draftAssessment])
+  }, [draftAssessment, domains])
 
   // Show confirmation dialog when resuming a draft from assessment list
   useEffect(() => {
@@ -218,19 +234,27 @@ export function AssessmentForm({
     setGeneralNotes(draft.notes || '')
 
     // Load domain data from draft
+    let loadedData: Record<string, { answers: Record<string, number>; notes: string }> = {}
     if (draft.domainScores) {
       const savedData = draft.domainScores as Record<string, { answers: Record<string, number>; notes: string }>
-      const loadedData: Record<string, { answers: Record<string, number>; notes: string }> = {}
-      ASSESSMENT_DOMAINS.forEach(domain => {
-        if (savedData[domain.id]) {
-          loadedData[domain.id] = savedData[domain.id]
-        } else {
-          loadedData[domain.id] = { answers: {}, notes: '' }
-        }
+      domains.forEach(domain => {
+        loadedData[domain.id] = savedData[domain.id] ?? { answers: {}, notes: '' }
       })
       setDomainData(loadedData)
     }
-  }, [])
+
+    // If resuming directly at the summary step, compute the result immediately
+    // using loadedData (can't rely on the domainData state yet as setState is async).
+    if (draft.currentStep === DOMAIN_GROUPS.length + 2) {
+      const result = calculateAssessmentResult(loadedData, assessorRole)
+      setAssessmentResult(result)
+    }
+
+    // Load scale results from draft
+    if (draft.scaleResults) {
+      setScaleResults(draft.scaleResults as Record<string, SavedScaleEntry>)
+    }
+  }, [domains, assessorRole])
 
   // Handle elderly selection - check for existing draft
   const handleElderlySelect = async (elderly: SafeUser) => {
@@ -288,9 +312,36 @@ export function AssessmentForm({
     setExistingDraft(null)
   }
 
+  // Where to land when the user closes or completes a self-assessment vs a
+  // staff-led assessment. Elders and family members live under /my-assessments.
+  const exitPath =
+    selfAssessment || assessorRole === 'elderly' || assessorRole === 'family'
+      ? '/dashboard/my-assessments'
+      : '/dashboard/assessments'
+
   // Handle close/exit assessment
   const handleClose = () => {
-    router.push('/dashboard/assessments')
+    router.push(exitPath)
+  }
+
+  // Direct step navigation from the stepper. Subject + domain + review steps
+  // are freely navigable; the summary step is reached only via submission.
+  // For non-self assessments, you can't enter a domain step until an elderly
+  // person is selected. Whatever's been answered on the current step is
+  // auto-saved as a draft before we jump, so partial work is preserved.
+  const goToStep = async (target: number) => {
+    if (target === currentStep) return
+    if (target === DOMAIN_GROUPS.length + 2) return // summary not directly clickable
+    if (target >= 1 && !selfAssessment && !selectedElderly) {
+      setShowValidationErrors(true)
+      setError('Please select a person first')
+      return
+    }
+    setShowValidationErrors(false)
+    setError(null)
+    await saveProgress(target)
+    setCurrentStep(target)
+    scrollToTop()
   }
 
   // Get current domain group
@@ -301,11 +352,12 @@ export function AssessmentForm({
     return null
   }, [currentStep])
 
-  // Get domains for current step
+  // Get domains for current step (role-filtered so family doesn't see
+  // volunteer/professional-only questions).
   const currentDomains = useMemo(() => {
     if (!currentDomainGroup) return []
-    return ASSESSMENT_DOMAINS.filter(d => currentDomainGroup.domains.includes(d.id))
-  }, [currentDomainGroup])
+    return domains.filter(d => currentDomainGroup.domains.includes(d.id))
+  }, [currentDomainGroup, domains])
 
   // Calculate progress
   const progressPercentage = (currentStep / (totalSteps - 1)) * 100
@@ -368,6 +420,53 @@ export function AssessmentForm({
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // Persist the current form state as a draft. Used by Next, the stepper, and
+  // any other navigation that should preserve in-progress answers. Returns
+  // true on success (or when there's nothing to save yet, i.e. no elder
+  // selected — that case is treated as a no-op).
+  const saveProgress = async (forStep: number): Promise<boolean> => {
+    if (!selectedElderly) return true
+
+    setIsSavingDraft(true)
+    setError(null)
+    try {
+      const partialResult = calculateAssessmentResult(domainData, assessorRole)
+      const formData = {
+        subjectId: selectedElderly.id,
+        overallRisk: partialResult.overallRisk,
+        currentStep: forStep,
+        notes: generalNotes || undefined,
+        domainScores: domainData,
+        domains: partialResult.domainScores.map(score => ({
+          domain: score.domain,
+          riskLevel: score.riskLevel,
+          score: score.score,
+          answers: score.answers,
+          notes: score.notes,
+        })),
+      }
+      const result = draftId
+        ? await updateDraft(draftId, formData)
+        : await saveDraft(formData)
+
+      if (result.success && result.data) {
+        setDraftId(result.data.id)
+        setDraftSaveMessage('Progress saved')
+        setTimeout(() => setDraftSaveMessage(null), 2000)
+        return true
+      }
+      console.error('Save failed:', result.error)
+      setError(result.error || 'Failed to save progress')
+      return false
+    } catch (err) {
+      console.error('Auto-save failed:', err)
+      setError('Failed to save progress')
+      return false
+    } finally {
+      setIsSavingDraft(false)
+    }
+  }
+
   // Navigate to next step with auto-save
   const handleNext = async () => {
     if (!isCurrentStepValid) {
@@ -380,57 +479,11 @@ export function AssessmentForm({
 
     if (currentStep === DOMAIN_GROUPS.length + 1) {
       // Moving to summary - calculate result
-      const result = calculateAssessmentResult(domainData)
+      const result = calculateAssessmentResult(domainData, assessorRole)
       setAssessmentResult(result)
     }
 
-    // Auto-save as draft when navigating (whenever we have a selected elderly)
-    if (selectedElderly) {
-      setIsSavingDraft(true)
-      setError(null)
-      try {
-        const partialResult = calculateAssessmentResult(domainData)
-        const formData = {
-          subjectId: selectedElderly.id,
-          overallRisk: partialResult.overallRisk,
-          currentStep: nextStep,
-          notes: generalNotes || undefined,
-          domainScores: domainData,
-          domains: partialResult.domainScores.map(score => ({
-            domain: score.domain,
-            riskLevel: score.riskLevel,
-            score: score.score,
-            answers: score.answers,
-            notes: score.notes,
-          })),
-        }
-
-        console.log('Auto-saving draft...', { draftId, formData })
-
-        let result
-        if (draftId) {
-          result = await updateDraft(draftId, formData)
-        } else {
-          result = await saveDraft(formData)
-        }
-
-        console.log('Save result:', result)
-
-        if (result.success && result.data) {
-          setDraftId(result.data.id)
-          setDraftSaveMessage('Progress saved')
-          setTimeout(() => setDraftSaveMessage(null), 2000)
-        } else {
-          console.error('Save failed:', result.error)
-          setError(result.error || 'Failed to save progress')
-        }
-      } catch (err) {
-        console.error('Auto-save failed:', err)
-        setError('Failed to save progress')
-      } finally {
-        setIsSavingDraft(false)
-      }
-    }
+    await saveProgress(nextStep)
 
     setCurrentStep(nextStep)
     scrollToTop()
@@ -458,7 +511,7 @@ export function AssessmentForm({
 
     try {
       // Calculate partial result for domain scores
-      const partialResult = calculateAssessmentResult(domainData)
+      const partialResult = calculateAssessmentResult(domainData, assessorRole)
 
       const formData = {
         subjectId: selectedElderly.id,
@@ -521,6 +574,7 @@ export function AssessmentForm({
           answers: score.answers,
           notes: score.notes,
         })),
+        scaleResults: Object.keys(scaleResults).length > 0 ? scaleResults : undefined,
       }
 
       let result
@@ -536,7 +590,7 @@ export function AssessmentForm({
         if (onSuccess) {
           onSuccess()
         } else {
-          router.push('/dashboard/assessments')
+          router.push(exitPath)
         }
       } else {
         setError(result.error || 'Failed to save assessment')
@@ -751,49 +805,14 @@ export function AssessmentForm({
     </Card>
   )
 
-  // Render domain group step
+  // Render domain group step. The "Psychological: 0/6"-style progress
+  // indicator now lives inside each DomainQuestionCard's own header — no
+  // separate banner card on top.
   const renderDomainGroup = () => {
     if (!currentDomainGroup) return null
 
     return (
       <div className="space-y-6">
-        {/* Domain Group Header */}
-        <Card className="border-0 shadow-soft bg-gradient-to-r from-primary/10 to-secondary/10">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center text-4xl">
-                {currentDomainGroup.emoji}
-              </div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold">{currentDomainGroup.name}</h2>
-                <p className="text-muted-foreground">
-                  Tap the emoji that best describes how you feel
-                </p>
-              </div>
-            </div>
-
-            {/* Domain Progress Pills */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              {currentDomains.map(domain => {
-                const answered = getAnsweredCount(domain)
-                const total = domain.questions.length
-                const isComplete = answered === total
-
-                return (
-                  <Badge
-                    key={domain.id}
-                    variant={isComplete ? 'default' : 'outline'}
-                    className={`text-sm px-3 py-1 ${isComplete ? 'bg-green-500' : ''}`}
-                  >
-                    <span className="mr-1">{domain.emoji}</span>
-                    {domain.name}: {answered}/{total}
-                  </Badge>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
         {currentDomains.map(domain => (
           <DomainQuestionCard
             key={domain.id}
@@ -815,7 +834,7 @@ export function AssessmentForm({
     let totalQuestions = 0
     let answeredQuestions = 0
 
-    ASSESSMENT_DOMAINS.forEach(domain => {
+    domains.forEach(domain => {
       totalQuestions += domain.questions.length
       const data = domainData[domain.id]
       if (data) {
@@ -838,13 +857,23 @@ export function AssessmentForm({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Completion Summary */}
+            {/* Completion Summary - color tracks how close to done you are */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Assessment Completion</span>
                 <span className="font-medium">{answeredQuestions}/{totalQuestions} questions</span>
               </div>
-              <Progress value={completionPercentage} className="h-2" />
+              <Progress
+                value={completionPercentage}
+                className={cn(
+                  'h-2',
+                  completionPercentage >= 100
+                    ? 'bg-healthy/20 [&>*]:bg-healthy'
+                    : completionPercentage >= 50
+                      ? 'bg-at-risk/20 [&>*]:bg-at-risk'
+                      : 'bg-intervention/20 [&>*]:bg-intervention'
+                )}
+              />
               {completionPercentage < 100 && (
                 <p className="text-sm text-yellow-600 flex items-center gap-1">
                   <AlertTriangle className="w-4 h-4" />
@@ -858,11 +887,11 @@ export function AssessmentForm({
               <p className="font-medium text-sm">Domain Summary</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {DOMAIN_GROUPS.map(group => {
-                  const domains = ASSESSMENT_DOMAINS.filter(d => group.domains.includes(d.id))
+                  const groupDomains = domains.filter(d => group.domains.includes(d.id))
                   let groupTotal = 0
                   let groupAnswered = 0
 
-                  domains.forEach(domain => {
+                  groupDomains.forEach(domain => {
                     groupTotal += domain.questions.length
                     const data = domainData[domain.id]
                     if (data) {
@@ -921,6 +950,9 @@ export function AssessmentForm({
           result={assessmentResult}
           elderlyName={selectedElderly.name}
           assessedAt={new Date().toISOString()}
+          initialScaleResults={scaleResults}
+          onScaleResultsChange={setScaleResults}
+          editable={true}
         />
 
         {error && (
@@ -1001,40 +1033,54 @@ export function AssessmentForm({
               {currentStep === DOMAIN_GROUPS.length + 2 && <><span>✅</span> Complete</>}
             </div>
           </div>
-          <Progress value={adjustedProgress} className="h-2" />
+          <Progress
+            value={adjustedProgress}
+            className="h-3 bg-primary/15 [&>*]:bg-primary"
+          />
 
-          {/* Step indicators with emojis - scrollable on mobile, spread on desktop */}
+          {/* Step indicators with emojis. Clickable for free navigation
+              between steps (subject + domains + review). The summary step is
+              read-only — only reachable after submission. */}
           <div className="mt-4 -mx-4 px-4 sm:mx-0 sm:px-1 overflow-x-auto sm:overflow-visible scrollbar-hide">
             <div className="flex gap-3 sm:gap-0 sm:justify-between min-w-max sm:min-w-0 pb-2 sm:pb-0">
               {/* Only show Select step if not self-assessment */}
               {!selfAssessment && (
-                <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg transition-all ${currentStep >= 0 ? 'bg-primary shadow-md sm:scale-110' : 'bg-muted'}`}>
-                    👤
-                  </div>
-                  <span className="text-[10px] sm:text-xs mt-1 hidden sm:block">Select</span>
-                </div>
+                <StepDot
+                  emoji="👤"
+                  label="Select"
+                  active={currentStep === 0}
+                  reached={currentStep >= 0}
+                  onClick={() => goToStep(0)}
+                />
               )}
-              {DOMAIN_GROUPS.map((group, idx) => (
-                <div key={group.id} className="flex flex-col items-center">
-                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg transition-all ${currentStep >= idx + 1 ? 'bg-primary shadow-md sm:scale-110' : 'bg-muted'} ${currentStep === idx + 1 ? 'ring-2 ring-primary ring-offset-1 sm:ring-offset-2' : ''}`}>
-                    {group.emoji}
-                  </div>
-                  <span className="text-[10px] sm:text-xs mt-1 hidden md:block truncate max-w-12 text-center">{group.name}</span>
-                </div>
-              ))}
-              <div className="flex flex-col items-center">
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg transition-all ${currentStep >= DOMAIN_GROUPS.length + 1 ? 'bg-primary shadow-md sm:scale-110' : 'bg-muted'} ${currentStep === DOMAIN_GROUPS.length + 1 ? 'ring-2 ring-primary ring-offset-1 sm:ring-offset-2' : ''}`}>
-                  📋
-                </div>
-                <span className="text-[10px] sm:text-xs mt-1 hidden sm:block">Review</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg transition-all ${currentStep >= DOMAIN_GROUPS.length + 2 ? 'bg-primary shadow-md sm:scale-110' : 'bg-muted'} ${currentStep === DOMAIN_GROUPS.length + 2 ? 'ring-2 ring-primary ring-offset-1 sm:ring-offset-2' : ''}`}>
-                  ✅
-                </div>
-                <span className="text-[10px] sm:text-xs mt-1 hidden sm:block">Done</span>
-              </div>
+              {DOMAIN_GROUPS.map((group, idx) => {
+                const stepIndex = idx + 1
+                return (
+                  <StepDot
+                    key={group.id}
+                    emoji={group.emoji}
+                    label={group.name}
+                    showLabelOnDesktop
+                    active={currentStep === stepIndex}
+                    reached={currentStep >= stepIndex}
+                    onClick={() => goToStep(stepIndex)}
+                  />
+                )
+              })}
+              <StepDot
+                emoji="📋"
+                label="Review"
+                active={currentStep === DOMAIN_GROUPS.length + 1}
+                reached={currentStep >= DOMAIN_GROUPS.length + 1}
+                onClick={() => goToStep(DOMAIN_GROUPS.length + 1)}
+              />
+              <StepDot
+                emoji="✅"
+                label="Done"
+                active={currentStep === DOMAIN_GROUPS.length + 2}
+                reached={currentStep >= DOMAIN_GROUPS.length + 2}
+                disabled // summary only reachable after submission
+              />
             </div>
           </div>
         </CardContent>
@@ -1231,5 +1277,58 @@ export function AssessmentForm({
         elderly={profileEditElderly}
       />
     </div>
+  )
+}
+
+// Single dot/pill in the stepper above. Clickable when an `onClick` is
+// provided (and not disabled); otherwise renders a non-interactive indicator.
+interface StepDotProps {
+  emoji: string
+  label: string
+  active: boolean
+  reached: boolean
+  onClick?: () => void
+  disabled?: boolean
+  showLabelOnDesktop?: boolean
+}
+
+function StepDot({
+  emoji,
+  label,
+  active,
+  reached,
+  onClick,
+  disabled,
+  showLabelOnDesktop,
+}: StepDotProps) {
+  const isClickable = !!onClick && !disabled
+  const dotClasses = [
+    'w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center text-base sm:text-lg transition-all',
+    reached ? 'bg-primary text-white shadow-md' : 'bg-muted text-muted-foreground',
+    active ? 'ring-2 ring-primary ring-offset-2 sm:scale-110' : '',
+    isClickable ? 'cursor-pointer hover:bg-primary/90 hover:shadow-lg' : '',
+    disabled ? 'opacity-60' : '',
+  ].join(' ')
+
+  const labelClasses = [
+    'text-[10px] sm:text-xs mt-1 truncate max-w-16 text-center',
+    showLabelOnDesktop ? 'hidden md:block' : 'hidden sm:block',
+  ].join(' ')
+
+  return (
+    <button
+      type="button"
+      onClick={isClickable ? onClick : undefined}
+      disabled={!isClickable}
+      aria-label={`Step: ${label}`}
+      aria-current={active ? 'step' : undefined}
+      className={cn(
+        'flex flex-col items-center bg-transparent border-0 p-0',
+        isClickable ? 'cursor-pointer' : 'cursor-default'
+      )}
+    >
+      <div className={dotClasses}>{emoji}</div>
+      <span className={labelClasses}>{label}</span>
+    </button>
   )
 }
