@@ -654,6 +654,23 @@ async function main() {
       overallRisk: RiskLevel.intervention,
       notes: 'Needs immediate intervention. Cognitive decline and fall risk.',
       domainScores: a3Domains,
+      scaleResults: {
+        HMSE: {
+          result: { total: 18, maxTotal: 31, bandLabel: 'Moderate cognitive impairment' },
+          answers: {},
+          savedAt: '2024-11-20T10:30:00.000Z',
+        },
+        MoCA: {
+          result: { total: 16, maxTotal: 30, bandLabel: 'Cognitive impairment likely' },
+          answers: {},
+          savedAt: '2024-11-20T11:00:00.000Z',
+        },
+        MNA: {
+          result: { total: 9, maxTotal: 14, bandLabel: 'At risk of malnutrition' },
+          answers: {},
+          savedAt: '2024-11-20T11:30:00.000Z',
+        },
+      },
     },
   })
 
@@ -674,6 +691,23 @@ async function main() {
       overallRisk: RiskLevel.intervention,
       notes: 'Depression screening positive. Nutritional support needed.',
       domainScores: a4Domains,
+      scaleResults: {
+        'PHQ-9': {
+          result: { total: 17, maxTotal: 27, bandLabel: 'Moderately severe depression' },
+          answers: {},
+          savedAt: '2024-12-05T09:15:00.000Z',
+        },
+        GDS: {
+          result: { total: 11, maxTotal: 15, bandLabel: 'Severe depression' },
+          answers: {},
+          savedAt: '2024-12-05T09:45:00.000Z',
+        },
+        UCLA: {
+          result: { total: 8, maxTotal: 9, bandLabel: 'High loneliness' },
+          answers: {},
+          savedAt: '2024-12-05T10:15:00.000Z',
+        },
+      },
     },
   })
 
@@ -694,6 +728,28 @@ async function main() {
       overallRisk: RiskLevel.intervention,
       notes: 'Multiple severe concerns. Comprehensive care plan required.',
       domainScores: a5Domains,
+      scaleResults: {
+        HMSE: {
+          result: { total: 12, maxTotal: 31, bandLabel: 'Severe cognitive impairment' },
+          answers: {},
+          savedAt: '2024-10-25T14:00:00.000Z',
+        },
+        CAM: {
+          result: { delirium: true, bandLabel: 'Delirium positive' },
+          answers: {},
+          savedAt: '2024-10-25T14:30:00.000Z',
+        },
+        MNA: {
+          result: { total: 6, maxTotal: 14, bandLabel: 'Malnourished' },
+          answers: {},
+          savedAt: '2024-10-25T15:00:00.000Z',
+        },
+        UCLA: {
+          result: { total: 9, maxTotal: 9, bandLabel: 'High loneliness' },
+          answers: {},
+          savedAt: '2024-10-25T15:30:00.000Z',
+        },
+      },
     },
   })
 
@@ -734,6 +790,13 @@ async function main() {
       overallRisk: RiskLevel.at_risk,
       notes: 'Follow-up assessment. Slight improvement in mobility.',
       domainScores: a7Domains,
+      scaleResults: {
+        HMSE: {
+          result: { total: 24, maxTotal: 31, bandLabel: 'Mild cognitive impairment' },
+          answers: {},
+          savedAt: '2024-12-15T11:00:00.000Z',
+        },
+      },
     },
   })
 
@@ -1113,8 +1176,8 @@ async function main() {
   console.log('📊 Seed Data Summary:')
   console.log('-------------------------------------')
   console.log(`👤 Users: 17 (1 admin, 3 doctors, 3 volunteers, 3 family, 7 elderly)`)
-  console.log(`📋 Assessments: 7`)
-  console.log(`🏥 Assessment Domains: 21`)
+  console.log(`📋 Assessments: 7 (4 with clinical scale results)`)
+  console.log(`🏥 Assessment Domains: 42`)
   console.log(`💊 Interventions: 18`)
   console.log(`📝 Audit Logs: 14`)
   console.log('=====================================')
