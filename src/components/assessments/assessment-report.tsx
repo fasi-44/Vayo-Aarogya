@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useAuthStore } from '@/store'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -77,6 +78,13 @@ export function AssessmentReport({
   onScaleResultsChange,
   editable = false,
 }: AssessmentReportProps) {
+  const { user: viewer } = useAuthStore()
+  const canViewScales =
+    !editable &&
+    (viewer?.role === 'volunteer' ||
+      viewer?.role === 'professional' ||
+      viewer?.role === 'super_admin')
+
   const [activeScale, setActiveScale] = useState<ClinicalScaleCode | null>(null)
   const [hmseResult, setHmseResult] = useState<HMSEResult | undefined>(undefined)
   const [mocaResult, setMocaResult] = useState<MoCAResult | undefined>(undefined)
@@ -114,8 +122,9 @@ export function AssessmentReport({
     onScaleResultsChange(current)
   }
 
-  const handleOpenScale = (code: ClinicalScaleCode) => {
-    if (editable && IMPLEMENTED_SCALES.includes(code)) setActiveScale(code)
+  const handleOpenScale = (code: ClinicalScaleCode, hasResult: boolean) => {
+    if (!IMPLEMENTED_SCALES.includes(code)) return
+    if (editable || (canViewScales && hasResult)) setActiveScale(code)
   }
 
   const handleHMSEComplete = (res: HMSEResult, answers: HMSEAnswers) => {
@@ -235,16 +244,20 @@ export function AssessmentReport({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {result.recommendedScales.map(scale => (
-                <ScaleCard
-                  key={scale.code}
-                  scale={scale}
-                  available={IMPLEMENTED_SCALES.includes(scale.code)}
-                  result={getScaleResult(scale.code)}
-                  editable={editable}
-                  onClick={() => handleOpenScale(scale.code)}
-                />
-              ))}
+              {result.recommendedScales.map(scale => {
+                const scaleResult = getScaleResult(scale.code)
+                return (
+                  <ScaleCard
+                    key={scale.code}
+                    scale={scale}
+                    available={IMPLEMENTED_SCALES.includes(scale.code)}
+                    result={scaleResult}
+                    editable={editable}
+                    canView={canViewScales && !!scaleResult}
+                    onClick={() => handleOpenScale(scale.code, !!scaleResult)}
+                  />
+                )
+              })}
             </div>
           </CardContent>
         </Card>
@@ -305,60 +318,81 @@ export function AssessmentReport({
         onOpenChange={(open) => !open && setActiveScale(null)}
         subjectName={subjectName}
         onComplete={handleHMSEComplete}
+        initialAnswers={canViewScales ? initialScaleResults?.HMSE?.answers as import('@/lib/clinical-scales/hmse').HMSEAnswers | undefined : undefined}
+        viewOnly={canViewScales}
       />
       <MoCADialog
         open={activeScale === 'MoCA'}
         onOpenChange={(open) => !open && setActiveScale(null)}
         subjectName={subjectName}
         onComplete={handleMoCAComplete}
+        initialAnswers={canViewScales ? initialScaleResults?.MoCA?.answers as import('@/lib/clinical-scales/moca').MoCAAnswers | undefined : undefined}
+        initialLowEducation={canViewScales ? initialScaleResults?.MoCA?.lowEducation : undefined}
+        viewOnly={canViewScales}
       />
       <CAMDialog
         open={activeScale === 'CAM'}
         onOpenChange={(open) => !open && setActiveScale(null)}
         subjectName={subjectName}
         onComplete={handleCAMComplete}
+        initialAnswers={canViewScales ? initialScaleResults?.CAM?.answers as import('@/lib/clinical-scales/cam').CAMAnswers | undefined : undefined}
+        viewOnly={canViewScales}
       />
       <PHQ9Dialog
         open={activeScale === 'PHQ-9'}
         onOpenChange={(open) => !open && setActiveScale(null)}
         subjectName={subjectName}
         onComplete={handlePHQ9Complete}
+        initialAnswers={canViewScales ? initialScaleResults?.['PHQ-9']?.answers as import('@/lib/clinical-scales/phq9').PHQ9Answers | undefined : undefined}
+        viewOnly={canViewScales}
       />
       <GDSDialog
         open={activeScale === 'GDS'}
         onOpenChange={(open) => !open && setActiveScale(null)}
         subjectName={subjectName}
         onComplete={handleGDSComplete}
+        initialAnswers={canViewScales ? initialScaleResults?.GDS?.answers as import('@/lib/clinical-scales/gds').GDSAnswers | undefined : undefined}
+        viewOnly={canViewScales}
       />
       <BSSDialog
         open={activeScale === 'BSS'}
         onOpenChange={(open) => !open && setActiveScale(null)}
         subjectName={subjectName}
         onComplete={handleBSSComplete}
+        initialAnswers={canViewScales ? initialScaleResults?.BSS?.answers as import('@/lib/clinical-scales/bss').BSSAnswers | undefined : undefined}
+        viewOnly={canViewScales}
       />
       <HAMADialog
         open={activeScale === 'HAM-A'}
         onOpenChange={(open) => !open && setActiveScale(null)}
         subjectName={subjectName}
         onComplete={handleHAMAComplete}
+        initialAnswers={canViewScales ? initialScaleResults?.['HAM-A']?.answers as import('@/lib/clinical-scales/hama').HAMAAnswers | undefined : undefined}
+        viewOnly={canViewScales}
       />
       <BPRSDialog
         open={activeScale === 'BPRS'}
         onOpenChange={(open) => !open && setActiveScale(null)}
         subjectName={subjectName}
         onComplete={handleBPRSComplete}
+        initialAnswers={canViewScales ? initialScaleResults?.BPRS?.answers as import('@/lib/clinical-scales/bprs').BPRSAnswers | undefined : undefined}
+        viewOnly={canViewScales}
       />
       <MNADialog
         open={activeScale === 'MNA'}
         onOpenChange={(open) => !open && setActiveScale(null)}
         subjectName={subjectName}
         onComplete={handleMNAComplete}
+        initialAnswers={canViewScales ? initialScaleResults?.MNA?.answers as import('@/lib/clinical-scales/mna').MNAAnswers | undefined : undefined}
+        viewOnly={canViewScales}
       />
       <UCLADialog
         open={activeScale === 'UCLA'}
         onOpenChange={(open) => !open && setActiveScale(null)}
         subjectName={subjectName}
         onComplete={handleUCLAComplete}
+        initialAnswers={canViewScales ? initialScaleResults?.UCLA?.answers as import('@/lib/clinical-scales/ucla').UCLAAnswers | undefined : undefined}
+        viewOnly={canViewScales}
       />
     </div>
   )
@@ -369,11 +403,12 @@ interface ScaleCardProps {
   available: boolean
   result?: ScaleResultSummary
   editable?: boolean
+  canView?: boolean
   onClick: () => void
 }
 
-function ScaleCard({ scale, available, result, editable, onClick }: ScaleCardProps) {
-  const canClick = available && (editable || false)
+function ScaleCard({ scale, available, result, editable, canView, onClick }: ScaleCardProps) {
+  const canClick = available && (editable || canView)
   const hasResult = !!result
 
   return (
@@ -404,6 +439,9 @@ function ScaleCard({ scale, available, result, editable, onClick }: ScaleCardPro
         {available && !hasResult && canClick && (
           <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
         )}
+        {available && hasResult && canView && (
+          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+        )}
       </div>
       <p className="text-xs text-muted-foreground mt-1">{scale.purpose}</p>
       {!available && (
@@ -412,7 +450,8 @@ function ScaleCard({ scale, available, result, editable, onClick }: ScaleCardPro
       {available && hasResult && (
         <p className="text-[11px] mt-1 text-foreground">
           {result.bandLabel}
-          {canClick && ' — tap to re-administer'}
+          {editable && ' — tap to re-administer'}
+          {canView && !editable && ' — tap to view responses'}
         </p>
       )}
       {available && !hasResult && canClick && (

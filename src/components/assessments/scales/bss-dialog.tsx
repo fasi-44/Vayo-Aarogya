@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -21,22 +21,33 @@ import {
   type BSSResult,
 } from '@/lib/clinical-scales/bss'
 import { ShieldAlert, RotateCcw, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { useAuthStore } from '@/store'
 
 interface BSSDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   subjectName?: string
   onComplete?: (result: BSSResult, answers: BSSAnswers) => void
+  initialAnswers?: BSSAnswers
+  viewOnly?: boolean
 }
 
-export function BSSDialog({ open, onOpenChange, subjectName, onComplete }: BSSDialogProps) {
+export function BSSDialog({ open, onOpenChange, subjectName, onComplete, initialAnswers, viewOnly }: BSSDialogProps) {
   const [answers, setAnswers] = useState<BSSAnswers>({})
+  const { user } = useAuthStore()
+  const hideRiskLabel = user?.role === 'elderly' || user?.role === 'family'
+
+  useEffect(() => {
+    if (open && initialAnswers) setAnswers(initialAnswers)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const result = useMemo(() => calculateBSS(answers), [answers])
   const groups = useMemo(() => groupBSSItems(), [])
   const completionPercent = (result.answeredCount / result.totalQuestions) * 100
 
   const setAnswer = (id: string, value: 0 | 1 | 2) => {
+    if (viewOnly) return
     setAnswers(prev => ({ ...prev, [id]: value }))
   }
 
@@ -137,27 +148,35 @@ export function BSSDialog({ open, onOpenChange, subjectName, onComplete }: BSSDi
                   <span className="text-2xl font-bold">{result.total}</span>
                   <span className="text-sm text-muted-foreground">/ {result.maxTotal}</span>
                 </div>
-                <Badge className={cn('font-medium', getBandClass(result.band))}>
-                  {result.bandLabel}
-                </Badge>
+                {!hideRiskLabel && (
+                  <Badge className={cn('font-medium', getBandClass(result.band))}>
+                    {result.bandLabel}
+                  </Badge>
+                )}
               </div>
-              {result.band !== 'low' && (
+              {!hideRiskLabel && result.band !== 'low' && (
                 <p className="text-xs text-muted-foreground max-w-lg">{result.recommendation}</p>
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                Reset
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSave}
-                className={result.band === 'high' ? 'bg-red-600 hover:bg-red-700' : ''}
-              >
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Save Result
-              </Button>
+              {viewOnly ? (
+                <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                    Reset
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSave}
+                    className={result.band === 'high' ? 'bg-red-600 hover:bg-red-700' : ''}
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                    Save Result
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

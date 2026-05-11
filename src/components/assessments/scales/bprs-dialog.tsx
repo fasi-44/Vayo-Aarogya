@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -23,21 +23,32 @@ import {
   type BPRSResult,
 } from '@/lib/clinical-scales/bprs'
 import { Brain, RotateCcw, CheckCircle2 } from 'lucide-react'
+import { useAuthStore } from '@/store'
 
 interface BPRSDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   subjectName?: string
   onComplete?: (result: BPRSResult, answers: BPRSAnswers) => void
+  initialAnswers?: BPRSAnswers
+  viewOnly?: boolean
 }
 
-export function BPRSDialog({ open, onOpenChange, subjectName, onComplete }: BPRSDialogProps) {
+export function BPRSDialog({ open, onOpenChange, subjectName, onComplete, initialAnswers, viewOnly }: BPRSDialogProps) {
   const [answers, setAnswers] = useState<BPRSAnswers>({})
+  const { user } = useAuthStore()
+  const hideRiskLabel = user?.role === 'elderly' || user?.role === 'family'
+
+  useEffect(() => {
+    if (open && initialAnswers) setAnswers(initialAnswers)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const result = useMemo(() => calculateBPRS(answers), [answers])
   const completionPercent = (result.answeredCount / result.totalQuestions) * 100
 
   const setAnswer = (id: string, value: BPRSAnswerValue) => {
+    if (viewOnly) return
     setAnswers(prev => ({ ...prev, [id]: value }))
   }
 
@@ -138,7 +149,7 @@ export function BPRSDialog({ open, onOpenChange, subjectName, onComplete }: BPRS
                   <span className="text-sm text-muted-foreground">/ {result.ratedCount * 7}</span>
                 )}
               </div>
-              {result.band && (
+              {!hideRiskLabel && result.band && (
                 <Badge className={cn('font-medium', getBandClass(result.band))}>
                   {result.bandLabel}
                 </Badge>
@@ -148,14 +159,20 @@ export function BPRSDialog({ open, onOpenChange, subjectName, onComplete }: BPRS
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                Reset
-              </Button>
-              <Button size="sm" onClick={handleSave}>
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Save Result
-              </Button>
+              {viewOnly ? (
+                <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                    Reset
+                  </Button>
+                  <Button size="sm" onClick={handleSave}>
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                    Save Result
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

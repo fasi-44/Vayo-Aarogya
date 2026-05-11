@@ -13,7 +13,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MobileMenuButton } from "./sidebar";
-import { ActiveElderPill } from "./active-elder-pill";
 import { useUIStore, useAuthStore, useHydration } from "@/store";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -82,8 +81,6 @@ export function Header({ title, subtitle }: HeaderProps) {
 
                 {/* Right side */}
                 <div className="flex items-center gap-2 sm:gap-3">
-                    {/* Active elder pill (family role only) */}
-                    <ActiveElderPill />
 
                     {/* Notifications - commented out for now */}
                     {/* <DropdownMenu>

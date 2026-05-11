@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -21,21 +21,32 @@ import {
   type GDSResult,
 } from '@/lib/clinical-scales/gds'
 import { Heart, RotateCcw, CheckCircle2 } from 'lucide-react'
+import { useAuthStore } from '@/store'
 
 interface GDSDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   subjectName?: string
   onComplete?: (result: GDSResult, answers: GDSAnswers) => void
+  initialAnswers?: GDSAnswers
+  viewOnly?: boolean
 }
 
-export function GDSDialog({ open, onOpenChange, subjectName, onComplete }: GDSDialogProps) {
+export function GDSDialog({ open, onOpenChange, subjectName, onComplete, initialAnswers, viewOnly }: GDSDialogProps) {
   const [answers, setAnswers] = useState<GDSAnswers>({})
+  const { user } = useAuthStore()
+  const hideRiskLabel = user?.role === 'elderly' || user?.role === 'family'
+
+  useEffect(() => {
+    if (open && initialAnswers) setAnswers(initialAnswers)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const result = useMemo(() => calculateGDS(answers), [answers])
   const completionPercent = (result.answeredCount / result.totalQuestions) * 100
 
   const setAnswer = (id: string, value: GDSAnswer) => {
+    if (viewOnly) return
     setAnswers(prev => ({ ...prev, [id]: value }))
   }
 
@@ -122,24 +133,32 @@ export function GDSDialog({ open, onOpenChange, subjectName, onComplete }: GDSDi
                 <span className="text-2xl font-bold">{result.total}</span>
                 <span className="text-sm text-muted-foreground">/ {result.maxTotal}</span>
               </div>
-              <Badge className={cn('font-medium', getBandClass(result.band))}>
-                {result.bandLabel}
-              </Badge>
-              {result.depressionLikely && (
+              {!hideRiskLabel && (
+                <Badge className={cn('font-medium', getBandClass(result.band))}>
+                  {result.bandLabel}
+                </Badge>
+              )}
+              {!hideRiskLabel && result.depressionLikely && (
                 <Badge variant="outline" className="text-[11px] border-orange-300 text-orange-700">
                   ≥5 — depression suggested
                 </Badge>
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                Reset
-              </Button>
-              <Button size="sm" onClick={handleSave}>
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Save Result
-              </Button>
+              {viewOnly ? (
+                <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                    Reset
+                  </Button>
+                  <Button size="sm" onClick={handleSave}>
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                    Save Result
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -172,20 +191,17 @@ function QuestionRow({ question, value, onChange }: QuestionRowProps) {
       </td>
       {answers.map(ans => {
         const selected = value === ans
-        const scores = ans === question.scoringAnswer
         return (
           <td key={ans} className="px-2 py-3 text-center">
             <button
               type="button"
               onClick={() => onChange(ans)}
-              aria-label={`${ans}${scores ? ' (scores 1 point)' : ''}`}
+              aria-label={ans}
               className={cn(
                 'w-10 h-10 rounded-full border-2 text-xs font-semibold transition-colors mx-auto block',
                 selected
                   ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                  : scores
-                    ? 'bg-background border-primary/40 text-primary hover:bg-primary/10'
-                    : 'bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+                  : 'bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               {ans === 'yes' ? 'Y' : 'N'}

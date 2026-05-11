@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -28,24 +28,33 @@ import {
   type YesNoUncertain,
 } from '@/lib/clinical-scales/cam'
 import { Stethoscope, RotateCcw, CheckCircle2, Check, X, HelpCircle } from 'lucide-react'
+import { useAuthStore } from '@/store'
 
 interface CAMDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** Optional name of the person being assessed — shown in the header. */
   subjectName?: string
-  /** Called with the final result when the assessor clicks Save. */
   onComplete?: (result: CAMResult, answers: CAMAnswers) => void
+  initialAnswers?: CAMAnswers
+  viewOnly?: boolean
 }
 
-export function CAMDialog({ open, onOpenChange, subjectName, onComplete }: CAMDialogProps) {
+export function CAMDialog({ open, onOpenChange, subjectName, onComplete, initialAnswers, viewOnly }: CAMDialogProps) {
   const [answers, setAnswers] = useState<CAMAnswers>({})
+  const { user } = useAuthStore()
+  const hideRiskLabel = user?.role === 'elderly' || user?.role === 'family'
+
+  useEffect(() => {
+    if (open && initialAnswers) setAnswers(initialAnswers)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const result = useMemo(() => calculateCAM(answers), [answers])
   const groups = useMemo(() => groupCAMQuestions(), [])
   const completionPercent = (result.answeredCount / result.totalQuestions) * 100
 
   const setAnswer = <K extends keyof CAMAnswers>(id: K, value: CAMAnswers[K]) => {
+    if (viewOnly) return
     setAnswers(prev => ({ ...prev, [id]: value }))
   }
 
@@ -142,9 +151,11 @@ export function CAMDialog({ open, onOpenChange, subjectName, onComplete }: CAMDi
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="flex flex-col gap-2 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <Badge className={cn('font-semibold text-sm px-3 py-1', getBandClass(result.band))}>
-                  {result.bandLabel}
-                </Badge>
+                {!hideRiskLabel && (
+                  <Badge className={cn('font-semibold text-sm px-3 py-1', getBandClass(result.band))}>
+                    {result.bandLabel}
+                  </Badge>
+                )}
                 <span className="text-xs text-muted-foreground">
                   {result.total}/4 features positive
                 </span>
@@ -157,14 +168,20 @@ export function CAMDialog({ open, onOpenChange, subjectName, onComplete }: CAMDi
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                Reset
-              </Button>
-              <Button size="sm" onClick={handleSave}>
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Save Result
-              </Button>
+              {viewOnly ? (
+                <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                    Reset
+                  </Button>
+                  <Button size="sm" onClick={handleSave}>
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                    Save Result
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

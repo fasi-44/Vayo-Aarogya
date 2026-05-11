@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import {
   type HAMAResult,
 } from '@/lib/clinical-scales/hama'
 import { Activity, RotateCcw, CheckCircle2 } from 'lucide-react'
+import { useAuthStore } from '@/store'
 
 const SCORE_VALUES = [0, 1, 2, 3, 4] as const
 
@@ -30,15 +31,25 @@ interface HAMADialogProps {
   onOpenChange: (open: boolean) => void
   subjectName?: string
   onComplete?: (result: HAMAResult, answers: HAMAAnswers) => void
+  initialAnswers?: HAMAAnswers
+  viewOnly?: boolean
 }
 
-export function HAMADialog({ open, onOpenChange, subjectName, onComplete }: HAMADialogProps) {
+export function HAMADialog({ open, onOpenChange, subjectName, onComplete, initialAnswers, viewOnly }: HAMADialogProps) {
   const [answers, setAnswers] = useState<HAMAAnswers>({})
+  const { user } = useAuthStore()
+  const hideRiskLabel = user?.role === 'elderly' || user?.role === 'family'
+
+  useEffect(() => {
+    if (open && initialAnswers) setAnswers(initialAnswers)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const result = useMemo(() => calculateHAMA(answers), [answers])
   const completionPercent = (result.answeredCount / result.totalQuestions) * 100
 
   const setScore = (id: string, value: number) => {
+    if (viewOnly) return
     setAnswers(prev => ({ ...prev, [id]: value }))
   }
 
@@ -133,19 +144,27 @@ export function HAMADialog({ open, onOpenChange, subjectName, onComplete }: HAMA
                 <span className="text-2xl font-bold">{result.total}</span>
                 <span className="text-sm text-muted-foreground">/ {result.maxTotal}</span>
               </div>
-              <Badge className={cn('font-medium', getBandClass(result.band))}>
-                {result.bandLabel}
-              </Badge>
+              {!hideRiskLabel && (
+                <Badge className={cn('font-medium', getBandClass(result.band))}>
+                  {result.bandLabel}
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                Reset
-              </Button>
-              <Button size="sm" onClick={handleSave}>
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Save Result
-              </Button>
+              {viewOnly ? (
+                <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                    Reset
+                  </Button>
+                  <Button size="sm" onClick={handleSave}>
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                    Save Result
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

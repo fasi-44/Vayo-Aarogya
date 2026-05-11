@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -21,24 +21,33 @@ import {
   type PHQ9Result,
 } from '@/lib/clinical-scales/phq9'
 import { ClipboardCheck, RotateCcw, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { useAuthStore } from '@/store'
 
 interface PHQ9DialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** Optional name of the person being assessed — shown in the header. */
   subjectName?: string
-  /** Called with the final result when the assessor clicks Save. */
   onComplete?: (result: PHQ9Result, answers: PHQ9Answers) => void
+  initialAnswers?: PHQ9Answers
+  viewOnly?: boolean
 }
 
-export function PHQ9Dialog({ open, onOpenChange, subjectName, onComplete }: PHQ9DialogProps) {
+export function PHQ9Dialog({ open, onOpenChange, subjectName, onComplete, initialAnswers, viewOnly }: PHQ9DialogProps) {
   const [answers, setAnswers] = useState<PHQ9Answers>({})
+  const { user } = useAuthStore()
+  const hideRiskLabel = user?.role === 'elderly' || user?.role === 'family'
+
+  useEffect(() => {
+    if (open && initialAnswers) setAnswers(initialAnswers)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const result = useMemo(() => calculatePHQ9(answers), [answers])
   const groups = useMemo(() => groupPHQ9Questions(), [])
   const completionPercent = (result.answeredCount / result.totalQuestions) * 100
 
   const setScore = (id: string, value: number) => {
+    if (viewOnly) return
     setAnswers(prev => ({ ...prev, [id]: value }))
   }
 
@@ -157,10 +166,12 @@ export function PHQ9Dialog({ open, onOpenChange, subjectName, onComplete }: PHQ9
                   <span className="text-2xl font-bold">{result.total}</span>
                   <span className="text-sm text-muted-foreground">/ {result.maxTotal}</span>
                 </div>
-                <Badge className={cn('font-medium', getBandClass(result.band))}>
-                  {result.bandLabel}
-                </Badge>
-                {result.provisionalDiagnosis !== 'none' && (
+                {!hideRiskLabel && (
+                  <Badge className={cn('font-medium', getBandClass(result.band))}>
+                    {result.bandLabel}
+                  </Badge>
+                )}
+                {!hideRiskLabel && result.provisionalDiagnosis !== 'none' && (
                   <Badge variant="outline" className="text-[11px]">
                     {result.provisionalDiagnosis === 'major_depression' ? 'Provisional MDD' : 'Other depressive disorder'}
                   </Badge>
@@ -168,14 +179,20 @@ export function PHQ9Dialog({ open, onOpenChange, subjectName, onComplete }: PHQ9
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                Reset
-              </Button>
-              <Button size="sm" onClick={handleSave}>
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Save Result
-              </Button>
+              {viewOnly ? (
+                <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                    Reset
+                  </Button>
+                  <Button size="sm" onClick={handleSave}>
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                    Save Result
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -201,21 +218,18 @@ interface QuestionRowProps {
 }
 
 function QuestionRow({ question, value, onChange }: QuestionRowProps) {
-  const isSuicidality = question.isSuicidality
-
   return (
     <tr
       className={cn(
         'border-b align-top transition-colors hover:bg-muted/30',
         value !== undefined && 'bg-primary/[0.02]',
-        isSuicidality && (value ?? 0) >= 1 && 'bg-red-50/60 hover:bg-red-50'
       )}
     >
       <td className="px-3 py-3 text-xs font-mono text-muted-foreground whitespace-nowrap">
         {question.number}
       </td>
       <td className="px-3 py-3">
-        <p className={cn('text-sm font-medium leading-snug', isSuicidality && 'text-red-700')}>
+        <p className="text-sm font-medium leading-snug">
           {question.prompt}
         </p>
         {question.helpText && (

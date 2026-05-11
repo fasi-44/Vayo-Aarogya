@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -21,21 +21,32 @@ import {
   type UCLAResult,
 } from '@/lib/clinical-scales/ucla'
 import { Users, RotateCcw, CheckCircle2 } from 'lucide-react'
+import { useAuthStore } from '@/store'
 
 interface UCLADialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   subjectName?: string
   onComplete?: (result: UCLAResult, answers: UCLAAnswers) => void
+  initialAnswers?: UCLAAnswers
+  viewOnly?: boolean
 }
 
-export function UCLADialog({ open, onOpenChange, subjectName, onComplete }: UCLADialogProps) {
+export function UCLADialog({ open, onOpenChange, subjectName, onComplete, initialAnswers, viewOnly }: UCLADialogProps) {
   const [answers, setAnswers] = useState<UCLAAnswers>({})
+  const { user } = useAuthStore()
+  const hideRiskLabel = user?.role === 'elderly' || user?.role === 'family'
+
+  useEffect(() => {
+    if (open && initialAnswers) setAnswers(initialAnswers)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const result = useMemo(() => calculateUCLA(answers), [answers])
   const completionPercent = (result.answeredCount / result.totalQuestions) * 100
 
   const setScore = (id: string, value: number) => {
+    if (viewOnly) return
     setAnswers(prev => ({ ...prev, [id]: value }))
   }
 
@@ -125,21 +136,27 @@ export function UCLADialog({ open, onOpenChange, subjectName, onComplete }: UCLA
                 <span className="text-2xl font-bold">{result.total}</span>
                 <span className="text-sm text-muted-foreground">/ {result.maxTotal}</span>
               </div>
-              {result.answeredCount > 0 && (
+              {!hideRiskLabel && result.answeredCount > 0 && (
                 <Badge className={cn('font-medium', getBandClass(result.band))}>
                   {result.bandLabel}
                 </Badge>
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                Reset
-              </Button>
-              <Button size="sm" onClick={handleSave}>
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Save Result
-              </Button>
+              {viewOnly ? (
+                <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                    Reset
+                  </Button>
+                  <Button size="sm" onClick={handleSave}>
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                    Save Result
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

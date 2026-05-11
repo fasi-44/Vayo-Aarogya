@@ -953,6 +953,7 @@ export function AssessmentForm({
           initialScaleResults={scaleResults}
           onScaleResultsChange={setScaleResults}
           editable={true}
+          hideEmergencyBanner={assessorRole === 'elderly' || assessorRole === 'family'}
         />
 
         {error && (

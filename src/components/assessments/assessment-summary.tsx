@@ -33,6 +33,7 @@ interface AssessmentSummaryProps {
   initialScaleResults?: Record<string, SavedScaleEntry>
   onScaleResultsChange?: (sr: Record<string, SavedScaleEntry>) => void
   editable?: boolean
+  hideEmergencyBanner?: boolean
 }
 
 // Tailwind progress-bar classes per risk level. Track gets a tinted
@@ -51,6 +52,7 @@ export function AssessmentSummary({
   initialScaleResults,
   onScaleResultsChange,
   editable,
+  hideEmergencyBanner,
 }: AssessmentSummaryProps) {
   const overallDisplay = getRiskLevelDisplay(result.overallRisk)
   const scorePercentage = (result.totalScore / result.maxTotalScore) * 100
@@ -138,6 +140,7 @@ export function AssessmentSummary({
         initialScaleResults={initialScaleResults}
         onScaleResultsChange={onScaleResultsChange}
         editable={editable}
+        hideEmergencyBanner={hideEmergencyBanner}
       />
 
       {/* Domain Scores Grid */}

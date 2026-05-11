@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -21,24 +21,33 @@ import {
   type HMSEResult,
 } from '@/lib/clinical-scales/hmse'
 import { Brain, RotateCcw, CheckCircle2 } from 'lucide-react'
+import { useAuthStore } from '@/store'
 
 interface HMSEDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** Optional name of the person being assessed — shown in the header. */
   subjectName?: string
-  /** Called with the final result when the assessor clicks Save. */
   onComplete?: (result: HMSEResult, answers: HMSEAnswers) => void
+  initialAnswers?: HMSEAnswers
+  viewOnly?: boolean
 }
 
-export function HMSEDialog({ open, onOpenChange, subjectName, onComplete }: HMSEDialogProps) {
+export function HMSEDialog({ open, onOpenChange, subjectName, onComplete, initialAnswers, viewOnly }: HMSEDialogProps) {
   const [answers, setAnswers] = useState<HMSEAnswers>({})
+  const { user } = useAuthStore()
+  const hideRiskLabel = user?.role === 'elderly' || user?.role === 'family'
+
+  useEffect(() => {
+    if (open && initialAnswers) setAnswers(initialAnswers)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const result = useMemo(() => calculateHMSE(answers), [answers])
   const groups = useMemo(() => groupHMSEQuestions(), [])
   const completionPercent = (result.answeredCount / result.totalQuestions) * 100
 
   const setScore = (id: string, value: number) => {
+    if (viewOnly) return
     setAnswers(prev => ({ ...prev, [id]: value }))
   }
 
@@ -138,19 +147,27 @@ export function HMSEDialog({ open, onOpenChange, subjectName, onComplete }: HMSE
                 <span className="text-2xl font-bold">{result.total}</span>
                 <span className="text-sm text-muted-foreground">/ {result.maxTotal}</span>
               </div>
-              <Badge className={cn('font-medium', getBandClass(result.band))}>
-                {result.bandLabel}
-              </Badge>
+              {!hideRiskLabel && (
+                <Badge className={cn('font-medium', getBandClass(result.band))}>
+                  {result.bandLabel}
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                Reset
-              </Button>
-              <Button size="sm" onClick={handleSave}>
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Save Result
-              </Button>
+              {viewOnly ? (
+                <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                    Reset
+                  </Button>
+                  <Button size="sm" onClick={handleSave}>
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                    Save Result
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

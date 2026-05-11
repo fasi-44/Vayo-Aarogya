@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -23,17 +23,27 @@ import {
   type MNAResult,
 } from '@/lib/clinical-scales/mna'
 import { Apple, RotateCcw, CheckCircle2, AlertCircle } from 'lucide-react'
+import { useAuthStore } from '@/store'
 
 interface MNADialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   subjectName?: string
   onComplete?: (result: MNAResult, answers: MNAAnswers) => void
+  initialAnswers?: MNAAnswers
+  viewOnly?: boolean
 }
 
-export function MNADialog({ open, onOpenChange, subjectName, onComplete }: MNADialogProps) {
+export function MNADialog({ open, onOpenChange, subjectName, onComplete, initialAnswers, viewOnly }: MNADialogProps) {
   const [answers, setAnswers] = useState<MNAAnswers>({})
+  const { user } = useAuthStore()
+  const hideRiskLabel = user?.role === 'elderly' || user?.role === 'family'
   const [proteinMarkers, setProteinMarkers] = useState<MNAProteinAnswers>({})
+
+  useEffect(() => {
+    if (open && initialAnswers) setAnswers(initialAnswers)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   // Merge protein score into answers whenever markers change
   const mergedAnswers = useMemo<MNAAnswers>(() => ({
@@ -45,6 +55,7 @@ export function MNADialog({ open, onOpenChange, subjectName, onComplete }: MNADi
   const completionPercent = (result.answeredCount / result.totalQuestions) * 100
 
   const setScore = (id: string, value: number) => {
+    if (viewOnly) return
     setAnswers(prev => ({ ...prev, [id]: value }))
   }
 
@@ -190,12 +201,12 @@ export function MNADialog({ open, onOpenChange, subjectName, onComplete }: MNADi
                   <span className="text-2xl font-bold">{result.total}</span>
                   <span className="text-sm text-muted-foreground">/ 30</span>
                 </div>
-                {result.totalBand && (
+                {!hideRiskLabel && result.totalBand && (
                   <Badge className={cn('font-medium', getTotalBandClass(result.totalBand))}>
                     {result.bandLabel}
                   </Badge>
                 )}
-                {!result.totalBand && result.screeningComplete && (
+                {!hideRiskLabel && !result.totalBand && result.screeningComplete && (
                   <Badge className={cn('font-medium', getScreeningBandClass(result.screeningBand))}>
                     {result.bandLabel}
                   </Badge>
@@ -203,14 +214,20 @@ export function MNADialog({ open, onOpenChange, subjectName, onComplete }: MNADi
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                Reset
-              </Button>
-              <Button size="sm" onClick={handleSave}>
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Save Result
-              </Button>
+              {viewOnly ? (
+                <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                    Reset
+                  </Button>
+                  <Button size="sm" onClick={handleSave}>
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                    Save Result
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

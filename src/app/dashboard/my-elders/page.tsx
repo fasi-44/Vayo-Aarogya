@@ -48,6 +48,7 @@ import {
   BarChart3,
   HandHeart,
   FileText,
+  XCircle,
 } from 'lucide-react'
 
 // Elder with extended data
@@ -88,7 +89,7 @@ export default function MyEldersPage() {
 function MyEldersPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, setActiveElder } = useAuthStore()
+  const { user, activeElder, setActiveElder, clearActiveElder } = useAuthStore()
   const hydrated = useHydration()
 
   const [elders, setElders] = useState<ElderWithData[]>([])
@@ -297,6 +298,27 @@ function MyEldersPageContent() {
       title="My Elders"
       subtitle="Monitor and manage your family members' health"
     >
+      {/* Active elder banner — shown when a family member is currently viewing an elder */}
+      {activeElder && (
+        <div className="flex items-center justify-between gap-3 mb-4 px-4 py-3 rounded-lg border border-amber-300 bg-amber-50">
+          <div className="flex items-center gap-2 text-sm text-amber-900">
+            <Eye className="w-4 h-4 shrink-0" />
+            <span>
+              Currently viewing <span className="font-semibold">{activeElder.name}</span>'s profile
+            </span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="shrink-0 border-amber-400 text-amber-900 hover:bg-amber-100"
+            onClick={async () => { await clearActiveElder() }}
+          >
+            <XCircle className="w-4 h-4 mr-1.5" />
+            Stop Viewing
+          </Button>
+        </div>
+      )}
+
       {/* Header Actions */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">

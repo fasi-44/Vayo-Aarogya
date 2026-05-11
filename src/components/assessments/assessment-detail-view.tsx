@@ -52,6 +52,7 @@ import { getRiskLevelDisplay, buildResultFromStored } from '@/lib/assessment-sco
 import { AssessmentReport } from './assessment-report'
 import { createIntervention, getAssessmentInterventions, DOMAIN_NAMES, STATUS_COLORS, PRIORITY_COLORS } from '@/services/interventions'
 import { formatDate, formatTime } from '@/lib/utils'
+import { useAuthStore } from '@/store'
 
 interface AssessmentDetailViewProps {
   assessment: Assessment
@@ -68,6 +69,8 @@ export function AssessmentDetailView({
 }: AssessmentDetailViewProps) {
   const router = useRouter()
   const printRef = useRef<HTMLDivElement>(null)
+  const { user: viewer } = useAuthStore()
+  const hideEmergencyBanner = viewer?.role === 'elderly' || viewer?.role === 'family'
   const overallDisplay = getRiskLevelDisplay(assessment.overallRisk)
 
   // Intervention data state
@@ -388,6 +391,7 @@ export function AssessmentDetailView({
           subjectName={assessment.subject?.name}
           initialScaleResults={assessment.scaleResults as Record<string, import('./assessment-report').SavedScaleEntry> | undefined}
           editable={false}
+          hideEmergencyBanner={hideEmergencyBanner}
         />
       )}
 

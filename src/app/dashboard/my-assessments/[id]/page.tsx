@@ -275,6 +275,7 @@ export default function MyAssessmentDetailPage() {
               subjectName={assessment.subject?.name}
               initialScaleResults={assessment.scaleResults as Record<string, import('@/components/assessments/assessment-report').SavedScaleEntry> | undefined}
               editable={false}
+              hideEmergencyBanner={true}
             />
           )
         })()}

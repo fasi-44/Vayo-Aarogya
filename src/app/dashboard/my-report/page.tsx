@@ -326,6 +326,7 @@ export default function MyReportPage() {
               subjectName={user?.name}
               initialScaleResults={latestAssessment?.scaleResults as Record<string, import('@/components/assessments/assessment-report').SavedScaleEntry> | undefined}
               editable={false}
+              hideEmergencyBanner={true}
             />
           </div>
         )
